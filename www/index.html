@@ -1,0 +1,184 @@
+<!doctype html>
+<html>
+<head>
+  <title>Voxeling Engine</title>
+<style>
+html, body {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+}
+canvas {
+  background-color: white;
+  width: 100%;
+  height: 100%;
+}
+
+#crosshair {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  margin: -2px 0 0 -2px;
+  width: 4px;
+  height: 4px;
+  background-color: #d00;
+  opacity: 0.5;
+}
+
+#coordinates {
+  position: absolute;
+  top: 0;
+  right: 0;
+  text-align: right;
+  color: #000;
+  z-index: 10;
+  font-family: monospace;
+
+  width: 90px;
+  background-color: #fff;
+}
+
+#stats {
+  bottom: 0px !important;
+  right: 0px !important;
+  opacity: 0.6 !important;
+}
+
+/* VOXELING SPECIFIC STUFF */
+#overlay {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 600px;
+  height: 600px;
+  background-color: #fff;
+}
+#overlay > div {
+  display: none;
+}
+#overlay.introduction, #overlay.introduction > div.introduction {
+	display: block;
+}
+#overlay.textures, #overlay.textures > div.textures {
+	display: block;
+}
+#overlay.map, #overlay.map > div.map {
+	display: block;
+}
+#overlay div.textures > div {
+  width: 110px;
+  height: 120px;
+  float: left;
+  border: 1px solid #fff;
+  font-size: smaller;
+  text-align: center;
+}
+#overlay div.textures img {
+  display:block;
+  width: 64px;
+  height: 64px;
+  margin-left: auto;
+  margin-right: auto;
+}
+#overlay div.textures > div.selected {
+  border: 1px solid red;
+}
+
+#overlay div.padding {
+  padding: 10px;
+}
+
+#overlay.textures, #overlay.textures div.textures {
+  display: block;
+}
+#overlay.map, #overlay.map div.map {
+  display: block;
+}
+#overlay.settings, #overlay.settings div.settings {
+  display: block;
+}
+
+#chat { padding: 10px; height: 200px; width: 25%; position: absolute; bottom: 50px; left: 0; }
+      #chat #messages { max-height: 153px; overflow: auto; }
+      #cmdbox { position: absolute; bottom: 0; }
+      #chat input { box-shadow: none; padding: 0px 10px; margin: 0; background: none; border: none; border-radius: 0; }
+      input, input:focus { outline: none }
+
+.drawDistance {
+	width: 50px;
+}
+label {
+	display: inline-block;
+	width: 120px;
+}
+</style>
+
+<script src="js/jquery-2.1.4.min.js"></script>
+
+</head>
+<body>
+
+  <canvas id="herewego" style="border: none;"></canvas>
+  <div id="crosshair"></div>
+  <div id="coordinates"></div>
+
+  <!-- in game inventory overlay -->
+  <div id="overlay" class="">
+    <div class="introduction"><div class="padding">
+      <h2>Controls</h2>
+      <p>
+        w - move forward<br />
+        s - move backward<br />
+        a - move left<br />
+        d - move right<br />
+        spacebar - jump<br />
+        f - fly<br />
+        <br />Use the mouse to look around
+        <br /><br />Left-click - remove block
+        <br />Right-click - create block using current material
+        <br />hold shift - move mouse then left-click to bulk destroy
+        <br />hold ctrl - move mouse then left-click to bulk create
+        <br />1-9 - select material from hotbar
+        <br />e - Show/hide material picker
+        <br />r - Cycle first and third-person views
+
+        <br /><br />Click on the game window to start playing
+      </p>
+      <br />
+      <label>Your name:</label> <input type="text" id="username" style="width: 200px;" />
+
+      <br /><br />
+      <label>Draw Distance:</label> <input type="number" name="drawDistance" id="drawDistance" value="2" />
+      <br /><em>Adjust this value if you have a simple graphics card, or an awesome one.</em>
+
+      <br />
+      <br />
+      <p>If something's broken and you need someone ot yell at: alan.szlosek@gmail.com</p>
+
+      
+    </div></div>
+
+    <div class="textures" id="textureContainer">
+    </div>
+
+    <div class="map"><div class="padding">
+      <img id="mapImage" width="100%" />
+    </div></div>
+
+    <div class="settings"><div class="padding" id="settings">
+    </div></div>
+  </div>
+
+  <div id="chat">
+	<ul id="messages"></ul>
+	<div id="cmdbox">
+	<input type="text" id="cmd" placeholder="Press <enter> to chat" /><br/>
+	</div>
+  </div>
+
+  <script src="bundle.js"></script>
+</body>
+</html>
