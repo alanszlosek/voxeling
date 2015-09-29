@@ -8,7 +8,7 @@ module.exports = {
 
     initialPosition: [16.5, 25.5, 16.5],
     chunkFolder: './chunks/test/',
-    server: 'ws://ws.tenten.us',
+    server: 'ws://127.0.0.1:10005',
 
     textures: [
         {

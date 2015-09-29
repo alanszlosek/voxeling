@@ -19,7 +19,7 @@ var Physics = require('./lib/physics');
 var Stats = require('./lib/stats');
 var VoxelingClient = require('./lib/client');
 var ClientGenerator = require('./lib/generators/client');
-var Coordinator = require('voxel-coordinates');
+var Coordinates = require('./lib/coordinates');
 var Voxels = require('./lib/voxels');
 var Game = require('./lib/game');
 
@@ -28,10 +28,9 @@ var mesher = require('./lib/meshers/horizontal-merge');
 var chunkSize = config.chunkSize;
 var chunkCache = config.chunkCache;
 var generator = new ClientGenerator(chunkCache, chunkSize);
-var coordinates = new Coordinator(chunkSize);
+var coordinates = new Coordinates(chunkSize);
 
-//var client = new VoxelingClient('ws://127.0.0.1:10005', config, generator);
-var client = new VoxelingClient('ws://ws.tenten.us', config, generator);
+var client = new VoxelingClient(config, generator);
 
 // TODO: use dependency injection, not this
 //client.game = game
@@ -127,15 +126,16 @@ client.on('ready', function() {
         player.translate(config.initialPosition);
 
         webgl.onRender(function() {
+            // what's the proper name for this matrix?
             // get inverse matrix from camera and pass to render() on other objects?
-            var projection = camera.inverse;
+            var matrix = camera.inverse;
 
             // player
             // highlight/select
             // players.render()
-            voxels.render(projection);
-            lines.render(projection);
-            player.render(projection);
+            voxels.render(matrix);
+            lines.render(matrix);
+            player.render(matrix);
             st.update();
         });
 

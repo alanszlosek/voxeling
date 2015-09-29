@@ -19,7 +19,7 @@ Features
 * Gamepad support (80% complete)
 * Adjustable draw distance
 * World changes are persisted to disk
-* Relatively flat architecture means it's easy to get a WebGL handle and the projection matrix for drawing
+* Relatively flat architecture means it's easy to get a WebGL handle and the inverse camera matrix for drawing
 
 What's Included
 ====
@@ -39,26 +39,12 @@ See it in action ...
 Installation
 ====
 
-Clone my forked repos somewhere:
-
-```
-git clone https://github.com/alanszlosek/voxel-coordinates.git
-git clone https://github.com/alanszlosek/voxel-generator.git
-```
-
-Now symlink each of those folders into voxeling-server's `node_modules` folder:
-
 ```
 cd /path/to/voxeling-engine
-mkdir node_modules
-cd node_modules
-ln -s /path/to/voxel-coordinates ./voxel-coordinates
-ln -s /path/to/voxel-generator ./voxel-generator
-cd ..
 npm install
 
 # create folder for world chunks and edit config.js
-./server.sh
+node server.js
 # in another terminal
 ./client.sh
 ```
