@@ -29,6 +29,7 @@ var chunkSize = config.chunkSize;
 var chunkCache = config.chunkCache;
 var generator = new ClientGenerator(chunkCache, chunkSize);
 var coordinates = new Coordinates(chunkSize);
+var pool = require('./lib/object-pool');
 
 var client = new VoxelingClient(config, generator);
 
@@ -53,7 +54,6 @@ var fillMaterials = function(textures) {
     }
     container.innerHTML = html;
     $(container).on('click', function(e) {
-        console.log(e);
         var $el = $(e.target);
         var $div = $el.closest('div');
         var index = Number($div.data('id'));
@@ -113,6 +113,8 @@ client.on('ready', function() {
         var camera = new Camera(canvas, player);
         var physics = new Physics(player, inputHandler.state, game);
         var lines = new Lines(webgl.gl);
+        
+        client.game = game;
 
         // add cube wireframe
         //lines.fill( Shapes.wire.cube([0,0,0], [1,1,1]) )
@@ -163,9 +165,14 @@ client.on('ready', function() {
             game.drawChunkNextUpdate(chunkID);
         });
 
+        // Material to build with. The material picker dialog changes this value
         var currentMaterial = 1;
+        // Holds coordinates of the voxel being looked at
         var currentVoxel = null;
         var currentVoxelNormal = [ 0, 0, 0 ];
+        // When doing bulk create/destroy, holds the coordinates of the start of the selected region
+        var selectStart = null;
+        
         fillMaterials(textures);
 
         // Show coordinates
@@ -244,27 +251,108 @@ client.on('ready', function() {
             document.getElementById('overlay').className = '';
         });
 
-        inputHandler.on('fire', function() {
+        inputHandler.on('fire.down', function() {
+            // Log current voxel we're pointing at
             if (currentVoxel) {
-                var details = game.setBlock(currentVoxel[0], currentVoxel[1], currentVoxel[2], 0);
+                if (!selectStart) {
+                    selectStart = pool.malloc('array', 3);
+                }
+                for (var i = 0; i < currentVoxel.length; i++) {
+                    selectStart[i] = currentVoxel[i];
+                }
+            } else {
+                if (selectStart) {
+                    pool.free('array', selectStart);
+                }
+                selectStart = null;
+            }
+        });
+        inputHandler.on('fire.up', function() {
+            if (currentVoxel && selectStart) {
+                var out = {};
+                var details;
+                var chunkID;
+                var lowX = Math.min(selectStart[0], currentVoxel[0]);
+                var lowY = Math.min(selectStart[1], currentVoxel[1]);
+                var lowZ = Math.min(selectStart[2], currentVoxel[2]);
+                var highX = Math.max(selectStart[0], currentVoxel[0]);
+                var highY = Math.max(selectStart[1], currentVoxel[1]);
+                var highZ = Math.max(selectStart[2], currentVoxel[2]);
+                for (var i = lowX; i <= highX; i++) {
+                    for (var j = lowY; j <= highY; j++) {
+                        for (var k = lowZ; k <= highZ; k++) {
+                            if (inputHandler.state.alt) {
+                                details = game.setBlock(i, j, k, currentMaterial);
+                            } else {
+                                details = game.setBlock(i, j, k, 0);
+                            }
+                            chunkID = details.pop();
+                            if (chunkID in out) {
+                                Array.prototype.push.apply(out[chunkID], details);
+                            } else {
+                                out[chunkID] = details;
+                            }
+                        }
+                    }
+                }
                 // relay to server - get chunk id and index
                 // details contains an array: [chunkID, voxelIndex, newValue]
-                client.connection.emit('chunkVoxelIndexValue', details);
+                client.connection.emit('chunkVoxelIndexValue', out);
+                pool.free('array', selectStart);
+                out = {};
             }
         });
 
-        inputHandler.on('firealt', function() {
-            // TODO: clean this up so we use the object pool for these arrays
+        inputHandler.on('firealt.down', function() {
+            // Log current voxel we're pointing at
             if (currentVoxel) {
-                var details = game.setBlock(
-                    currentVoxel[0] + currentVoxelNormal[0],
-                    currentVoxel[1] + currentVoxelNormal[1],
-                    currentVoxel[2] + currentVoxelNormal[2],
-                    currentMaterial
-                );
+                if (!selectStart) {
+                    selectStart = pool.malloc('array', 3);
+                }
+                // Add in normals
+                for (var i = 0; i < currentVoxelNormal.length; i++) {
+                    selectStart[i] = currentVoxel[i] + currentVoxelNormal[i];
+                }
+            } else {
+                if (selectStart) {
+                    pool.free('array', selectStart);
+                }
+                selectStart = null;
+            }
+        });
+        inputHandler.on('firealt.up', function() {
+            // TODO: clean this up so we use the object pool for these arrays
+            if (currentVoxel && selectStart) {
+                var details
+                var low = [
+                    Math.min(selectStart[0], currentVoxel[0] + currentVoxelNormal[0]),
+                    Math.min(selectStart[1], currentVoxel[1] + currentVoxelNormal[1]),
+                    Math.min(selectStart[2], currentVoxel[2] + currentVoxelNormal[2])
+                ];
+                var high = [
+                    Math.max(selectStart[0], currentVoxel[0] + currentVoxelNormal[0]),
+                    Math.max(selectStart[1], currentVoxel[1] + currentVoxelNormal[1]),
+                    Math.max(selectStart[2], currentVoxel[2] + currentVoxelNormal[2])
+                ];
+                var out = {};
+                for (var i = low[0]; i <= high[0]; i++) {
+                    for (var j = low[1]; j <= high[1]; j++) {
+                        for (var k = low[2]; k <= high[2]; k++) {
+                            details = game.setBlock(i, j, k, currentMaterial);
+                            chunkID = details.pop();
+                            if (chunkID in out) {
+                                Array.prototype.push.apply(out[chunkID], details);
+                            } else {
+                                out[chunkID] = details;
+                            }
+                        }
+                    }
+                }
                 // relay to server - get chunk id and index
                 // details contains an array: [chunkID, voxelIndex, newValue]
-                client.connection.emit('chunkVoxelIndexValue', details);
+                client.connection.emit('chunkVoxelIndexValue', out);
+                pool.free('array', selectStart);
+                out = {};
             }
         });
 
@@ -273,7 +361,6 @@ client.on('ready', function() {
         });
 
         inputHandler.on('chat', function(message) {
-            console.log('Sending ' + message);
             var out = {
                 user: localStorage.getItem('name'),
                 text: message
@@ -288,6 +375,7 @@ client.on('ready', function() {
         var voxelHit = [ 0, 0, 0 ];
         var distance = 10;
         var direction = vec3.create();
+        var hi = pool.malloc('array', 3);
         var pointer = function() {
             var hit;
             direction[0] = direction[1] = 0;
@@ -299,7 +387,14 @@ client.on('ready', function() {
                 voxelHit[0] = Math.floor(voxelHit[0]);
                 voxelHit[1] = Math.floor(voxelHit[1]);
                 voxelHit[2] = Math.floor(voxelHit[2]);
-                var hi = [ voxelHit[0] + 1, voxelHit[1] + 1, voxelHit[2] + 1 ];
+                if (inputHandler.state.alt) {
+                    voxelHit[0] += currentVoxelNormal[0];
+                    voxelHit[1] += currentVoxelNormal[1];
+                    voxelHit[2] += currentVoxelNormal[2];
+                }
+                hi[0] = voxelHit[0] + 1;
+                hi[1] = voxelHit[1] + 1;
+                hi[2] = voxelHit[2] + 1;
                 lines.fill(Shapes.wire.cube(voxelHit, hi));
                 lines.skip(false);
                 currentVoxel = voxelHit;
