@@ -54,7 +54,6 @@ var fillMaterials = function(textures) {
     }
     container.innerHTML = html;
     $(container).on('click', function(e) {
-        console.log(e);
         var $el = $(e.target);
         var $div = $el.closest('div');
         var index = Number($div.data('id'));
@@ -114,6 +113,8 @@ client.on('ready', function() {
         var camera = new Camera(canvas, player);
         var physics = new Physics(player, inputHandler.state, game);
         var lines = new Lines(webgl.gl);
+        
+        client.game = game;
 
         // add cube wireframe
         //lines.fill( Shapes.wire.cube([0,0,0], [1,1,1]) )
@@ -331,7 +332,6 @@ client.on('ready', function() {
                     Math.max(selectStart[2], currentVoxel[2] + currentVoxelNormal[2])
                 ];
                 var out = {};
-                console.log(low, high);
                 for (var i = low[0]; i <= high[0]; i++) {
                     for (var j = low[1]; j <= high[1]; j++) {
                         for (var k = low[2]; k <= high[2]; k++) {
@@ -358,7 +358,6 @@ client.on('ready', function() {
         });
 
         inputHandler.on('chat', function(message) {
-            console.log('Sending ' + message);
             var out = {
                 user: localStorage.getItem('name'),
                 text: message
