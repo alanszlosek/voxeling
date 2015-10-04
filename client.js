@@ -159,6 +159,9 @@ client.on('ready', function() {
             // start, once we've got our first chunks
             webgl.start();
         });
+        client.on('chunkChanged', function(chunkID) {
+            game.drawChunkNextUpdate(chunkID);
+        });
 
         var currentMaterial = 1;
         var currentVoxel = null;
@@ -190,8 +193,8 @@ client.on('ready', function() {
 
             // nickname
             element = document.getElementById('username');
-            value = localStorage.getItem('name').trim();
-            if (!value || value.length == 0) {
+            value = localStorage.getItem('name');
+            if (!value || value.length == 0 || value.trim().length == 0) {
                 value = randomName();
                 localStorage.setItem('name', value);
             }
