@@ -169,9 +169,10 @@ client.on('ready', function() {
         var currentMaterial = 1;
         // Holds coordinates of the voxel being looked at
         var currentVoxel = null;
-        var currentVoxelNormal = [ 0, 0, 0 ];
+        var currentNormalVoxel = pool.malloc('array', 3);
+
         // When doing bulk create/destroy, holds the coordinates of the start of the selected region
-        var selectStart = null;
+        var selectStart = pool.malloc('array', 3);
         
         fillMaterials(textures);
 
@@ -251,36 +252,34 @@ client.on('ready', function() {
             document.getElementById('overlay').className = '';
         });
 
+
+        // Creation / destruction
+        var selecting = false;
+        var low = pool.malloc('array', 3);
+        var high = pool.malloc('array', 3);
         inputHandler.on('fire.down', function() {
             // Log current voxel we're pointing at
             if (currentVoxel) {
-                if (!selectStart) {
-                    selectStart = pool.malloc('array', 3);
-                }
-                for (var i = 0; i < currentVoxel.length; i++) {
-                    selectStart[i] = currentVoxel[i];
-                }
-            } else {
-                if (selectStart) {
-                    pool.free('array', selectStart);
-                }
-                selectStart = null;
+                selecting = true;
+                selectStart[0] = currentVoxel[0];
+                selectStart[1] = currentVoxel[1];
+                selectStart[2] = currentVoxel[2];
             }
         });
         inputHandler.on('fire.up', function() {
-            if (currentVoxel && selectStart) {
+            if (currentVoxel && selecting) {
                 var out = {};
                 var details;
                 var chunkID;
-                var lowX = Math.min(selectStart[0], currentVoxel[0]);
-                var lowY = Math.min(selectStart[1], currentVoxel[1]);
-                var lowZ = Math.min(selectStart[2], currentVoxel[2]);
-                var highX = Math.max(selectStart[0], currentVoxel[0]);
-                var highY = Math.max(selectStart[1], currentVoxel[1]);
-                var highZ = Math.max(selectStart[2], currentVoxel[2]);
-                for (var i = lowX; i <= highX; i++) {
-                    for (var j = lowY; j <= highY; j++) {
-                        for (var k = lowZ; k <= highZ; k++) {
+                low[0] = Math.min(selectStart[0], currentVoxel[0]);
+                low[1] = Math.min(selectStart[1], currentVoxel[1]);
+                low[2] = Math.min(selectStart[2], currentVoxel[2]);
+                high[0] = Math.max(selectStart[0], currentVoxel[0]);
+                high[1] = Math.max(selectStart[1], currentVoxel[1]);
+                high[2] = Math.max(selectStart[2], currentVoxel[2]);
+                for (var i = low[0]; i <= high[0]; i++) {
+                    for (var j = low[1]; j <= high[1]; j++) {
+                        for (var k = low[2]; k <= high[2]; k++) {
                             if (inputHandler.state.alt) {
                                 details = game.setBlock(i, j, k, currentMaterial);
                             } else {
@@ -298,42 +297,30 @@ client.on('ready', function() {
                 // relay to server - get chunk id and index
                 // details contains an array: [chunkID, voxelIndex, newValue]
                 client.connection.emit('chunkVoxelIndexValue', out);
-                pool.free('array', selectStart);
                 out = {};
             }
+            selecting = false;
         });
 
         inputHandler.on('firealt.down', function() {
             // Log current voxel we're pointing at
             if (currentVoxel) {
-                if (!selectStart) {
-                    selectStart = pool.malloc('array', 3);
-                }
-                // Add in normals
-                for (var i = 0; i < currentVoxelNormal.length; i++) {
-                    selectStart[i] = currentVoxel[i] + currentVoxelNormal[i];
-                }
-            } else {
-                if (selectStart) {
-                    pool.free('array', selectStart);
-                }
-                selectStart = null;
+                selecting = true;
+                selectStart[0] = currentNormalVoxel[0];
+                selectStart[1] = currentNormalVoxel[1];
+                selectStart[2] = currentNormalVoxel[2];
             }
         });
         inputHandler.on('firealt.up', function() {
             // TODO: clean this up so we use the object pool for these arrays
-            if (currentVoxel && selectStart) {
+            if (currentVoxel && selecting) {
                 var details
-                var low = [
-                    Math.min(selectStart[0], currentVoxel[0] + currentVoxelNormal[0]),
-                    Math.min(selectStart[1], currentVoxel[1] + currentVoxelNormal[1]),
-                    Math.min(selectStart[2], currentVoxel[2] + currentVoxelNormal[2])
-                ];
-                var high = [
-                    Math.max(selectStart[0], currentVoxel[0] + currentVoxelNormal[0]),
-                    Math.max(selectStart[1], currentVoxel[1] + currentVoxelNormal[1]),
-                    Math.max(selectStart[2], currentVoxel[2] + currentVoxelNormal[2])
-                ];
+                low[0] = Math.min(selectStart[0], currentNormalVoxel[0]);
+                low[1] = Math.min(selectStart[1], currentNormalVoxel[1]);
+                low[2] = Math.min(selectStart[2], currentNormalVoxel[2]);
+                high[0] = Math.max(selectStart[0], currentNormalVoxel[0]);
+                high[1] = Math.max(selectStart[1], currentNormalVoxel[1]);
+                high[2] = Math.max(selectStart[2], currentNormalVoxel[2]);
                 var out = {};
                 for (var i = low[0]; i <= high[0]; i++) {
                     for (var j = low[1]; j <= high[1]; j++) {
@@ -351,9 +338,9 @@ client.on('ready', function() {
                 // relay to server - get chunk id and index
                 // details contains an array: [chunkID, voxelIndex, newValue]
                 client.connection.emit('chunkVoxelIndexValue', out);
-                pool.free('array', selectStart);
                 out = {};
             }
+            selecting = false;
         });
 
         inputHandler.on('currentMaterial', function(c) {
@@ -372,32 +359,59 @@ client.on('ready', function() {
 
 
         // This needs cleanup, and encapsulation, but it works
-        var voxelHit = [ 0, 0, 0 ];
+        var voxelHit = pool.malloc('array', 3);
+        var voxelNormal = pool.malloc('array', 3);
         var distance = 10;
         var direction = vec3.create();
-        var hi = pool.malloc('array', 3);
         var pointer = function() {
             var hit;
             direction[0] = direction[1] = 0;
             direction[2] = -1;
             vec3.transformQuat(direction, direction, camera.getPitch());
             vec3.transformQuat(direction, direction, camera.getYaw());
-            hit = raycast(game, player.getPosition(), direction, distance, voxelHit, currentVoxelNormal);
+            hit = raycast(game, player.getPosition(), direction, distance, voxelHit, voxelNormal);
             if (hit > 0) {
                 voxelHit[0] = Math.floor(voxelHit[0]);
                 voxelHit[1] = Math.floor(voxelHit[1]);
                 voxelHit[2] = Math.floor(voxelHit[2]);
-                if (inputHandler.state.alt) {
-                    voxelHit[0] += currentVoxelNormal[0];
-                    voxelHit[1] += currentVoxelNormal[1];
-                    voxelHit[2] += currentVoxelNormal[2];
-                }
-                hi[0] = voxelHit[0] + 1;
-                hi[1] = voxelHit[1] + 1;
-                hi[2] = voxelHit[2] + 1;
-                lines.fill(Shapes.wire.cube(voxelHit, hi));
-                lines.skip(false);
+
+                // Give us access to the current voxel and the voxel at it's normal
                 currentVoxel = voxelHit;
+                currentNormalVoxel[0] = voxelHit[0] + voxelNormal[0];
+                currentNormalVoxel[1] = voxelHit[1] + voxelNormal[1];
+                currentNormalVoxel[2] = voxelHit[2] + voxelNormal[2];
+
+                if (selecting) {
+                    if (inputHandler.state.alt || inputHandler.state.firealt) {
+                        low[0] = Math.min(selectStart[0], currentNormalVoxel[0]);
+                        low[1] = Math.min(selectStart[1], currentNormalVoxel[1]);
+                        low[2] = Math.min(selectStart[2], currentNormalVoxel[2]);
+                        high[0] = Math.max(selectStart[0] + 1, currentNormalVoxel[0] + 1);
+                        high[1] = Math.max(selectStart[1] + 1, currentNormalVoxel[1] + 1);
+                        high[2] = Math.max(selectStart[2] + 1, currentNormalVoxel[2] + 1);
+                    } else {
+                        low[0] = Math.min(selectStart[0], currentVoxel[0]);
+                        low[1] = Math.min(selectStart[1], currentVoxel[1]);
+                        low[2] = Math.min(selectStart[2], currentVoxel[2]);
+                        high[0] = Math.max(selectStart[0] + 1, currentVoxel[0] + 1);
+                        high[1] = Math.max(selectStart[1] + 1, currentVoxel[1] + 1);
+                        high[2] = Math.max(selectStart[2] + 1, currentVoxel[2] + 1);
+                    }
+                    lines.fill(Shapes.wire.cube(low, high));
+                } else {
+                    if (inputHandler.state.alt || inputHandler.state.firealt) {
+                        high[0] = currentNormalVoxel[0] + 1;
+                        high[1] = currentNormalVoxel[1] + 1;
+                        high[2] = currentNormalVoxel[2] + 1;
+                        lines.fill(Shapes.wire.cube(currentNormalVoxel, high));
+                    } else {
+                        high[0] = currentVoxel[0] + 1;
+                        high[1] = currentVoxel[1] + 1;
+                        high[2] = currentVoxel[2] + 1;
+                        lines.fill(Shapes.wire.cube(currentVoxel, high));
+                    }
+                }
+                lines.skip(false);
             } else {
                 // clear
                 lines.skip(true);
