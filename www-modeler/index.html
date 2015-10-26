@@ -1,0 +1,68 @@
+<!doctype html>
+<html>
+<head>
+  <title>Modeler</title>
+<style>
+html, body {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+}
+canvas {
+	position: absolute;
+	top: 0;
+	left: 0;
+	background-color: white;
+	width: 70%;
+	height: 100%;
+}
+.controls {
+	position: absolute;
+	top: 0;
+	right: 0;
+	background-color: beige;
+	width: 30%;
+	height: 100%;
+	margin-left: 70%;
+}
+.padded {
+	padding: 10px;
+}
+label {
+	display: block;
+}
+input[type=text] {
+	width:80%;
+}
+</style>
+
+<script src="js/jquery-2.1.4.min.js"></script>
+
+</head>
+<body>
+
+
+<div class="controls"><div class="padded">
+	<label>JSON Url</label>
+	<input type="text" />
+	<br />
+
+	<label>Position</label>
+	X: <button id="addX">+1</button> <button id="subX">-1</button><br />
+	Y: <button id="addY">+1</button> <button id="subY">-1</button><br />
+	Z: <button id="addZ">+1</button> <button id="subZ">-1</button><br />
+
+	<label>Rotate</label>
+	X: <button id="addX">+1</button> <button id="subX">-1</button><br />
+	Y: <button id="addY">+1</button> <button id="subY">-1</button><br />
+	Z: <button id="addZ">+1</button> <button id="subZ">-1</button><br />
+
+</div></div>
+
+<canvas id="herewego" style="border: none;"></canvas>
+
+<script src="bundle.js"></script>
+</body>
+</html>
