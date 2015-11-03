@@ -1,7 +1,7 @@
 var WebSocketEmitter = require('./lib/web-socket-emitter');
 var Server = require('./lib/server');
 var fs = require('fs');
-var ServerGenerator = require('./lib/generators/server-regions');
+var ServerGenerator = require('./lib/generators/server-terraced');
 var stats = require('./lib/voxel-stats');
 var config = require('./config');
 

@@ -70,25 +70,25 @@ setInterval(function() {
 
 var adjustment = 1;
 
-$('.controls')
-    .on('click', 'button#addX', function(e) {
-        modelPosition.translate([adjustment, 0, 0]);
-    })
-    .on('click', 'button#subX', function(e) {
-        modelPosition.translate([-adjustment, 0, 0]);
-    })
+var $controls = $('.controls');
 
-    .on('click', 'button#addY', function(e) {
-        modelPosition.translate([0, adjustment, 0]);
-    })
-    .on('click', 'button#subY', function(e) {
-        modelPosition.translate([0, -adjustment, 0]);
-    })
+$controls.find('.position')
+    .on('change', 'input', function(e) {
+        var translation = [
+            $('#positionX').val(),
+            $('#positionY').val(),
+            $('#positionZ').val()
 
-    .on('click', 'button#addZ', function(e) {
-        modelPosition.translate([0, 0, adjustment]);
-    })
-    .on('click', 'button#subZ', function(e) {
-        modelPosition.translate([0, 0, -adjustment]);
-    })
-    ;
+        ];
+        modelPosition.setTranslation(translation);
+    });
+$controls.find('.rotation')
+    .on('change', 'input', function(e) {
+        var rotation = [
+            $('#rotationX').val(),
+            $('#rotationY').val(),
+            $('#rotationZ').val()
+
+        ];
+        modelPosition.setRotation(rotation);
+    });

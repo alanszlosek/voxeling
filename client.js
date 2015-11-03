@@ -18,7 +18,6 @@ var Player = require('./lib/player');
 var Physics = require('./lib/physics');
 var Stats = require('./lib/stats');
 var VoxelingClient = require('./lib/client');
-var ClientGenerator = require('./lib/generators/client');
 var Coordinates = require('./lib/coordinates');
 var Voxels = require('./lib/voxels');
 var Game = require('./lib/game');
@@ -27,11 +26,10 @@ var Game = require('./lib/game');
 var mesher = require('./lib/meshers/horizontal-merge');
 var chunkSize = config.chunkSize;
 var chunkCache = config.chunkCache;
-var generator = new ClientGenerator(chunkCache, chunkSize);
 var coordinates = new Coordinates(chunkSize);
 var pool = require('./lib/object-pool');
 
-var client = new VoxelingClient(config, generator);
+var client = new VoxelingClient(config);
 
 // TODO: use dependency injection, not this
 //client.game = game
@@ -41,9 +39,9 @@ var scene;
 var fillMaterials = function(textures) {
     var container = document.getElementById('textureContainer');
     var html = '';
-    for (var i = 0; i < textures.setup.length; i++) {
+    for (var i = 0; i < textures.textureArray.length; i++) {
         var index = i + 1;
-        var material = textures.setup[i];
+        var material = textures.textureArray[i];
         var src;
         if ('sides' in material) {
             src = textures.byValue[material.sides[0]].src;
@@ -69,9 +67,9 @@ var fillMaterials = function(textures) {
 var fillSettings = function(textures) {
     var container = document.getElementById('settings');
     var html = '';
-    for (var i = 0; i < textures.setup.length; i++) {
+    for (var i = 0; i < textures.textureArray.length; i++) {
         var index = i + 1;
-        var material = textures.setup[i];
+        var material = textures.textureArray[i];
         if ('sides' in material) {
             continue;
         }
@@ -101,15 +99,40 @@ client.on('ready', function() {
     canvas.width = canvas.clientWidth;
     canvas.height = canvas.clientHeight;
     webgl = new WebGL(canvas);
-    textures = new Textures(webgl.gl);
-    mesher.config(config.chunkSize, textures, coordinates);
+    textures = new Textures(config.textures);
+    
+    //mesher.config(config.chunkSize, textures, coordinates);
 
-    textures.load(config.textures, function() {
+    textures.load(webgl.gl, function() {
         // stops physics and input handling from running early
         var ready = false;
         var player = client.player = new Player(webgl.gl);
         var voxels = new Voxels(webgl.gl, textures, coordinates);
-        var game = new Game(config, voxels, generator, mesher, coordinates, player);
+        var game = new Game(
+            config, voxels, coordinates, player,
+            // This is called by requestNearbyMissingChunks
+            function(needChunks) {
+                needChunks.unshift('needChunks');
+                client.worker.postMessage(needChunks);
+            },
+            // This is called when the game is done with a chunk
+            function(oldChunk) {
+                var transferList = [];
+                // Return this chunk to the web worker for handling
+                // We'll add an LRU
+
+                // We want to transfer voxel and mesh arrays
+                transferList.push(oldChunk.voxels.buffer);
+                for (var textureValue in oldChunk.mesh) {
+                    var texture = oldChunk.mesh[textureValue];
+                    // Go past the Growable, to the underlying ArrayBuffer
+                    transferList.push(texture.position.data.buffer);
+                    transferList.push(texture.texcoord.data.buffer);
+                }
+
+                client.worker.postMessage(['oldChunk', oldChunk], transferList);
+            }
+        );
         var camera = new Camera(canvas, player);
         var physics = new Physics(player, inputHandler.state, game);
         var lines = new Lines(webgl.gl);
@@ -141,9 +164,6 @@ client.on('ready', function() {
             st.update();
         });
 
-        // give generator the connection so it can request chunks. UGLY
-        generator.setEmitter(client.connection);
-
         // Temporarily override draw distance settings, so we can get up and running quickly
         var horiz = config.horizontalDistance;
         var vert = config.verticalDistance;
@@ -153,7 +173,7 @@ client.on('ready', function() {
         config.horizontalDistance = horiz;
         config.verticalDistance = vert;
 
-        client.on('chunks', function() {
+        client.on('hasChunks', function() {
             if (ready) {
                 return;
             }
