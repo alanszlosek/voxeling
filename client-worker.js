@@ -7,6 +7,8 @@ var Coordinates = require('./lib/coordinates');
 var Textures = require('./lib/textures');
 var mesher = require('./lib/meshers/horizontal-merge');
 var ClientGenerator = require('./lib/generators/client.js');
+var chunkArrayLength = config.chunkSize * config.chunkSize * config.chunkSize;
+var chunkCache = {};
 
 var debug = true;
 
@@ -30,7 +32,8 @@ chunk - sending a decoded, meshed chunk to the client
 var worker = {
     connected: false,
     connection: null,
-    receivedChunks: [],
+    chunksToDecodeAndMesh: [],
+    chunksToMesh: [],
 
     emit: function(name, data) {
         postMessage(Array.prototype.slice.apply(arguments));
@@ -42,7 +45,7 @@ var worker = {
         var coordinates = new Coordinates(config.chunkSize);
         var textures = new Textures(config.textures);
         var websocket = this.connection = new WebSocketEmitter.client();
-        var generator = new ClientGenerator(config.chunkCache, config.chunkSize);
+        var generator = new ClientGenerator(chunkCache, config.chunkSize);
 
         mesher.config(config.chunkSize, textures, coordinates);
 
@@ -74,34 +77,36 @@ var worker = {
             self.emit('settings', settings, id);
         });
 
-        websocket.on('chunks', function(pairs) {
+        websocket.on('chunks', function(tuples) {
             if (debug) {
-                console.log('websorker: Websocket received chunks', pairs);
+                console.log('websorker: Websocket received chunks', tuples);
             }
-            self.receivedChunks = self.receivedChunks.concat(pairs);
+            self.chunksToDecodeAndMesh = self.chunksToDecodeAndMesh.concat(tuples);
         });
 
         // fires when server sends us voxel edits [chunkID, voxelIndex, value, voxelIndex, value...]
         // would like to expand this to cover more than 1 chunk at a time
-        /*
-        websocket.on('chunkVoxelIndexValue', function(chunks) {
-            for (var chunkID in chunks) {
-                if (chunkID in self.settings.chunkCache) {
-                    var chunk = self.settings.chunkCache[chunkID];
-                    var details = chunks[chunkID];
+        websocket.on('chunkVoxelIndexValue', function(changes) {
+            // Tell the client
+            self.emit('chunkVoxelIndexValue', changes);
+            // Update our local cache
+            for (var chunkID in changes) {
+                if (chunkID in chunkCache) {
+                    var chunk = chunkCache[chunkID];
+                    var details = changes[chunkID];
                     for (var i = 0; i < details.length; i += 2) {
                         var index = details[i];
                         var val = details[i + 1];
                         chunk.voxels[index] = val;
                     }
-                    self.emitter.emit('chunkChanged', chunkID);
+                    // Re-mesh this chunk
+                    self.chunksToMesh.push(chunkID);
                 }
             }
         });
-*/
 
         websocket.on('chat', function(message) {
-            self.emit('chat', message)
+            self.emit('chat', message);
         });
 
         this.connection.connect(config.server);
@@ -110,27 +115,56 @@ var worker = {
     needChunks: function() {
         var chunks = Array.prototype.slice.apply(arguments);
         chunks.unshift('needChunks');
-        console.log('sending needChunks', chunks);
+        if (debug) {
+            console.log('sending needChunks', chunks);
+        }
         this.connection.emit.apply(this.connection, chunks);
     },
 
+    /*
+    We queue up chunks when we receive them from the server. This method decodes them and meshes them,
+    in preparation for rendering.
+    */
     processChunks: function() {
-        for (var i = 0; i < this.receivedChunks.length; i++) {
-            var pair = this.receivedChunks[i];
-            var encoded = pair[0];
-            // maybe data should come as an array, instead of an object, so i don't have to change the object shape when mesh is created
-            var chunk = pair[1];
-            var data = pool.malloc('uint8', chunk.length);
+        var tuples = this.chunksToDecodeAndMesh;
+        for (var i = 0; i < tuples.length; i+=3) {
+            var chunkID = tuples[i];
+            var position = tuples[i + 1];
+            var encoded = tuples[i + 2];
+            var data = pool.malloc('uint8', chunkArrayLength);
+
+            var chunk = {
+                chunkID: chunkID,
+                position: position,
+                voxels: decoder(encoded, data)
+            };
+            var mesh = mesher.mesh(chunk.position, chunk.voxels);
+
+            var transfer = {
+                chunkID: chunkID,
+                position: position,
+                voxels: chunk.voxels,
+                mesh: {}
+            };
             var transferList = [];
 
-            chunk.voxels = decoder(encoded, data);
-            console.log(chunk);
-            chunk.mesh = mesher.mesh(chunk.position, chunk.voxels);
+            // Cache in webworker
+            chunkCache[chunkID] = chunk;
 
-            // We want to transfer voxel and mesh arrays
-            transferList.push(chunk.voxels.buffer);
-            for (var textureValue in chunk.mesh) {
-                var texture = chunk.mesh[textureValue];
+            // We don't want to transfer the voxel array, just copy it
+            for (var textureValue in mesh) {
+                var texture = mesh[textureValue];
+
+                transfer.mesh[textureValue] = {
+                    position: {
+                        buffer: texture.position.data.buffer,
+                        offset: texture.position.offset
+                    },
+                    texcoord: {
+                        buffer: texture.texcoord.data.buffer,
+                        offset: texture.texcoord.offset
+                    }
+                };
                 // Go past the Growable, to the underlying ArrayBuffer
                 transferList.push(texture.position.data.buffer);
                 transferList.push(texture.texcoord.data.buffer);
@@ -138,38 +172,101 @@ var worker = {
 
             // specially list the ArrayBuffer object we want to transfer
             postMessage(
-                ['chunk', chunk],
+                ['chunk', transfer],
                 transferList
             );
         }
         postMessage(['chunksProcessed']);
-        this.receivedChunks = [];
+        this.chunksToDecodeAndMesh = [];
+
+        for (var i = 0; i < this.chunksToMesh.length; i++) {
+            var chunkID = this.chunksToMesh[i];
+            if (!(chunkID in chunkCache)) {
+                continue;
+            }
+
+            var chunk = chunkCache[chunkID];
+            var mesh = mesher.mesh(chunk.position, chunk.voxels);
+
+            var transfer = {};
+            var transferList = [];
+
+            for (var textureValue in mesh) {
+                var texture = mesh[textureValue];
+
+                // Just send over ArrayBuffers
+                transfer[textureValue] = {
+                    position: {
+                        buffer: texture.position.data.buffer,
+                        offset: texture.position.offset
+                    },
+                    texcoord: {
+                        buffer: texture.texcoord.data.buffer,
+                        offset: texture.texcoord.offset
+                    }
+                };
+                // Go past the Growable, to the underlying ArrayBuffer
+                transferList.push(texture.position.data.buffer);
+                transferList.push(texture.texcoord.data.buffer);
+            }
+
+            // specially list the ArrayBuffer object we want to transfer
+            postMessage(
+                ['chunkMesh', chunkID, transfer],
+                transferList
+            );
+        }
+        this.chunksToMesh = [];
     },
 
-    oldChunk: function(chunk) {
-        // Chunk is being returned to us. no longer need to show it
-        // Keep it in LRU?
-        // Delete it?
-        return;
-
-        var chunk = this.chunkCache[chunkID];
-        if (chunk) {
-            pool.free('uint8', chunk.voxels);
-            // TODO: free meshes, too
-            chunk.voxels = null;
-            if ('mesh' in chunk) {
-                for (var textureValue in chunk.mesh) {
-                    var textureMesh = chunk.mesh[textureValue];
-                    textureMesh.position.free();
-                    textureMesh.texcoord.free();
+    // Update our local cache and tell the server
+    chunkVoxelIndexValue: function(changes) {
+        var self = this;
+        self.connection.emit('chunkVoxelIndexValue', changes);
+        for (var chunkID in changes) {
+            if (chunkID in chunkCache) {
+                var chunk = chunkCache[chunkID];
+                var details = changes[chunkID];
+                for (var i = 0; i < details.length; i += 2) {
+                    var index = details[i];
+                    var val = details[i + 1];
+                    chunk.voxels[index] = val;
                 }
-                chunk.mesh = null;
+                // Re-mesh this chunk
+                self.chunksToMesh.push(chunkID);
             }
         }
-        delete this.chunkCache[chunkID];
-        delete this.chunksToDraw[chunkID];
-        delete this.visibleChunks[chunkID];
-        delete this.requestedChunks[chunkID];
+    },
+
+    chat: function(message) {
+        var self = this;
+        self.connection.emit('chat', message);
+    },
+
+    /*
+    Client no longer needs this mesh
+    */
+    freeMesh: function(mesh) {
+        for (var textureValue in mesh) {
+            var textureMesh = mesh[textureValue];
+            // We pass ArrayBuffers across worker boundary, so need to we-wrap in the appropriate type
+            pool.free('float32', new Float32Array(textureMesh.position.buffer));
+            pool.free('float32', new Float32Array(textureMesh.texcoord.buffer));
+        }
+    },
+    /*
+    Client no longer needs this chunk (voxels and mesh)
+    Add the arrays back to the pool
+    */
+    freeChunk: function(chunk) {
+        var mesh = chunk.mesh;
+        for (var textureValue in mesh) {
+            var textureMesh = mesh[textureValue];
+            textureMesh.position.free();
+            textureMesh.texcoord.free();
+        }
+
+        pool.free('uint8', chunk.voxels);
     }
 }
 

@@ -25,7 +25,6 @@ var Game = require('./lib/game');
 //var Meshing = require('../lib/meshers/non-blocked')
 var mesher = require('./lib/meshers/horizontal-merge');
 var chunkSize = config.chunkSize;
-var chunkCache = config.chunkCache;
 var coordinates = new Coordinates(chunkSize);
 var pool = require('./lib/object-pool');
 
@@ -109,7 +108,7 @@ client.on('ready', function() {
         var player = client.player = new Player(webgl.gl);
         var voxels = new Voxels(webgl.gl, textures, coordinates);
         var game = new Game(
-            config, voxels, coordinates, player,
+            config, client.chunkCache, voxels, coordinates, player,
             // This is called by requestNearbyMissingChunks
             function(needChunks) {
                 needChunks.unshift('needChunks');
@@ -118,19 +117,19 @@ client.on('ready', function() {
             // This is called when the game is done with a chunk
             function(oldChunk) {
                 var transferList = [];
-                // Return this chunk to the web worker for handling
-                // We'll add an LRU
+                
+                transferList.push( oldChunk.voxels );
 
-                // We want to transfer voxel and mesh arrays
-                transferList.push(oldChunk.voxels.buffer);
+                // We want to transfer mesh arrays
                 for (var textureValue in oldChunk.mesh) {
                     var texture = oldChunk.mesh[textureValue];
-                    // Go past the Growable, to the underlying ArrayBuffer
-                    transferList.push(texture.position.data.buffer);
-                    transferList.push(texture.texcoord.data.buffer);
+                    // We don't have the Growable wrapper (only on the worker side),
+                    // here we just have the ArrayBuffer
+                    transferList.push(texture.position.buffer);
+                    transferList.push(texture.texcoord.buffer);
                 }
 
-                client.worker.postMessage(['oldChunk', oldChunk], transferList);
+                client.worker.postMessage(['freeChunk', oldChunk], transferList);
             }
         );
         var camera = new Camera(canvas, player);
@@ -181,9 +180,11 @@ client.on('ready', function() {
             // start, once we've got our first chunks
             webgl.start();
         });
+        /*
         client.on('chunkChanged', function(chunkID) {
             game.drawChunkNextUpdate(chunkID);
         });
+        */
 
         // Material to build with. The material picker dialog changes this value
         var currentMaterial = 1;
@@ -288,6 +289,13 @@ client.on('ready', function() {
         });
         inputHandler.on('fire.up', function() {
             if (currentVoxel && selecting) {
+                /*
+                Regarding out:
+                - keys are chunkIDs
+                - each value is an array of pairs where subsequent elements are pairs:
+                    - voxel index
+                    - voxel value (texture number)
+                */
                 var out = {};
                 var details;
                 var chunkID;
@@ -301,8 +309,10 @@ client.on('ready', function() {
                     for (var j = low[1]; j <= high[1]; j++) {
                         for (var k = low[2]; k <= high[2]; k++) {
                             if (inputHandler.state.alt) {
+                                // details is an array: [voxelIndex, newValue, chunkID]
                                 details = game.setBlock(i, j, k, currentMaterial);
                             } else {
+                                // details is an array: [voxelIndex, newValue, chunkID]
                                 details = game.setBlock(i, j, k, 0);
                             }
                             chunkID = details.pop();
@@ -314,9 +324,9 @@ client.on('ready', function() {
                         }
                     }
                 }
-                // relay to server - get chunk id and index
                 // details contains an array: [chunkID, voxelIndex, newValue]
-                client.connection.emit('chunkVoxelIndexValue', out);
+                client.worker.postMessage(['chunkVoxelIndexValue', out]);
+                client.updateVoxelCache(out);
                 out = {};
             }
             selecting = false;
@@ -334,6 +344,14 @@ client.on('ready', function() {
         inputHandler.on('firealt.up', function() {
             // TODO: clean this up so we use the object pool for these arrays
             if (currentVoxel && selecting) {
+                /*
+                Regarding out:
+                - keys are chunkIDs
+                - each value is an array of pairs where subsequent elements are pairs:
+                    - voxel index
+                    - voxel value (texture number)
+                */
+                var out = {};
                 var details
                 low[0] = Math.min(selectStart[0], currentNormalVoxel[0]);
                 low[1] = Math.min(selectStart[1], currentNormalVoxel[1]);
@@ -341,10 +359,10 @@ client.on('ready', function() {
                 high[0] = Math.max(selectStart[0], currentNormalVoxel[0]);
                 high[1] = Math.max(selectStart[1], currentNormalVoxel[1]);
                 high[2] = Math.max(selectStart[2], currentNormalVoxel[2]);
-                var out = {};
                 for (var i = low[0]; i <= high[0]; i++) {
                     for (var j = low[1]; j <= high[1]; j++) {
                         for (var k = low[2]; k <= high[2]; k++) {
+                            // details is an array: [voxelIndex, newValue, chunkID]
                             details = game.setBlock(i, j, k, currentMaterial);
                             chunkID = details.pop();
                             if (chunkID in out) {
@@ -355,9 +373,8 @@ client.on('ready', function() {
                         }
                     }
                 }
-                // relay to server - get chunk id and index
-                // details contains an array: [chunkID, voxelIndex, newValue]
-                client.connection.emit('chunkVoxelIndexValue', out);
+                client.worker.postMessage(['chunkVoxelIndexValue', out]);
+                client.updateVoxelCache(out);
                 out = {};
             }
             selecting = false;
@@ -372,7 +389,7 @@ client.on('ready', function() {
                 user: localStorage.getItem('name'),
                 text: message
             };
-            client.connection.emit('chat', out);
+            client.worker.postMessage(['chat', out]);
         });
 
         inputHandler.transition('start');

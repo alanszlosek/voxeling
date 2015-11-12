@@ -5,13 +5,15 @@ var ServerGenerator = require('./lib/generators/server-terraced');
 var stats = require('./lib/voxel-stats');
 var config = require('./config');
 
+var chunkCache = {};
+
 var clientSettings = {
     avatarInitialPosition: [ 16, 31, 16 ],
     avatars: [ '/player.png', '/substack.png', '/viking.png' ]
 };
 
 var serverSettings = {
-    generator: new ServerGenerator(config.chunkCache, config.chunkSize, config.chunkFolder),
+    generator: new ServerGenerator(chunkCache, config.chunkSize, config.chunkFolder),
     worldOrigin: [ 0, 0, 0 ],
     worldDiameter: 20,
     maxPlayers: 2
@@ -20,7 +22,7 @@ var serverSettings = {
 // Chunk persistence
 var chunksToSave = {};
 
-var server = new Server(config, serverSettings, clientSettings);
+var server = new Server(config, chunkCache, serverSettings, clientSettings);
 
 server.on('missingChunk', function(chunk) {
     console.log('missing chunk');
