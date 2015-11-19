@@ -163,11 +163,16 @@ var worker = {
                     texcoord: {
                         buffer: texture.texcoord.data.buffer,
                         offset: texture.texcoord.offset
+                    },
+                    normal: {
+                        buffer: texture.normal.data.buffer,
+                        offset: texture.normal.offset
                     }
                 };
                 // Go past the Growable, to the underlying ArrayBuffer
                 transferList.push(texture.position.data.buffer);
                 transferList.push(texture.texcoord.data.buffer);
+                transferList.push(texture.normal.data.buffer);
             }
 
             // specially list the ArrayBuffer object we want to transfer
@@ -203,11 +208,16 @@ var worker = {
                     texcoord: {
                         buffer: texture.texcoord.data.buffer,
                         offset: texture.texcoord.offset
+                    },
+                    normal: {
+                        buffer: texture.normal.data.buffer,
+                        offset: texture.normal.offset
                     }
                 };
                 // Go past the Growable, to the underlying ArrayBuffer
                 transferList.push(texture.position.data.buffer);
                 transferList.push(texture.texcoord.data.buffer);
+                transferList.push(texture.normal.data.buffer);
             }
 
             // specially list the ArrayBuffer object we want to transfer
@@ -252,6 +262,7 @@ var worker = {
             // We pass ArrayBuffers across worker boundary, so need to we-wrap in the appropriate type
             pool.free('float32', new Float32Array(textureMesh.position.buffer));
             pool.free('float32', new Float32Array(textureMesh.texcoord.buffer));
+            pool.free('float32', new Float32Array(textureMesh.normal.buffer));
         }
     },
     /*
@@ -264,6 +275,7 @@ var worker = {
             var textureMesh = mesh[textureValue];
             textureMesh.position.free();
             textureMesh.texcoord.free();
+            textureMesh.normal.free();
         }
 
         pool.free('uint8', chunk.voxels);
