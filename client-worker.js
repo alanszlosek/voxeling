@@ -109,6 +109,10 @@ var worker = {
             self.emit('chat', message);
         });
 
+        websocket.on('players', function(players) {
+            self.emit('players', players);
+        });
+
         this.connection.connect(config.server);
     },
 
@@ -279,6 +283,13 @@ var worker = {
         }
 
         pool.free('uint8', chunk.voxels);
+    },
+
+    playerPosition: function(position, yaw, pitch) {
+        if (!worker.connected) {
+            return;
+        }
+        worker.connection.emit('myPosition', position, yaw, pitch);
     }
 }
 

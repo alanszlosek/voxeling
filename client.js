@@ -102,10 +102,12 @@ client.on('ready', function() {
     
     //mesher.config(config.chunkSize, textures, coordinates);
 
+    // Wait until textures have fully loaded
     textures.load(webgl.gl, function() {
-        // stops physics and input handling from running early
+        // ready=false stops physics and input handling from running early
         var ready = false;
-        var player = client.player = new Player(webgl.gl);
+        var player = client.player = new Player(webgl.gl, textures);
+        var players = {};
         var voxels = new Voxels(webgl.gl, textures, coordinates);
         var game = new Game(
             config, client.chunkCache, voxels, coordinates, player,
@@ -161,6 +163,12 @@ client.on('ready', function() {
             lines.render(matrix);
             player.render(matrix);
             st.update();
+
+
+            for (var id in players) {
+                var pl = players[id];
+                pl.model.render(matrix);
+            }
         });
 
         // Temporarily override draw distance settings, so we can get up and running quickly
@@ -185,6 +193,20 @@ client.on('ready', function() {
             game.drawChunkNextUpdate(chunkID);
         });
         */
+        client.on('players', function(others) {
+            for (var id in others) {
+                var player = others[id];
+
+                if (id in players) {
+                    players[id].model.setTranslation(player.position)
+
+                } else {
+                    players[id] = player;
+                    player.model = new Player(webgl.gl, textures, 'wood');
+                    player.model.setTranslation(player.position);
+                }
+            }
+        })
 
         // Material to build with. The material picker dialog changes this value
         var currentMaterial = 1;
@@ -208,6 +230,7 @@ client.on('ready', function() {
         inputHandler.mouseDeltaCallback(function(delta) {
             // Can I do these at the same time? Maybe a new quat, rotated by vector, multiplied into existing?
             player.rotateY(-(delta.dx / 200));
+            // Don't pitch player, just the camera
             player.rotateX(-(delta.dy / 200));
         });
 
@@ -406,7 +429,7 @@ client.on('ready', function() {
             direction[2] = -1;
             vec3.transformQuat(direction, direction, camera.getPitch());
             vec3.transformQuat(direction, direction, camera.getYaw());
-            hit = raycast(game, player.getPosition(), direction, distance, voxelHit, voxelNormal);
+            hit = raycast(game, player.getEyePosition(), direction, distance, voxelHit, voxelNormal);
             if (hit > 0) {
                 voxelHit[0] = Math.floor(voxelHit[0]);
                 voxelHit[1] = Math.floor(voxelHit[1]);
@@ -466,7 +489,7 @@ client.on('ready', function() {
             }
             camera.updateProjection();
             game.tick();
-            //players.tick()
+
             //other.tick()
             pointer();
         }, 1000 / 60);

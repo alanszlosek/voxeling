@@ -1,7 +1,7 @@
-voxeling-engine
+voxeling
 ====
 
-Inspired by voxel-engine, a pure WebGL voxel engine with very few dependencies.
+Inspired by voxel-engine, this project implement a pure WebGL voxel engine with very few dependencies.
 
 More info: http://voxeling.tumblr.com/
 
@@ -17,9 +17,11 @@ Features
 * First and third person camera views
 * Building materials and material picker dialog
 * Gamepad support (80% complete)
-* Adjustable draw distance
+* Adjustable draw distance (adjust it according to your GPU speed and memory)
 * World changes are persisted to disk
 * Relatively flat architecture means it's easy to get a WebGL handle and the inverse camera matrix for drawing
+* All IO and chunk meshing is done in a web worker, which keeps the framerate very high
+* Directional lighting
 
 What's Included
 ====
@@ -39,13 +41,26 @@ See it in action ...
 Installation
 ====
 
+In terminal 1:
+
 ```
 cd /path/to/voxeling-engine
 npm install
 
 # create folder for world chunks and edit config.js
+mkdir -p chunks/your-world
+
+# generate web-worker JavaScript
+./worker.sh
+
+# start server
 node server.js
-# in another terminal
+```
+
+In terminal 2:
+
+```
+# start the client
 ./client.sh
 ```
 
@@ -56,8 +71,6 @@ Up Next
 ====
 
 * Character models
-* Move meshing to web worker thread
-* Directional lighting
 
 License
 ====

@@ -13,7 +13,7 @@ var Model = require('./lib/model');
 
 var pool = require('./lib/object-pool');
 
-var mesh = require('./lib/player-mesh');
+//var mesh = require('./lib/player-mesh');
 
 var canvas = document.getElementById('herewego');
 var webgl
@@ -27,6 +27,50 @@ var player = new Movable(webgl.gl);
 var camera = new Camera(canvas, player);
 var lines = new Lines(webgl.gl);
 
+/*
+var mesh = {
+    vertices: [
+        0, 0, 0,
+        1, 0, 0,
+        1, 1, 0
+    ],
+    faces: [
+        0, 1, 2
+    ]
+};
+*/
+var parts = [
+    // left leg
+    Shapes.three.rectangle([-0.35, 0, -0.15], 0.2, 0.5, 0.2),
+    // right leg
+    Shapes.three.rectangle([0.15, 0, -0.15], 0.2, 0.5, 0.2),
+
+    // torso
+    Shapes.three.rectangle([-0.2, 0.5, -0.2], 0.4, 0.5, 0.4),
+
+    // left arm
+    Shapes.three.rectangle([-0.5, 0.9, -0.5], 0.2, 0.2, 0.5),
+    // right arm
+    Shapes.three.rectangle([0.3, 0.9, -0.5], 0.2, 0.2, 0.5),
+
+    // head
+    Shapes.three.rectangle([-0.15, 1.1, -0.15], 0.3, 0.3, 0.3),
+];
+var mesh = {
+    vertices: [],
+    faces: [],
+    texcoord: null,
+    rotation: [1, 1, 1],
+    scale: 1.0
+};
+
+for (var i = 0; i < parts.length; i++) {
+    mesh.vertices = mesh.vertices.concat(parts[i].vertices);
+}
+var to = mesh.vertices.length/3;
+for (var i = 0; i < to; i++) {
+    mesh.faces.push(i);
+}
 
 var modelPosition = new Movable(webgl.gl);
 var model = new Model(
@@ -36,10 +80,10 @@ var model = new Model(
 	modelPosition
 );
 modelPosition.translate([0, 0, 0]);
-modelPosition.rotateY(0.4);
+modelPosition.rotateY(0.0);
 
 
-player.translate([0, 1, 10]);
+player.translate([0, 0.5, 2]);
 
 /*
 camera.nextView();
@@ -92,3 +136,17 @@ $controls.find('.rotation')
         ];
         modelPosition.setRotation(rotation);
     });
+$controls.find('.scale')
+    .on('change', 'input', function(e) {
+        var scale = $('#scale').val();
+        
+    });
+
+$controls.find('#fetch').on('click', function(e) {
+    var url = $('#url').val();
+
+    $.getJSON(url, function(json) {
+        
+    });
+    
+});

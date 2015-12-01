@@ -50,7 +50,7 @@ input[type=text],input[type=number] {
 
 <div class="controls"><div class="padded">
 	<label>JSON Url</label>
-	<input type="text" />
+	<input type="text" id="url" /> <input type="button" id="fetch" value="Go" />
 	<br />
 
 	<label>Position</label>
@@ -65,6 +65,11 @@ input[type=text],input[type=number] {
 		X: <input type="number" id="rotationX" value="0.00" step="0.01" /><br />
 		Y: <input type="number" id="rotationY" value="0.00" step="0.01" /><br />
 		Z: <input type="number" id="rotationZ" value="0.00" step="0.01" />
+	</div>
+
+	<label>Scale</label>
+	<div class="scale">
+		<input type="number" id="scale" value="1.00" step="0.01" />
 	</div>
 
 </div></div>
