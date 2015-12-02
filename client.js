@@ -427,9 +427,8 @@ client.on('ready', function() {
             var hit;
             direction[0] = direction[1] = 0;
             direction[2] = -1;
-            vec3.transformQuat(direction, direction, camera.getPitch());
-            vec3.transformQuat(direction, direction, camera.getYaw());
-            hit = raycast(game, player.getEyePosition(), direction, distance, voxelHit, voxelNormal);
+            vec3.transformQuat(direction, direction, player.getRotationQuat());
+            hit = raycast(game, camera.getPosition(), direction, distance, voxelHit, voxelNormal);
             if (hit > 0) {
                 voxelHit[0] = Math.floor(voxelHit[0]);
                 voxelHit[1] = Math.floor(voxelHit[1]);
