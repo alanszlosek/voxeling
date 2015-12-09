@@ -1,7 +1,7 @@
 voxeling
 ====
 
-Inspired by voxel-engine, this project implement a pure WebGL voxel engine with very few dependencies.
+Inspired by voxel-engine, this is a multiplayer sandbox (like Minecraft creation mode) implemented in pure WebGL with very few dependencies.
 
 More info: http://voxeling.tumblr.com/
 
