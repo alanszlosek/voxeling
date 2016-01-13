@@ -39,7 +39,6 @@ var fillMaterials = function(textures) {
     var container = document.getElementById('textureContainer');
     var html = '';
     for (var i = 0; i < textures.textureArray.length; i++) {
-        var index = i + 1;
         var material = textures.textureArray[i];
         var src;
         if ('sides' in material) {
@@ -47,14 +46,12 @@ var fillMaterials = function(textures) {
         } else {
             src = material.src;
         }
-        html += '<div data-id="' + index + '"><img src="' + src + '" crossorigin="anonymous" />' + '<span>' + material.name + '</span></div>';
+        html += '<div data-texturevalue="' + material.value + '"><img src="' + src + '" crossorigin="anonymous" />' + '<span>' + material.name + '</span></div>';
     }
     container.innerHTML = html;
     $(container).on('click', function(e) {
         var $el = $(e.target);
         var $div = $el.closest('div');
-        var index = Number($div.data('id'));
-        //self.game.currentMaterial = index
         $(self.container).find('div').removeClass('selected');
         $div.addClass('selected');
         e.preventDefault();
@@ -195,18 +192,26 @@ client.on('ready', function() {
         */
         client.on('players', function(others) {
             for (var id in others) {
-                var player = others[id];
-
+                var updatedPlayerInfo = others[id];
+                var player;
                 if (id in players) {
-                    players[id].model.setTranslation(player.position)
-
+                    player = players[id];
                 } else {
-                    players[id] = player;
+                    players[id] = updatedPlayerInfo;
+                    player = updatedPlayerInfo;
                     player.model = new Player(webgl.gl, textures, 'wood');
-                    player.model.setTranslation(player.position);
+                }
+                // player 
+                player.model.setTranslation(updatedPlayerInfo.position);
+                player.model.setRotation(updatedPlayerInfo.pitch, updatedPlayerInfo.yaw, 0);
+            }
+            // Compare players to others, remove old players
+            for (var id in players) {
+                if (!(id in others)) {
+                    delete players[id];
                 }
             }
-        })
+        });
 
         // Material to build with. The material picker dialog changes this value
         var currentMaterial = 1;
