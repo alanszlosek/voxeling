@@ -7,6 +7,8 @@ More info: http://voxeling.tumblr.com/
 
 Of course, this is still a work in progress. Soon I hope to host a demo for anyone to try.
 
+Textures provided by https://github.com/deathcap/ProgrammerArt and https://github.com/phionabrie
+
 
 Features
 ====
@@ -71,6 +73,8 @@ Up Next
 ====
 
 * Character models
+
+
 
 License
 ====

@@ -129,6 +129,12 @@ module.exports = {
             value: 23,
             name: 'grass+dirt',
             src: 'http://g.tenten.us/textures/grass_dirt.png'
+        },
+
+        {
+            value: 100,
+            name: 'leaves',
+            src: '/textures/leaves_oak.png'
         }
     ]
 }
