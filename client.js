@@ -41,6 +41,9 @@ var fillMaterials = function(textures) {
     for (var i = 0; i < textures.textureArray.length; i++) {
         var material = textures.textureArray[i];
         var src;
+        if ('hidden' in material && material.hidden) {
+            continue;
+        }
         if ('sides' in material) {
             src = textures.byValue[material.sides[0]].src;
         } else {

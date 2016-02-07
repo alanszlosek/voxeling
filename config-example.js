@@ -13,7 +13,7 @@ module.exports = {
     textures: [
         {
             value: 1,
-            name: 'ground',
+            name: 'grass+dirt',
             sides: [
                 14,
                 23, 23, 23, 23,
@@ -21,116 +21,123 @@ module.exports = {
             ]
         },
         {
-            value: 2,
-            name: 'brick',
-            src: 'http://g.tenten.us/textures/brick.png'
-        },
-        {
-            value: 3,
-            name: 'dirt',
-            src: 'http://g.tenten.us/textures/dirt.png'
-        },
-        {
-            value: 4,
-            name: 'obsidian',
-            src: 'http://g.tenten.us/textures/obsidian.png'
-        },
-        {
-            value: 5,
-            name: 'whitewool',
-            src: 'http://g.tenten.us/textures/whitewool.png'
-        },
-        {
-            value: 6,
-            name: 'water',
-            src: 'http://g.tenten.us/textures/water.png'
-        },
-        {
-            value: 7,
-            name: 'lava',
-            src: 'http://g.tenten.us/textures/lava.png'
-        },
-        {
-            value: 8,
-            name: 'crate',
-            src: 'http://g.tenten.us/textures/crate.png'
-        },
-        {
-            value: 9,
-            name: 'brick2',
-            src: 'http://g.tenten.us/textures/brick2.png'
-        },
-        {
-            value: 10,
-            name: 'brick3',
-            src: 'http://g.tenten.us/textures/brick3.png'
-        },
-        {
-            value: 11,
-            name: 'cobblestone',
-            src: 'http://g.tenten.us/textures/cobblestone.png'
-        },
-        {
-            value: 12,
-            name: 'cobblestone2',
-            src: 'http://g.tenten.us/textures/cobblestone2.png'
-        },
-        {
-            value: 13,
-            name: 'granite',
-            src: 'http://g.tenten.us/textures/granite.png'
-        },
-        {
             value: 14,
             name: 'grass',
-            src: 'http://g.tenten.us/textures/grass.png'
-        },
-        {
-            value: 15,
-            name: 'grassy cobblestone',
-            src: 'http://g.tenten.us/textures/grassy_cobblestone.png'
-        },
-        {
-            value: 16,
-            name: 'ice',
-            src: 'http://g.tenten.us/textures/ice.png'
+            src: '/textures/grass.png'
         },
         {
             value: 17,
             name: 'long grass',
-            src: 'http://g.tenten.us/textures/long_grass.png'
+            src: '/textures/long_grass.png'
         },
         {
-            value: 18,
-            name: 'sandstone',
-            src: 'http://g.tenten.us/textures/sandstone.png'
+            value: 3,
+            name: 'dirt',
+            src: '/textures/dirt.png'
+        },
+        {
+            value: 23,
+            name: 'grass_dirt',
+            src: '/textures/grass_dirt.png',
+            hidden: true
+        },
+
+        {
+            value: 2,
+            name: 'brick',
+            src: '/textures/brick.png'
+        },
+        {
+            value: 9,
+            name: 'brick2',
+            src: '/textures/brick2.png'
+        },
+        {
+            value: 10,
+            name: 'brick3',
+            src: '/textures/brick3.png'
+        },
+
+        {
+            value: 4,
+            name: 'obsidian',
+            src: '/textures/obsidian.png'
+        },
+        {
+            value: 13,
+            name: 'granite',
+            src: '/textures/granite.png'
         },
         {
             value: 19,
             name: 'slate',
-            src: 'http://g.tenten.us/textures/slate.png'
+            src: '/textures/slate.png'
+        },
+        {
+            value: 18,
+            name: 'sandstone',
+            src: '/textures/sandstone.png'
+        },
+        {
+            value: 11,
+            name: 'cobblestone',
+            src: '/textures/cobblestone.png'
+        },
+        {
+            value: 12,
+            name: 'cobblestone2',
+            src: '/textures/cobblestone2.png'
+        },
+        {
+            value: 15,
+            name: 'grassy cobblestone',
+            src: '/textures/grassy_cobblestone.png'
+        },
+
+        {
+            value: 7,
+            name: 'lava',
+            src: '/textures/lava.png'
+        },
+        
+        {
+            value: 6,
+            name: 'water',
+            src: '/textures/water.png'
+        },
+        {
+            value: 16,
+            name: 'ice',
+            src: '/textures/ice.png'
         },
         {
             value: 20,
-            name: 'snow2',
-            src: 'http://g.tenten.us/textures/sparkly_snow.png'
+            name: 'snow',
+            src: '/textures/sparkly_snow.png'
         },
+        {
+            value: 5,
+            name: 'whitewool',
+            src: '/textures/whitewool.png'
+        },
+
+        {
+            value: 8,
+            name: 'crate',
+            src: '/textures/crate.png'
+        },
+        
         {
             value: 21,
             name: 'straw',
-            src: 'http://g.tenten.us/textures/straw.png'
+            src: '/textures/straw.png'
         },
         {
             value: 22,
             name: 'wood',
-            src: 'http://g.tenten.us/textures/woodsiding.png'
+            src: '/textures/woodsiding.png'
         },
-        {
-            value: 23,
-            name: 'grass+dirt',
-            src: 'http://g.tenten.us/textures/grass_dirt.png'
-        },
-
+        
         {
             value: 100,
             name: 'leaves',
