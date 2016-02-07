@@ -101,7 +101,7 @@ client.on('ready', function() {
 
     // Wait until textures have fully loaded
     textures.load(webgl.gl, function() {
-        // ready=false stops physics and input handling from running early
+        // ready=false stops physics from running early
         var ready = false;
         var player = client.player = new Player(webgl.gl, textures);
         var players = {};
@@ -168,28 +168,9 @@ client.on('ready', function() {
             }
         });
 
-        // Temporarily override draw distance settings, so we can get up and running quickly
-        var horiz = config.horizontalDistance;
-        var vert = config.verticalDistance;
-        config.horizontalDistance = 1;
-        config.verticalDistance = 1;
         game.removeFarChunks([ 0, 0, 0 ]);
-        config.horizontalDistance = horiz;
-        config.verticalDistance = vert;
+        webgl.start();
 
-        client.on('hasChunks', function() {
-            if (ready) {
-                return;
-            }
-            ready = true;
-            // start, once we've got our first chunks
-            webgl.start();
-        });
-        /*
-        client.on('chunkChanged', function(chunkID) {
-            game.drawChunkNextUpdate(chunkID);
-        });
-        */
         client.on('players', function(others) {
             for (var id in others) {
                 var updatedPlayerInfo = others[id];
@@ -265,19 +246,12 @@ client.on('ready', function() {
                 localStorage.setItem('drawDistance', value);
             }
             element.value = value;
+            config.horizontalDistance = config.verticalDistance = value;
+            config.horizontalRemoveDistance = config.verticalRemoveDistance = value + 1;
         });
 
-        inputHandler.on('from.start', function() {
-            // Get name from input and store in localStorage
-            var element = document.getElementById('username');
-            var value = element.value.trim();
-            if (value.length == 0) {
-                value = randomName();
-            }
-            localStorage.setItem('name', value);
-
-            element = document.getElementById('drawDistance');
-            value = parseInt(element.value);
+        inputHandler.on('drawDistance', function(drawDistance) {
+            var value = parseInt(drawDistance);
             if (value < 0) {
                 value = 1;
             }
@@ -285,6 +259,21 @@ client.on('ready', function() {
 
             config.horizontalDistance = config.verticalDistance = value;
             config.horizontalRemoveDistance = config.verticalRemoveDistance = value + 1;
+
+            game.removeFarChunks(player.getPosition());
+        });
+
+        inputHandler.on('from.start', function() {
+            // User has clicked the canvas to start playing. Let's activate physics now.
+            ready = true;
+
+            // Get name from input and store in localStorage
+            var element = document.getElementById('username');
+            var value = element.value.trim();
+            if (value.length == 0) {
+                value = randomName();
+            }
+            localStorage.setItem('name', value);
         });
 
         inputHandler.on('to.playing', function() {
@@ -486,8 +475,10 @@ client.on('ready', function() {
 
         // non-frame ticks
         setInterval(function() {
+            inputHandler.tick();
+            // Wait until user clicks the canvas for the first time before we activate physics
+            // Otherwise player may fall through the world before we get the the initial voxel data
             if (ready) {
-                inputHandler.tick();
                 // physics will somehow update player position, and thus, the camera
                 physics.tick();
             }
