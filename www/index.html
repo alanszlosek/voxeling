@@ -110,9 +110,12 @@ canvas {
 	position: absolute;
 	bottom: 50px;
 	left: 0;
+	background-color: rgba(0, 0, 0);
+	opacity: 0.5;
 }
 #chat.active {
 	background-color: #fff;
+	opacity: 1.0;
 }
 #chat #messages {
 	padding: 5px;
@@ -122,8 +125,15 @@ canvas {
 #chat dt {
 	color: #fff;
 }
+#chat.active dt {
+	color: #000;
+}
 #chat dd {
 	margin-left: 10px;
+	color: #fff;
+}
+#chat.active dd {
+	color: #000;
 }
 #cmd {
 	font-size: 12pt;
@@ -187,7 +197,7 @@ label {
       <label>Chat alias:</label> <input type="text" id="username" style="width: 200px;" />
 
       <br /><br />
-      <label>Draw Distance:</label> <input type="number" name="drawDistance" id="drawDistance" value="2" />
+      <label>Draw Distance:</label> <input type="number" name="drawDistance" id="drawDistance" value="2" max="5" />
       <br /><em>Adjust this value if you have a simple graphics card, or an awesome one.</em>
 
       <br />

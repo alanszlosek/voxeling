@@ -109,31 +109,41 @@ client.on('ready', function() {
         var player = client.player = new Player(webgl.gl, textures);
         var players = {};
         var voxels = new Voxels(webgl.gl, textures, coordinates);
-        var game = new Game(
-            config, client.chunkCache, voxels, coordinates, player,
+        var gameCallbacks = {
             // This is called by requestNearbyMissingChunks
-            function(needChunks) {
+            requestChunks: function(needChunks) {
                 needChunks.unshift('needChunks');
                 client.worker.postMessage(needChunks);
             },
-            // This is called when the game is done with a chunk
-            function(oldChunk) {
-                var transferList = [];
-                
-                transferList.push( oldChunk.voxels );
 
-                // We want to transfer mesh arrays
-                for (var textureValue in oldChunk.mesh) {
-                    var texture = oldChunk.mesh[textureValue];
-                    // We don't have the Growable wrapper (only on the worker side),
-                    // here we just have the ArrayBuffer
+            requestMesh: function(chunkID) {
+                client.worker.postMessage(['needMesh', chunkID]);
+
+            },
+            releaseMesh: function(mesh) {
+                // Release old mesh
+                var transferList = [];
+                for (var textureValue in mesh) {
+                    var texture = mesh[textureValue];
+                    // Go past the Growable, to the underlying ArrayBuffer
                     transferList.push(texture.position.buffer);
                     transferList.push(texture.texcoord.buffer);
+                    transferList.push(texture.normal.buffer);
                 }
+                // specially list the ArrayBuffer object we want to transfer
+                client.worker.postMessage(
+                    ['freeMesh', mesh],
+                    transferList
+                );
+            },
+            requestVoxels: function(chunkIDs) {
+                client.worker.postMessage(['needVoxels', chunkIDs]);
+            },
+            releaseVoxels: function(voxels) {
 
-                client.worker.postMessage(['freeChunk', oldChunk], transferList);
             }
-        );
+        };
+        var game = new Game(config, voxels, coordinates, player, gameCallbacks);
         var camera = new Camera(canvas, player);
         var physics = new Physics(player, inputHandler.state, game);
         var lines = new Lines(webgl.gl);
@@ -171,7 +181,7 @@ client.on('ready', function() {
             }
         });
 
-        game.removeFarChunks([ 0, 0, 0 ]);
+        game.regionChange([ 0, 0, 0 ]);
         webgl.start();
 
         client.on('players', function(others) {
@@ -243,14 +253,14 @@ client.on('ready', function() {
 
             // draw distance
             element = document.getElementById('drawDistance');
-            value = localStorage.getItem('drawDistance');
+            value = parseInt(localStorage.getItem('drawDistance'));
             if (!value) {
                 value = 2;
                 localStorage.setItem('drawDistance', value);
             }
             element.value = value;
-            config.horizontalDistance = config.verticalDistance = value;
-            config.horizontalRemoveDistance = config.verticalRemoveDistance = value + 1;
+            config.drawDistance = value;
+            config.removeDistance = value + 1;
         });
 
         inputHandler.on('drawDistance', function(drawDistance) {
@@ -260,10 +270,10 @@ client.on('ready', function() {
             }
             localStorage.setItem('drawDistance', value);
 
-            config.horizontalDistance = config.verticalDistance = value;
-            config.horizontalRemoveDistance = config.verticalRemoveDistance = value + 1;
+            config.drawDistance = value;
+            config.removeDistance = value + 1;
 
-            game.removeFarChunks(player.getPosition());
+            game.regionChange(player.getPosition());
         });
 
         inputHandler.on('from.start', function() {
@@ -346,7 +356,6 @@ client.on('ready', function() {
                 }
                 // details contains an array: [chunkID, voxelIndex, newValue]
                 client.worker.postMessage(['chunkVoxelIndexValue', out]);
-                client.updateVoxelCache(out);
                 out = {};
             }
             selecting = false;
@@ -394,7 +403,6 @@ client.on('ready', function() {
                     }
                 }
                 client.worker.postMessage(['chunkVoxelIndexValue', out]);
-                client.updateVoxelCache(out);
                 out = {};
             }
             selecting = false;

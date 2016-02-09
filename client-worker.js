@@ -33,7 +33,8 @@ var worker = {
     connected: false,
     connection: null,
     chunksToDecodeAndMesh: [],
-    chunksToMesh: [],
+    chunksToMesh: {},
+    voxelsToTransfer: {},
 
     emit: function(name, data) {
         postMessage(Array.prototype.slice.apply(arguments));
@@ -79,7 +80,7 @@ var worker = {
 
         websocket.on('chunks', function(tuples) {
             if (debug) {
-                console.log('websorker: Websocket received chunks', tuples);
+                console.log('webworker: Websocket received chunks', tuples);
             }
             self.chunksToDecodeAndMesh = self.chunksToDecodeAndMesh.concat(tuples);
         });
@@ -100,7 +101,7 @@ var worker = {
                         chunk.voxels[index] = val;
                     }
                     // Re-mesh this chunk
-                    self.chunksToMesh.push(chunkID);
+                    self.chunksToMesh[ chunkID ] = true;
                 }
             }
         });
@@ -118,11 +119,27 @@ var worker = {
 
     needChunks: function() {
         var chunks = Array.prototype.slice.apply(arguments);
+        // Should really see whether we already have any of these
         chunks.unshift('needChunks');
         if (debug) {
             console.log('sending needChunks', chunks);
         }
         this.connection.emit.apply(this.connection, chunks);
+    },
+    needMesh: function(chunkID) {
+        this.chunksToMesh[ chunkID ] = true;
+
+    },
+    needVoxels: function(chunkIDs) {
+        for (var i = 0; i < chunkIDs.length; i++) {
+            var chunkID = chunkIDs[i];
+            if (chunkID in chunkCache) {
+                this.voxelsToTransfer[ chunkID ] = true;
+            } else {
+                // Request the voxels
+                console.log('need voxels for ' + chunkID);
+            }
+        }
     },
 
     /*
@@ -142,54 +159,22 @@ var worker = {
                 position: position,
                 voxels: decoder(encoded, data)
             };
-            var mesh = mesher.mesh(chunk.position, chunk.voxels);
-
-            var transfer = {
-                chunkID: chunkID,
-                position: position,
-                voxels: chunk.voxels,
-                mesh: {}
-            };
-            var transferList = [];
-
             // Cache in webworker
             chunkCache[chunkID] = chunk;
 
-            // We don't want to transfer the voxel array, just copy it
-            for (var textureValue in mesh) {
-                var texture = mesh[textureValue];
+            this.voxelsToTransfer[ chunkID ] = true;
+            this.chunksToMesh[ chunkID ] = true;
+        }
 
-                transfer.mesh[textureValue] = {
-                    position: {
-                        buffer: texture.position.data.buffer,
-                        offset: texture.position.offset
-                    },
-                    texcoord: {
-                        buffer: texture.texcoord.data.buffer,
-                        offset: texture.texcoord.offset
-                    },
-                    normal: {
-                        buffer: texture.normal.data.buffer,
-                        offset: texture.normal.offset
-                    }
-                };
-                // Go past the Growable, to the underlying ArrayBuffer
-                transferList.push(texture.position.data.buffer);
-                transferList.push(texture.texcoord.data.buffer);
-                transferList.push(texture.normal.data.buffer);
-            }
-
-            // specially list the ArrayBuffer object we want to transfer
+        // Send voxel data to client
+        for (var chunkID in this.voxelsToTransfer) {
+            var chunk = chunkCache[ chunkID ];
             postMessage(
-                ['chunk', transfer],
-                transferList
+                ['chunkVoxels', chunk]
             );
         }
-        postMessage(['chunksProcessed']);
-        this.chunksToDecodeAndMesh = [];
 
-        for (var i = 0; i < this.chunksToMesh.length; i++) {
-            var chunkID = this.chunksToMesh[i];
+        for (var chunkID in this.chunksToMesh) {
             if (!(chunkID in chunkCache)) {
                 continue;
             }
@@ -230,7 +215,10 @@ var worker = {
                 transferList
             );
         }
-        this.chunksToMesh = [];
+
+        this.chunksToDecodeAndMesh = [];
+        this.chunksToMesh = {};
+        this.voxelsToTransfer = {};
     },
 
     // Update our local cache and tell the server
@@ -247,7 +235,7 @@ var worker = {
                     chunk.voxels[index] = val;
                 }
                 // Re-mesh this chunk
-                self.chunksToMesh.push(chunkID);
+                self.chunksToMesh[ chunkID ] = true;
             }
         }
     },

@@ -1,9 +1,7 @@
 module.exports = {
     chunkSize: 32,
-    horizontalDistance: 2,
-    verticalDistance: 2,
-    horizontalRemoveDistance: 3,
-    verticalRemoveDistance: 3,
+    drawDistance: 2,
+    removeDistance: 3,
     chunkCache: {},
 
     initialPosition: [16.5, 25.5, 16.5],
