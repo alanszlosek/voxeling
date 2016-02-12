@@ -147,6 +147,17 @@ var worker = {
     in preparation for rendering.
     */
     processChunks: function() {
+
+        // Send voxel data we've already got to client ASAP
+        for (var chunkID in this.voxelsToTransfer) {
+            if (chunkID in chunkCache) {
+                postMessage(
+                    ['chunkVoxels', chunkCache[ chunkID ]]
+                );
+                delete this.voxelsToTransfer[ chunkID ];
+            }
+        }
+
         var tuples = this.chunksToDecodeAndMesh;
         for (var i = 0; i < tuples.length; i+=3) {
             var chunkID = tuples[i];
@@ -166,11 +177,10 @@ var worker = {
             this.chunksToMesh[ chunkID ] = true;
         }
 
-        // Send voxel data to client
+        // Transfer anything that just came in
         for (var chunkID in this.voxelsToTransfer) {
-            var chunk = chunkCache[ chunkID ];
             postMessage(
-                ['chunkVoxels', chunk]
+                ['chunkVoxels', chunkCache[ chunkID ]]
             );
         }
 
