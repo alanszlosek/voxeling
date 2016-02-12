@@ -161,7 +161,7 @@ client.on('ready', function() {
 
         player.translate(config.initialPosition);
 
-        webgl.onRender(function() {
+        webgl.onRender(function(ts) {
             // what's the proper name for this matrix?
             // get inverse matrix from camera and pass to render() on other objects?
             var matrix = camera.inverse;
@@ -169,7 +169,7 @@ client.on('ready', function() {
             // player
             // highlight/select
             // players.render()
-            voxels.render(matrix);
+            voxels.render(matrix, ts);
             lines.render(matrix);
             player.render(matrix);
             st.update();
