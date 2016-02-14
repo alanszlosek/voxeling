@@ -106,7 +106,7 @@ client.on('ready', function() {
     textures.load(webgl.gl, function() {
         // ready=false stops physics from running early
         var ready = false;
-        var player = client.player = new Player(webgl.gl, textures);
+        var player = client.player = new Player(webgl.gl, textures.byName[ client.avatar ]);
         var players = {};
         var voxels = new Voxels(webgl.gl, textures, coordinates);
         var gameCallbacks = {
@@ -193,11 +193,12 @@ client.on('ready', function() {
                 } else {
                     players[id] = updatedPlayerInfo;
                     player = updatedPlayerInfo;
-                    player.model = new Player(webgl.gl, textures, 'wood');
+                    player.model = new Player(webgl.gl, textures.byName['player']);
                 }
                 // player 
                 player.model.setTranslation(updatedPlayerInfo.position);
                 player.model.setRotation(updatedPlayerInfo.pitch, updatedPlayerInfo.yaw, 0);
+                player.model.setTexture( textures.byName[updatedPlayerInfo.avatar] );
             }
             // Compare players to others, remove old players
             for (var id in players) {
@@ -274,6 +275,9 @@ client.on('ready', function() {
             config.removeDistance = value + 1;
 
             game.regionChange(player.getPosition());
+        });
+        inputHandler.on('avatar', function(avatar) {
+            client.avatar = avatar;
         });
 
         inputHandler.on('from.start', function() {

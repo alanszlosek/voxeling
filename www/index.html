@@ -164,7 +164,7 @@ label {
 }
 </style>
 
-<script src="js/jquery-2.1.4.min.js"></script>
+<script src="/js/jquery-2.1.4.min.js"></script>
 
 </head>
 <body>
@@ -197,6 +197,14 @@ label {
       <label>Chat alias:</label> <input type="text" id="username" style="width: 200px;" />
 
       <br /><br />
+      <label>Avatar:</label>
+      <select id="avatar">
+      	<option value="player">max ogden</option>
+      	<option value="substack">substack</option>
+      	<option value="viking">viking</option>
+      </select>
+
+      <br /><br />
       <label>Draw Distance:</label> <input type="number" name="drawDistance" id="drawDistance" value="2" max="5" />
       <br /><em>Adjust this value if you have a simple graphics card, or an awesome one.</em>
 
@@ -223,6 +231,6 @@ label {
 	<input type="text" id="cmd" placeholder="Press <enter> to chat" /><br/>
   </div>
 
-  <script src="bundle.js"></script>
+  <script src="/bundle.js"></script>
 </body>
 </html>

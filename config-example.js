@@ -135,6 +135,25 @@ module.exports = {
             name: 'wood',
             src: '/textures/woodsiding.png'
         },
+
+        {
+            value: 50,
+            name: 'player',
+            src: '/textures/player.png',
+            hidden: true
+        },
+        {
+            value: 51,
+            name: 'substack',
+            src: '/textures/substack.png',
+            hidden: true
+        },
+        {
+            value: 52,
+            name: 'viking',
+            src: '/textures/viking.png',
+            hidden: true
+        },
         
         {
             value: 100,

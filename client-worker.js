@@ -283,11 +283,11 @@ var worker = {
         pool.free('uint8', chunk.voxels);
     },
 
-    playerPosition: function(position, yaw, pitch) {
+    playerPosition: function(position, yaw, pitch, avatar) {
         if (!worker.connected) {
             return;
         }
-        worker.connection.emit('myPosition', position, yaw, pitch);
+        worker.connection.emit('myPosition', position, yaw, pitch, avatar);
     }
 }
 
