@@ -278,6 +278,7 @@ client.on('ready', function() {
         });
         inputHandler.on('avatar', function(avatar) {
             client.avatar = avatar;
+            player.setTexture( textures.byName[avatar] );
         });
 
         inputHandler.on('from.start', function() {
