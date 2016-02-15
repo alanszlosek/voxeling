@@ -26,6 +26,14 @@ Features
 * Directional lighting
 
 
+What I'm working on
+====
+
+* Fix camera movement in over-shoulder and third-person views
+* Use gzip to store chunk data
+* Store chunks in a database so we can do snapshots
+
+
 What's Included
 ====
 
@@ -38,7 +46,9 @@ What's Included
 * voxel-highlight replacement, but more work is needed
 * Simple run-length encoder/decoder (voxel-crunch did bitwise ops, and was buggy across node versions)
 
-See it in action ...
+See it in action in the demo (Google Chrome only): http://voxeling.greaterscope.com
+
+Or follow the installation instructions below to run it locally.
 
 
 Installation
@@ -50,8 +60,12 @@ In terminal 1:
 cd /path/to/voxeling-engine
 npm install
 
-# create folder for world chunks and edit config.js
+# create folder for world chunks
 mkdir -p chunks/your-world
+
+# copy the default config and customize
+cp config-example.js config.js
+vim config.js
 
 # generate web-worker JavaScript
 ./worker.sh
@@ -69,12 +83,6 @@ In terminal 2:
 
 Now, point your browser to http://127.0.0.1:9966. Read the introduction and enjoy!
 
-
-Up Next
-====
-
-* Use gzip to store chunk data
-* Store chunks in a database so we can do snapshots
 
 
 License
