@@ -3,9 +3,10 @@ voxeling
 
 Inspired by voxel-engine, this is a multiplayer sandbox (like Minecraft creation mode) implemented in pure WebGL with very few dependencies.
 
+Demo (Google Chrome only): http://voxeling.greaterscope.com
 More info: http://voxeling.tumblr.com/
 
-Of course, this is still a work in progress. Soon I hope to host a demo for anyone to try.
+Of course, this is still very much a work in progress.
 
 Textures provided by https://github.com/deathcap/ProgrammerArt and https://github.com/phionabrie
 
@@ -13,10 +14,10 @@ Textures provided by https://github.com/deathcap/ProgrammerArt and https://githu
 Features
 ====
 
-* Multiplayer! Although, we don't have any character models yet
+* Multiplayer, with maxogden, substack and viking skins
 * Block creation and destruction
 * Jumping and flying
-* First and third person camera views
+* First-person, over-shoulder, third person camera views (these need some love, though)
 * Building materials and material picker dialog
 * Gamepad support (80% complete)
 * Adjustable draw distance (adjust it according to your GPU speed and memory)
@@ -24,6 +25,7 @@ Features
 * Relatively flat architecture means it's easy to get a WebGL handle and the inverse camera matrix for drawing
 * All IO and chunk meshing is done in a web worker, which keeps the framerate very high
 * Directional lighting
+
 
 What's Included
 ====
@@ -72,8 +74,8 @@ Now, point your browser to http://127.0.0.1:9966. Read the introduction and enjo
 Up Next
 ====
 
-* Character models
-
+* Use gzip to store chunk data
+* Store chunks in a database so we can do snapshots
 
 
 License
