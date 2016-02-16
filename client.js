@@ -185,18 +185,33 @@ client.on('ready', function() {
         webgl.start();
 
         client.on('players', function(others) {
+            var ticksPerHalfSecond = 30;
             for (var id in others) {
                 var updatedPlayerInfo = others[id];
                 var player;
+                if (!('position' in updatedPlayerInfo) || !updatedPlayerInfo.position) {
+                    continue;
+                }
                 if (id in players) {
                     player = players[id];
+                    if (!('currentPosition' in player)) {
+                        player.currentPosition = [0, 0, 0];
+                    }
+                    player.positionAdjustments = [
+                        (updatedPlayerInfo.position[0] - player.currentPosition[0]) / ticksPerHalfSecond,
+                        (updatedPlayerInfo.position[1] - player.currentPosition[1]) / ticksPerHalfSecond,
+                        (updatedPlayerInfo.position[2] - player.currentPosition[2]) / ticksPerHalfSecond
+                    ];
                 } else {
                     players[id] = updatedPlayerInfo;
                     player = updatedPlayerInfo;
+                    player.positionAdjustments = [0, 0, 0];
+                    player.currentPosition = [0, 0, 0];
+
                     player.model = new Player(webgl.gl, textures.byName['player']);
+                    player.model.translate(updatedPlayerInfo.position);
+                    player.currentPosition = player.model.getPosition();
                 }
-                // player 
-                player.model.setTranslation(updatedPlayerInfo.position);
                 player.model.setRotation(updatedPlayerInfo.pitch, updatedPlayerInfo.yaw, 0);
                 player.model.setTexture( textures.byName[updatedPlayerInfo.avatar] );
             }
@@ -503,6 +518,12 @@ client.on('ready', function() {
 
             //other.tick()
             pointer();
+
+            // Update player positions
+            for (var id in players) {
+                var player = players[id];
+                player.model.translate(player.positionAdjustments);
+            }
         }, 1000 / 60);
     });
 });
