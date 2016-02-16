@@ -8,21 +8,15 @@ var config = require('./config');
 var chunkCache = {};
 
 var clientSettings = {
-    avatarInitialPosition: [ 16, 31, 16 ],
-    avatars: [ '/player.png', '/substack.png', '/viking.png' ]
+    avatarInitialPosition: config.initialPosition
 };
 
-var serverSettings = {
-    generator: new ServerGenerator(chunkCache, config.chunkSize, config.chunkFolder),
-    worldOrigin: [ 0, 0, 0 ],
-    worldDiameter: 20,
-    maxPlayers: 2
-};
+var generator = new ServerGenerator(chunkCache, config.chunkSize, config.chunkFolder);
 
 // Chunk persistence
 var chunksToSave = {};
 
-var server = new Server(config, chunkCache, serverSettings, clientSettings);
+var server = new Server(config, chunkCache, clientSettings, generator);
 
 server.on('missingChunk', function(chunk) {
     console.log('missing chunk');
@@ -60,7 +54,7 @@ server.on('chunkChanged', function(chunkID) {
     }
 });
 
-serverSettings.generator.on('chunkGenerated', function(chunk) {
+generator.on('chunkGenerated', function(chunk) {
     console.log('Chunk generated, queueing for save to disk');
     // Save when chunks are generated, too
     var chunkID = chunk.chunkID;
@@ -94,11 +88,12 @@ setInterval(function() {
 }, 1000);
 
 // WEBSOCKET SETUP
-var connectionLimit = 10;
+var connectionLimit = config.maxPlayers;
 var connections = 0;
 
 var wseServer = new WebSocketEmitter.server({
-    port: 10005
+    host: config.websocketBindAddress,
+    port: config.websocketBindPort
 });
 
 wseServer.on('connection', function(connection) {
