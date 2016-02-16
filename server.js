@@ -4,6 +4,7 @@ var fs = require('fs');
 var ServerGenerator = require('./lib/generators/server-terraced');
 var stats = require('./lib/voxel-stats');
 var config = require('./config');
+var debug = false;
 
 var chunkCache = {};
 
@@ -18,28 +19,27 @@ var chunksToSave = {};
 
 var server = new Server(config, chunkCache, clientSettings, generator);
 
-server.on('missingChunk', function(chunk) {
-    console.log('missing chunk');
-});
-
 server.on('client.join', function(client) {
-    console.log('client join');
+
 });
 
-server.on('client.leave', function(client) {});
+server.on('client.leave', function(client) {
 
-server.on('client.state', function(state) {});
+});
 
+server.on('client.state', function(state) {
+
+});
+
+/*
 server.on('client.frames', function(id, frames) {
     console.log('got frame data from client');
     var ts = Date.now();
     var filename = id + '.' + ts;
     fs.writeFile('./framelog/' + filename, JSON.stringify(frames));
 });
+*/
 
-server.on('chat', function(message) {});
-
-server.on('set', function(pos, val, client) {});
 
 server.on('error', function(error) {
     console.log(error);
@@ -55,7 +55,9 @@ server.on('chunkChanged', function(chunkID) {
 });
 
 generator.on('chunkGenerated', function(chunk) {
-    console.log('Chunk generated, queueing for save to disk');
+    if (debug) {
+        console.log('Chunk generated, queueing for save to disk');
+    }
     // Save when chunks are generated, too
     var chunkID = chunk.chunkID;
     if (!(chunkID in chunksToSave)) {
@@ -79,7 +81,9 @@ setInterval(function() {
                 if (err) {
                     return console.log(err);
                 }
-                console.log('Saved chunk ' + chunkID);
+                if (debug) {
+                    console.log('Saved chunk ' + chunkID);
+                }
             };
         }(chunkID);
         fs.writeFile(config.chunkFolder + filename, new Buffer(chunk.voxels), callbackClosure);
@@ -107,7 +111,7 @@ wseServer.on('connection', function(connection) {
         console.log('Connections: ' + connections);
     });
     if (connections > connectionLimit) {
-        console.log('Denying connection');
+        console.log('Denying connection, at our limit');
         connection.close();
         return;
     }
