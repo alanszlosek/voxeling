@@ -31,9 +31,9 @@ Features
 What I'm working on
 ====
 
+* Use gzip when storing chunk data in mysql
+* Fix other server-side generators to match server-terraced API
 * Fix camera movement in over-shoulder and third-person views
-* Use gzip to store chunk data
-* Store chunks in a database so we can do snapshots
 
 
 What's Included
