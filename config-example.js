@@ -5,12 +5,12 @@ module.exports = {
     chunkCache: {},
 
     initialPosition: [16.5, 25.5, 16.5],
+    worldRadius: 10,
     chunkFolder: './chunks/test/',
     server: 'ws://127.0.0.1:10005',
     websocketBindAddress: '127.0.0.1',
     websocketBindPort: 10005,
-    worldRadius: 10,
-    maxPlayers: 10,
+    maxPlayers: 2,
 
     textures: [
         {

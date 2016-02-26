@@ -8,6 +8,7 @@ Demo (Google Chrome only): http://voxeling.greaterscope.com
 More info: http://voxeling.tumblr.com/
 
 Textures provided by https://github.com/deathcap/ProgrammerArt and https://github.com/phionabrie
+Player skins from https://github.com/maxogden/voxel-client and https://github.com/deathcap/avatar
 
 
 Features
@@ -24,6 +25,7 @@ Features
 * Relatively flat architecture means it's easy to get a WebGL handle and the inverse camera matrix for drawing
 * All IO and chunk meshing is done in a web worker, which keeps the framerate very high
 * Directional lighting
+* Ability to persist chunks to disk or mysql (you'll need to install mysql npm module)
 
 
 What I'm working on

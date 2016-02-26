@@ -1,0 +1,4 @@
+drop table chunk;
+create table chunk (x integer, y integer, z integer, voxels blob, updated_ms bigint(20));
+
+create unique index chunk_id on chunk (x, y, z);
