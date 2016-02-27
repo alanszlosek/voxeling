@@ -7,6 +7,12 @@ module.exports = {
     initialPosition: [16.5, 25.5, 16.5],
     worldRadius: 10,
     chunkFolder: './chunks/test/',
+    mysql: {
+        user: 'voxeling',
+        password: 'voxeling',
+        database: 'voxeling',
+        host: 'localhost'
+    },
     server: 'ws://127.0.0.1:10005',
     websocketBindAddress: '127.0.0.1',
     websocketBindPort: 10005,

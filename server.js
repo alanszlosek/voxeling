@@ -1,12 +1,17 @@
 var WebSocketEmitter = require('./lib/web-socket-emitter');
 var Server = require('./lib/server');
 var fs = require('fs');
+var mysql = require('mysql');
 var chunkStore = require('./lib/chunk-stores/mysql');
 var chunkGenerator = require('./lib/generators/server-terraced');
 var stats = require('./lib/voxel-stats');
 var config = require('./config');
 var debug = true;
 
+var mysqlPool;
+if (config.mysql) {
+    mysqlPool = mysql.createPool(config.mysql);
+}
 var clientSettings = {
     initialPosition: config.initialPosition
 };
@@ -41,6 +46,18 @@ server.on('client.leave', function(client) {
 
 server.on('client.state', function(state) {
 
+});
+
+server.on('chat', function(message) {
+    stats.count('chat.messages.sent');
+    if (mysqlPool) {
+        var row = {
+            created_ms: Date.now(),
+            username: message.user,
+            message: message.text
+        };
+        mysqlPool.query('insert into chat SET ?', row);
+    }
 });
 
 /*
