@@ -36,7 +36,7 @@ if (config.mysql) {
 
 var serverSettings = {
     // test with memory chunk store for now
-    worldDiameter: config.worldDiameter || 20,
+    worldRadius: config.worldRadius || 10,
     maxPlayers: config.maxPlayers || 10
 };
 
