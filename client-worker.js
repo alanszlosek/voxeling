@@ -32,7 +32,7 @@ chunk - sending a decoded, meshed chunk to the client
 var worker = {
     connected: false,
     connection: null,
-    chunksToDecodeAndMesh: [],
+    chunksToDecodeAndMesh: {},
     chunksToMesh: {},
     voxelsToTransfer: {},
 
@@ -78,11 +78,11 @@ var worker = {
             self.emit('settings', settings, id);
         });
 
-        websocket.on('chunks', function(tuples) {
+        websocket.on('chunk', function(chunkID, encoded) {
             if (debug) {
-                console.log('webworker: Websocket received chunks', tuples);
+                console.log('webworker: Websocket received chunk: ' + chunkID);
             }
-            self.chunksToDecodeAndMesh = self.chunksToDecodeAndMesh.concat(tuples);
+            self.chunksToDecodeAndMesh[chunkID] = encoded;
         });
 
         // fires when server sends us voxel edits [chunkID, voxelIndex, value, voxelIndex, value...]
@@ -158,11 +158,11 @@ var worker = {
             }
         }
 
-        var tuples = this.chunksToDecodeAndMesh;
-        for (var i = 0; i < tuples.length; i+=3) {
-            var chunkID = tuples[i];
-            var position = tuples[i + 1];
-            var encoded = tuples[i + 2];
+        for (var chunkID in this.chunksToDecodeAndMesh) {
+            var encoded = this.chunksToDecodeAndMesh[chunkID];
+            var position = chunkID.split('|').map(function(value) {
+                return Number(value);
+            });
             var data = pool.malloc('uint8', chunkArrayLength);
 
             var chunk = {
@@ -171,6 +171,7 @@ var worker = {
                 voxels: decoder(encoded, data)
             };
             // Cache in webworker
+            // TODO: change this to an LRU cache
             chunkCache[chunkID] = chunk;
 
             this.voxelsToTransfer[ chunkID ] = true;
@@ -226,7 +227,7 @@ var worker = {
             );
         }
 
-        this.chunksToDecodeAndMesh = [];
+        this.chunksToDecodeAndMesh = {};
         this.chunksToMesh = {};
         this.voxelsToTransfer = {};
     },

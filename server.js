@@ -1,17 +1,16 @@
 var WebSocketEmitter = require('./lib/web-socket-emitter');
 var Server = require('./lib/server');
 var fs = require('fs');
-var mysql = require('mysql');
+
 var chunkStore = require('./lib/chunk-stores/file');
 var chunkGenerator = require('./lib/generators/server-terraced');
 var stats = require('./lib/voxel-stats');
 var config = require('./config');
 var debug = true;
 
+// This only gets filled by require if config.mysql isn't empty
 var mysqlPool;
-if (config.mysql) {
-    mysqlPool = mysql.createPool(config.mysql);
-}
+
 var clientSettings = {
     initialPosition: config.initialPosition
 };
@@ -22,10 +21,19 @@ var chunkStore = new chunkStore(
     config.chunkFolder
 );
 */
-var chunkStore = new chunkStore(
-    new chunkGenerator(config.chunkSize),
-    config.mysql
-);
+if (config.mysql) {
+    mysqlPool = require('mysql').createPool(config.mysql);
+    var chunkStore = new chunkStore(
+        new chunkGenerator(config.chunkSize),
+        config.mysql
+    );
+} else {
+    var chunkStore = new chunkStore(
+        new chunkGenerator(config.chunkSize),
+        config.chunkFolder
+    );
+}
+
 var serverSettings = {
     // test with memory chunk store for now
     worldDiameter: config.worldDiameter || 20,
@@ -81,6 +89,10 @@ var connections = 0;
 var wseServer = new WebSocketEmitter.server({
     host: config.websocketBindAddress,
     port: config.websocketBindPort
+});
+
+wseServer.on('error', function(error) {
+    console.log(error);
 });
 
 wseServer.on('connection', function(connection) {
