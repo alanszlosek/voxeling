@@ -45,16 +45,16 @@ var chunksToSave = {};
 
 var server = new Server(config, chunkStore, serverSettings, clientSettings);
 
+/*
 server.on('client.join', function(client) {
 });
 
 server.on('client.leave', function(client) {
-
 });
 
 server.on('client.state', function(state) {
-
 });
+*/
 
 server.on('chat', function(message) {
     stats.count('chat.messages.sent');
@@ -98,12 +98,15 @@ wseServer.on('error', function(error) {
 wseServer.on('connection', function(connection) {
     stats.count('connections.incoming');
     // Have we reached our player max?
-    console.log('Incoming client connection');
+    var ts = new Date();
+    console.log(ts.toUTCString(), 'Incoming client connection');
     connections++;
     console.log('Connections: ' + connections);
+
     connection.on('close', function() {
         connections--;
-        console.log('Connections: ' + connections);
+        var ts = new Date();
+        console.log(ts.toUTCString(), 'Connections: ' + connections);
     });
     if (connections > connectionLimit) {
         console.log('Denying connection, at our limit');

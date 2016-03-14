@@ -2,7 +2,6 @@ module.exports = {
     chunkSize: 32,
     drawDistance: 2,
     removeDistance: 3,
-    chunkCache: {},
 
     initialPosition: [16.5, 25.5, 16.5],
     worldRadius: 10,
