@@ -171,7 +171,7 @@ client.on('ready', function() {
             // players.render()
             voxels.render(matrix, ts);
             lines.render(matrix);
-            player.render(matrix);
+            player.render(matrix, ts);
             st.update();
 
 
