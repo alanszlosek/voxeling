@@ -177,7 +177,7 @@ client.on('ready', function() {
 
             for (var id in players) {
                 var pl = players[id];
-                pl.model.render(matrix);
+                pl.model.render(matrix, ts);
             }
         });
 
@@ -191,7 +191,6 @@ client.on('ready', function() {
                     output[i] = (wanted[i] - current[i]) / ticksPerHalfSecond;
                 }
             };
-            console.log(players);
             for (var id in others) {
                 var updatedPlayerInfo = others[id];
                 var player;
@@ -201,7 +200,6 @@ client.on('ready', function() {
                 if (id in players) {
                     player = players[id];
                     calculateAdjustments(player.adjustments, player.current, updatedPlayerInfo.positions);
-                    console.log(player);
                     //player.current = updatedPlayerInfo.positions;
                 } else {
                     player = players[id] = {
@@ -532,8 +530,10 @@ client.on('ready', function() {
             // Update player positions
             for (var id in players) {
                 var player = players[id];
+                var summed = 0;
                 for (var i = 0; i < player.current.length; i++) {
                     player.current[i] += player.adjustments[i];
+                    summed += Math.abs(player.adjustments[i]);
                 }
                 player.model.setTranslation(
                     player.current[0],
@@ -545,6 +545,7 @@ client.on('ready', function() {
                     player.current[4],
                     player.current[5]
                 );
+                player.model.isMoving = (summed > 0.05);
                 
             }
         }, 1000 / 60);
