@@ -186,33 +186,43 @@ client.on('ready', function() {
 
         client.on('players', function(others) {
             var ticksPerHalfSecond = 30;
+            var calculateAdjustments = function(output, current, wanted) {
+                for (var i = 0; i < output.length; i++) {
+                    output[i] = (wanted[i] - current[i]) / ticksPerHalfSecond;
+                }
+            };
+            console.log(players);
             for (var id in others) {
                 var updatedPlayerInfo = others[id];
                 var player;
-                if (!('position' in updatedPlayerInfo) || !updatedPlayerInfo.position) {
+                if (!('positions' in updatedPlayerInfo)) {
                     continue;
                 }
                 if (id in players) {
                     player = players[id];
-                    if (!('currentPosition' in player)) {
-                        player.currentPosition = [0, 0, 0];
-                    }
-                    player.positionAdjustments = [
-                        (updatedPlayerInfo.position[0] - player.currentPosition[0]) / ticksPerHalfSecond,
-                        (updatedPlayerInfo.position[1] - player.currentPosition[1]) / ticksPerHalfSecond,
-                        (updatedPlayerInfo.position[2] - player.currentPosition[2]) / ticksPerHalfSecond
-                    ];
+                    calculateAdjustments(player.adjustments, player.current, updatedPlayerInfo.positions);
+                    console.log(player);
+                    //player.current = updatedPlayerInfo.positions;
                 } else {
-                    players[id] = updatedPlayerInfo;
-                    player = updatedPlayerInfo;
-                    player.positionAdjustments = [0, 0, 0];
-                    player.currentPosition = [0, 0, 0];
+                    player = players[id] = {
+                        current: updatedPlayerInfo.positions,
+                        adjustments: [0, 0, 0, 0, 0, 0],
 
-                    player.model = new Player(webgl.gl, textures.byName['player']);
-                    player.model.translate(updatedPlayerInfo.position);
-                    player.currentPosition = player.model.getPosition();
+                        model: new Player(webgl.gl, textures.byName['player'])
+                    };
+
+                    player.model.setTranslation(
+                        updatedPlayerInfo.positions[0],
+                        updatedPlayerInfo.positions[1],
+                        updatedPlayerInfo.positions[2]
+                    );
+                    player.model.setRotation(
+                        updatedPlayerInfo.positions[3],
+                        updatedPlayerInfo.positions[4],
+                        updatedPlayerInfo.positions[5]
+                    );
                 }
-                player.model.setRotation(updatedPlayerInfo.pitch, updatedPlayerInfo.yaw, 0);
+                
                 player.model.setTexture( textures.byName[updatedPlayerInfo.avatar] );
             }
             // Compare players to others, remove old players
@@ -522,7 +532,20 @@ client.on('ready', function() {
             // Update player positions
             for (var id in players) {
                 var player = players[id];
-                player.model.translate(player.positionAdjustments);
+                for (var i = 0; i < player.current.length; i++) {
+                    player.current[i] += player.adjustments[i];
+                }
+                player.model.setTranslation(
+                    player.current[0],
+                    player.current[1],
+                    player.current[2]
+                );
+                player.model.setRotation(
+                    player.current[3],
+                    player.current[4],
+                    player.current[5]
+                );
+                
             }
         }, 1000 / 60);
     });
