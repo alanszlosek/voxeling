@@ -7,10 +7,11 @@ var Coordinates = require('./lib/coordinates');
 var Textures = require('./lib/textures');
 var mesher = require('./lib/meshers/horizontal-merge');
 var ClientGenerator = require('./lib/generators/client.js');
+var timer = require('./lib/timer');
 var chunkArrayLength = config.chunkSize * config.chunkSize * config.chunkSize;
 var chunkCache = {};
 
-var debug = true;
+var debug = false;
 
 /*
 INCOMING WEBWORKER MESSAGES
@@ -165,11 +166,13 @@ var worker = {
             });
             var data = pool.malloc('uint8', chunkArrayLength);
 
+            var start = Date.now();
             var chunk = {
                 chunkID: chunkID,
                 position: position,
                 voxels: decoder(encoded, data)
             };
+            timer.log('rle-decode', Date.now() - start);
             // Cache in webworker
             // TODO: change this to an LRU cache
             chunkCache[chunkID] = chunk;
@@ -309,4 +312,11 @@ setInterval(
         worker.processChunks();
     },
     1000 / 10
+);
+
+setInterval(
+    function() {
+        timer.print();
+    },
+    10000
 );
