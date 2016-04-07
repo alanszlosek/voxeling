@@ -168,6 +168,11 @@ module.exports = {
             value: 100,
             name: 'leaves',
             src: '/textures/leaves_oak.png'
+        },
+        {
+            value: 101,
+            name: 'glass',
+            src: '/textures/glass.png'
         }
     ]
 }
