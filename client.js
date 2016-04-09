@@ -21,6 +21,7 @@ var VoxelingClient = require('./lib/client');
 var Coordinates = require('./lib/coordinates');
 var Voxels = require('./lib/voxels');
 var Game = require('./lib/game');
+var timer = require('./lib/timer');
 
 //var Meshing = require('../lib/meshers/non-blocked')
 var mesher = require('./lib/meshers/horizontal-merge');
@@ -30,9 +31,6 @@ var pool = require('./lib/object-pool');
 
 var client = new VoxelingClient(config);
 
-// TODO: use dependency injection, not this
-//client.game = game
-var scene;
 
 // UI DIALOG SETUP
 var fillMaterials = function(textures) {
@@ -99,8 +97,6 @@ client.on('ready', function() {
     canvas.height = canvas.clientHeight;
     webgl = new WebGL(canvas);
     textures = new Textures(config.textures);
-    
-    //mesher.config(config.chunkSize, textures, coordinates);
 
     // Wait until textures have fully loaded
     textures.load(webgl.gl, function() {
@@ -159,7 +155,7 @@ client.on('ready', function() {
         st.domElement.style.bottom = '0px';
         document.body.appendChild(st.domElement);
 
-        player.translate(config.initialPosition);
+        
 
         webgl.onRender(function(ts) {
             // what's the proper name for this matrix?
@@ -169,7 +165,7 @@ client.on('ready', function() {
             // player
             // highlight/select
             // players.render()
-            voxels.render(matrix, ts);
+            voxels.render(matrix, ts, camera.frustum);
             lines.render(matrix);
             player.render(matrix, ts);
             st.update();
@@ -181,6 +177,8 @@ client.on('ready', function() {
             }
         });
 
+        player.translate(config.initialPosition);
+        // regionChange() triggers loading of world chunks from the server
         game.regionChange([ 0, 0, 0 ]);
         webgl.start();
 
@@ -551,3 +549,11 @@ client.on('ready', function() {
         }, 1000 / 60);
     });
 });
+
+
+setInterval(
+    function() {
+        timer.print();
+    },
+    10000
+);
