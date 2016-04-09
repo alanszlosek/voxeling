@@ -21,16 +21,17 @@ Features
 * Building materials and material picker dialog
 * Gamepad support (80% complete)
 * Adjustable draw distance (adjust it according to your GPU speed and memory)
-* World changes are persisted to disk
+* World state is saved to files or mysql (install mysql npm module)
 * Relatively flat architecture means it's easy to get a WebGL handle and the inverse camera matrix for drawing
 * All IO and chunk meshing is done in a web worker, which keeps the framerate very high
 * Directional lighting
-* Ability to persist chunks to disk or mysql (you'll need to install mysql npm module)
 
 
 What I'm working on
 ====
 
+* Frustum culling, which should allow us to draw farther
+* Point light sources (eventually)
 * Fix other server-side generators to match server-terraced API
 * Fix camera movement in over-shoulder and third-person views
 
@@ -46,6 +47,7 @@ What's Included
 * Object pool to reduce memory allocations and garbage-collection pauses
 * voxel-highlight replacement, but more work is needed
 * Simple run-length encoder/decoder (voxel-crunch did bitwise ops, and was buggy across node versions)
+* LRU cache for minimizing trips to the file-system or database for frequently requested chunks
 
 See it in action in the demo (Google Chrome only): http://voxeling.greaterscope.com
 
