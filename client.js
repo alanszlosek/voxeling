@@ -143,6 +143,7 @@ client.on('ready', function() {
         var camera = new Camera(canvas, player);
         var physics = new Physics(player, inputHandler.state, game);
         var lines = new Lines(webgl.gl);
+        var highlightOn = true;
         
         client.game = game;
 
@@ -166,7 +167,10 @@ client.on('ready', function() {
             // highlight/select
             // players.render()
             voxels.render(matrix, ts, camera.frustum);
-            lines.render(matrix);
+            if (highlightOn) {
+                // Highlight of targeted bock can be turned off with Shift
+                lines.render(matrix);
+            }
             player.render(matrix, ts);
             st.update();
 
@@ -255,10 +259,6 @@ client.on('ready', function() {
             player.rotateX(-(delta.dy / 200));
         });
 
-        inputHandler.on('view', function() {
-            camera.nextView();
-        });
-
         inputHandler.on('to.start', function() {
             var element;
             var value;
@@ -319,6 +319,14 @@ client.on('ready', function() {
             // hide intro
             var overlay = document.getElementById('overlay');
             overlay.className = '';
+        });
+
+        inputHandler.on('view', function() {
+            camera.nextView();
+        });
+
+        inputHandler.on('shift', function() {
+            highlightOn = (highlightOn ? false : true);
         });
 
         inputHandler.on('to.menu', function() {
