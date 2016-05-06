@@ -11,7 +11,7 @@ Textures provided by https://github.com/deathcap/ProgrammerArt and https://githu
 Player skins from https://github.com/maxogden/voxel-client and https://github.com/deathcap/avatar
 
 
-Features
+Gameplay Features
 ====
 
 * Multiplayer, with maxogden, substack and viking skins
@@ -22,21 +22,19 @@ Features
 * Gamepad support (80% complete)
 * Adjustable draw distance (adjust it according to your GPU speed and memory)
 * World state is saved to files or mysql (install mysql npm module)
-* Relatively flat architecture means it's easy to get a WebGL handle and the inverse camera matrix for drawing
-* All IO and chunk meshing is done in a web worker, which keeps the framerate very high
-* Directional lighting
 
 
 What I'm working on
 ====
 
-* Frustum culling, which should allow us to draw farther
+* Sky, day/night transition, weather
+* Fixing race conditions with LRU cache
 * Point light sources (eventually)
 * Fix other server-side generators to match server-terraced API
 * Fix camera movement in over-shoulder and third-person views
 
 
-What's Included
+Technical Features 
 ====
 
 * Client and Server (ported bits from my voxel-client and voxel-server forks)
@@ -45,9 +43,13 @@ What's Included
 * Sample world generators
 * Improved websocket emitter - disconnects are handled gracefully
 * Object pool to reduce memory allocations and garbage-collection pauses
-* voxel-highlight replacement, but more work is needed
+* voxel-highlight replacement
 * Simple run-length encoder/decoder (voxel-crunch did bitwise ops, and was buggy across node versions)
 * LRU cache for minimizing trips to the file-system or database for frequently requested chunks
+* Relatively flat architecture means it's easy to get a WebGL handle and the inverse camera matrix for drawing
+* All IO and chunk meshing is done in a web worker, which keeps the framerate very high
+* Frustum culling - only draw the stuff that's inside the viewport
+* Directional lighting
 
 See it in action in the demo (Google Chrome only): http://voxeling.greaterscope.com
 
