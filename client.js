@@ -103,10 +103,10 @@ client.on('ready', function() {
     textures.load(webgl.gl, function() {
         // ready=false stops physics from running early
         var ready = false;
-        var player = client.player = new Player(webgl.gl, textures.byName[ client.avatar ]);
+        var player = client.player = new Player(webgl.gl, webgl.shaders.projectionViewPosition, textures.byName[ client.avatar ]);
         var players = {};
-        var sky = new Sky(webgl.gl, textures);
-        var voxels = new Voxels(webgl.gl, textures);
+        var sky = new Sky(webgl.gl, webgl.shaders.projectionViewPosition, textures);
+        var voxels = new Voxels(webgl.gl, webgl.shaders.projectionPosition, textures);
         var gameCallbacks = {
             // This is called by requestNearbyMissingChunks
             requestChunks: function(needChunks) {
@@ -214,7 +214,7 @@ client.on('ready', function() {
                         current: updatedPlayerInfo.positions,
                         adjustments: [0, 0, 0, 0, 0, 0],
 
-                        model: new Player(webgl.gl, textures.byName['player'])
+                        model: new Player(webgl.gl, webgl.shaders.projectionViewPosition, textures.byName['player'])
                     };
 
                     player.model.setTranslation(
