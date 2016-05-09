@@ -14,6 +14,7 @@ var Lines = require('./lib/lines');
 var Shapes = require('./lib/shapes');
 var Textures = require('./lib/textures');
 var Player = require('./lib/player');
+var Sky = require('./lib/sky');
 
 var Physics = require('./lib/physics');
 var Stats = require('./lib/stats');
@@ -90,8 +91,8 @@ client.on('close', function() {
 client.on('ready', function() {
     var canvas = document.getElementById('herewego');
     var inputHandler = new InputHandler(document.body, document.body);
-    var webgl
-    var textures
+    var webgl;
+    var textures;
 
     canvas.width = canvas.clientWidth;
     canvas.height = canvas.clientHeight;
@@ -104,7 +105,8 @@ client.on('ready', function() {
         var ready = false;
         var player = client.player = new Player(webgl.gl, textures.byName[ client.avatar ]);
         var players = {};
-        var voxels = new Voxels(webgl.gl, textures, coordinates);
+        var sky = new Sky(webgl.gl, textures);
+        var voxels = new Voxels(webgl.gl, textures);
         var gameCallbacks = {
             // This is called by requestNearbyMissingChunks
             requestChunks: function(needChunks) {
@@ -162,15 +164,17 @@ client.on('ready', function() {
             // what's the proper name for this matrix?
             // get inverse matrix from camera and pass to render() on other objects?
             var matrix = camera.inverse;
+            if (!ts) {
+                ts = 0;
+            }
 
-            // player
-            // highlight/select
-            // players.render()
-            voxels.render(matrix, ts, camera.frustum);
+            sky.render(matrix, ts);
+            voxels.render(matrix, ts, camera.frustum, sky.directionalLight);
             if (highlightOn) {
                 // Highlight of targeted bock can be turned off with Shift
                 lines.render(matrix);
             }
+            
             player.render(matrix, ts);
             st.update();
 
@@ -201,10 +205,12 @@ client.on('ready', function() {
                 }
                 if (id in players) {
                     player = players[id];
-                    calculateAdjustments(player.adjustments, player.current, updatedPlayerInfo.positions);
-                    //player.current = updatedPlayerInfo.positions;
+                    calculateAdjustments(player.adjustments, player.latest, updatedPlayerInfo.positions);
+                    player.current = player.latest;
+                    player.latest = updatedPlayerInfo.positions;
                 } else {
                     player = players[id] = {
+                        latest: updatedPlayerInfo.positions,
                         current: updatedPlayerInfo.positions,
                         adjustments: [0, 0, 0, 0, 0, 0],
 
@@ -518,7 +524,8 @@ client.on('ready', function() {
         };
 
 
-        // non-frame ticks
+        // INTERVAL CALLBACKS NOT TIED TO FRAMERATE
+        // 60 calls per second
         setInterval(function() {
             inputHandler.tick();
             // Wait until user clicks the canvas for the first time before we activate physics
@@ -537,7 +544,7 @@ client.on('ready', function() {
             for (var id in players) {
                 var player = players[id];
                 var summed = 0;
-                for (var i = 0; i < player.current.length; i++) {
+                for (var i = 0; i < player.adjustments.length; i++) {
                     player.current[i] += player.adjustments[i];
                     summed += Math.abs(player.adjustments[i]);
                 }
@@ -555,6 +562,11 @@ client.on('ready', function() {
                 
             }
         }, 1000 / 60);
+        // Once every second
+        setInterval(function() {
+            // How many seconds to pass each tick
+            sky.tick(15);
+        }, 100);
     });
 });
 
