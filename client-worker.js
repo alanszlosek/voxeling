@@ -49,7 +49,7 @@ var worker = {
         var websocket = this.connection = new WebSocketEmitter.client();
         var generator = new ClientGenerator(chunkCache, config.chunkSize);
 
-        mesher.config(config.chunkSize, textures, coordinates);
+        mesher.config(config.chunkSize, textures, coordinates, chunkCache);
 
         websocket.on('open', function() {
             self.connected = true;
