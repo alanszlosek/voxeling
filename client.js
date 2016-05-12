@@ -141,8 +141,8 @@ client.on('ready', function() {
 
             }
         };
-        var game = new Game(config, voxels, coordinates, player, gameCallbacks);
         var camera = new Camera(canvas, player);
+        var game = new Game(config, voxels, coordinates, player, camera.frustum, gameCallbacks);
         var physics = new Physics(player, inputHandler.state, game);
         var lines = new Lines(webgl.gl);
         var highlightOn = true;
