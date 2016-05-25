@@ -108,16 +108,10 @@ client.on('ready', function() {
         var sky = new Sky(webgl.gl, webgl.shaders.projectionViewPosition, textures);
         var voxels = new Voxels(webgl.gl, webgl.shaders.projectionPosition, textures);
         var gameCallbacks = {
-            // This is called by requestNearbyMissingChunks
-            requestChunks: function(needChunks) {
-                needChunks.unshift('needChunks');
-                client.worker.postMessage(needChunks);
+            updateNeeds: function(priority, onlyTheseMeshes, onlyTheseVoxels, missingMeshes, missingVoxels) {
+                client.worker.postMessage(['updateNeeds', priority, onlyTheseMeshes, onlyTheseVoxels, missingMeshes, missingVoxels]);
             },
 
-            requestMesh: function(chunkID) {
-                client.worker.postMessage(['needMesh', chunkID]);
-
-            },
             releaseMesh: function(mesh) {
                 // Release old mesh
                 var transferList = [];
@@ -133,9 +127,6 @@ client.on('ready', function() {
                     ['freeMesh', mesh],
                     transferList
                 );
-            },
-            requestVoxels: function(chunkIDs) {
-                client.worker.postMessage(['needVoxels', chunkIDs]);
             },
             releaseVoxels: function(voxels) {
 
@@ -232,7 +223,9 @@ client.on('ready', function() {
                 player.model.setTexture( textures.byName[updatedPlayerInfo.avatar] );
             }
             // Compare players to others, remove old players
-            for (var id in players) {
+            var playerIds = Object.keys(players);
+            for (var i = 0; i < playerIds.length; i++) {
+                var id = playerIds[i];
                 if (!(id in others)) {
                     delete players[id];
                 }
@@ -561,6 +554,7 @@ client.on('ready', function() {
                 player.model.isMoving = (summed > 0.05);
                 
             }
+        // What if we call this 30 times a second instead?
         }, 1000 / 60);
         // Once every second
         setInterval(function() {

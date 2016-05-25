@@ -11,6 +11,7 @@ var timer = require('./lib/timer');
 var chunkArrayLength = config.chunkSize * config.chunkSize * config.chunkSize;
 var chunkCache = {};
 
+var log = require('./lib/log')('client-worker');
 var debug = false;
 
 /*
@@ -33,9 +34,20 @@ chunk - sending a decoded, meshed chunk to the client
 var worker = {
     connected: false,
     connection: null,
+    // When we get chunks from the server, we queue them here
     chunksToDecodeAndMesh: {},
+    // When we get chunks from server, or when user changed a voxel, we need to remesh. Queue them here
     chunksToMesh: {},
-    voxelsToTransfer: {},
+    // When we get chunks from server and need to send voxel data to client, they're queued here
+    voxelsToSend: {},
+
+    // Chunk ids in the order we want them
+    chunkPriority: [],
+    // Chunk ids we want voxels for
+    voxels: [],
+
+    // Chunks we're in the process of requesting from the server
+    neededChunks: {},
 
     emit: function(name, data) {
         postMessage(Array.prototype.slice.apply(arguments));
@@ -54,7 +66,7 @@ var worker = {
         websocket.on('open', function() {
             self.connected = true;
             if (debug) {
-                console.log('webworker: websocket connection opened');
+                log('websocket connection opened');
             }
             self.emit('open');
         });
@@ -62,37 +74,51 @@ var worker = {
         websocket.on('close', function() {
             self.connected = false;
             if (debug) {
-                console.log('webworker: websocket connection closed');
+                log('websocket connection closed');
             }
             self.emit('close');
         });
 
         websocket.on('error', function(message) {
-            console.log('webworker: websocket error, ' + message);
+            log('websocket error, ' + message);
         });
 
         websocket.on('settings', function(settings, id) {
             if (debug) {
-                console.log('webworker: got settings');
-                console.log(settings);
+                log('got settings', settings);
             }
             self.emit('settings', settings, id);
         });
 
         websocket.on('chunk', function(chunkID, encoded) {
             if (debug) {
-                console.log('webworker: Websocket received chunk: ' + chunkID);
+                log('Websocket received chunk: ' + chunkID);
+            }
+            var index = self.chunkPriority.indexOf(chunkID);
+            if (index == -1) {
+                if (debug) {
+                    log('Got chunk, but we dont care about it', chunkID, self.chunkPriority);
+                }
+                return;
             }
             self.chunksToDecodeAndMesh[chunkID] = encoded;
+
+            // Cleanup
+            if (chunkID in self.neededChunks) {
+                delete self.neededChunks[ chunkID ];
+            }
+            
         });
 
         // fires when server sends us voxel edits [chunkID, voxelIndex, value, voxelIndex, value...]
-        // would like to expand this to cover more than 1 chunk at a time
         websocket.on('chunkVoxelIndexValue', function(changes) {
             // Tell the client
             self.emit('chunkVoxelIndexValue', changes);
             // Update our local cache
             for (var chunkID in changes) {
+                if (self.chunkPriority.indexOf(chunkID) == -1) {
+                    continue;
+                }
                 if (chunkID in chunkCache) {
                     var chunk = chunkCache[chunkID];
                     var details = changes[chunkID];
@@ -103,6 +129,9 @@ var worker = {
                     }
                     // Re-mesh this chunk
                     self.chunksToMesh[ chunkID ] = true;
+                    if (self.voxels.indexOf(chunkID) > -1) {
+                        self.voxelsToSend[ chunkID ] = true;
+                    }
                 }
             }
         });
@@ -118,27 +147,40 @@ var worker = {
         this.connection.connect(config.server);
     },
 
-    needChunks: function() {
-        var chunks = Array.prototype.slice.apply(arguments);
-        // Should really see whether we already have any of these
-        chunks.unshift('needChunks');
-        if (debug) {
-            console.log('sending needChunks', chunks);
-        }
-        this.connection.emit.apply(this.connection, chunks);
-    },
-    needMesh: function(chunkID) {
-        this.chunksToMesh[ chunkID ] = true;
 
-    },
-    needVoxels: function(chunkIDs) {
-        for (var i = 0; i < chunkIDs.length; i++) {
-            var chunkID = chunkIDs[i];
-            if (chunkID in chunkCache) {
-                this.voxelsToTransfer[ chunkID ] = true;
-            } else {
-                // Request the voxels
-                console.log('need voxels for ' + chunkID);
+    // Client told us the order it wants to receive chunks in
+    updateNeeds: function(chunkIds, onlyTheseMeshes, onlyTheseVoxels, missingMeshes, missingVoxels) {
+        this.chunkPriority = chunkIds;
+        this.voxels = onlyTheseVoxels;
+
+        this.connection.emit('onlyTheseChunks', chunkIds);
+
+
+        // Might be easier to process these later
+        for (var i = 0; i < chunkIds.length; i++) {
+            var chunkId = chunkIds[i];
+
+            // Did client request this as a mesh?
+            if (missingMeshes.indexOf(chunkId) > -1) {
+                if (chunkId in chunkCache) {
+                    this.chunksToMesh[ chunkId ] = true;
+                } else if (!(chunkId in this.neededChunks)) {
+                    this.neededChunks[ chunkId ] = true;
+                }
+            }
+            if (missingVoxels.indexOf(chunkId) > -1) {
+                if (chunkId in chunkCache) {
+                    this.voxelsToSend[ chunkId ] = true;
+                }
+            }
+        }
+
+        // Clean up our request
+        var chunkIds = Object.keys(this.neededChunks);
+        for (var i = 0; i < chunkIds.length; i++) {
+            var chunkId = chunkIds[i];
+            if (this.chunkPriority.indexOf(chunkId) == -1) {
+                delete this.neededChunks[chunkId];
             }
         }
     },
@@ -149,17 +191,11 @@ var worker = {
     */
     processChunks: function() {
 
-        // Send voxel data we've already got to client ASAP
-        for (var chunkID in this.voxelsToTransfer) {
-            if (chunkID in chunkCache) {
-                postMessage(
-                    ['chunkVoxels', chunkCache[ chunkID ]]
-                );
-                delete this.voxelsToTransfer[ chunkID ];
-            }
-        }
-
         for (var chunkID in this.chunksToDecodeAndMesh) {
+            // Skip if we're no longer interested in this chunk
+            if (this.chunkPriority.indexOf(chunkID) == -1) {
+                continue;
+            }
             var encoded = this.chunksToDecodeAndMesh[chunkID];
             var position = chunkID.split('|').map(function(value) {
                 return Number(value);
@@ -177,23 +213,36 @@ var worker = {
             // TODO: change this to an LRU cache
             chunkCache[chunkID] = chunk;
 
-            this.voxelsToTransfer[ chunkID ] = true;
+            if (this.voxels.indexOf(chunkID) > -1) {
+                this.voxelsToSend[ chunkID ] = true;
+            }
             this.chunksToMesh[ chunkID ] = true;
         }
 
-        // Transfer anything that just came in
-        for (var chunkID in this.voxelsToTransfer) {
-            postMessage(
-                ['chunkVoxels', chunkCache[ chunkID ]]
-            );
+        // Transfer voxel data to client
+        var chunkIds = Object.keys(this.voxelsToSend);
+        for (var i = 0; i < chunkIds.length; i++) {
+            var chunkId = chunkIds[i];
+            if (chunkId in chunkCache) {
+                postMessage(
+                    ['chunkVoxels', chunkCache[ chunkId ]]
+                );
+                delete this.voxelsToSend[chunkId];
+            } else {
+                //log('Error: attempted to send voxels that dont exist in chunkCache', chunkID)
+            }
         }
 
-        for (var chunkID in this.chunksToMesh) {
-            if (!(chunkID in chunkCache)) {
+        var chunkIds = Object.keys(this.chunksToMesh);
+        for (var i = 0; i < chunkIds.length; i++) {
+            var chunkId = chunkIds[i];
+            if (!(chunkId in chunkCache)) {
+                // Need to error here
+                log('Error: attempted to mesh a chunk not found in chunkCache', chunkID);
                 continue;
             }
 
-            var chunk = chunkCache[chunkID];
+            var chunk = chunkCache[chunkId];
             var mesh = mesher.mesh(chunk.position, chunk.voxels);
 
             var transfer = {};
@@ -225,14 +274,13 @@ var worker = {
 
             // specially list the ArrayBuffer object we want to transfer
             postMessage(
-                ['chunkMesh', chunkID, transfer],
+                ['chunkMesh', chunkId, transfer],
                 transferList
             );
+            delete this.chunksToMesh[chunkId];
         }
 
         this.chunksToDecodeAndMesh = {};
-        this.chunksToMesh = {};
-        this.voxelsToTransfer = {};
     },
 
     // Update our local cache and tell the server
@@ -302,14 +350,47 @@ onmessage = function(e) {
     if (type in worker) {
         worker[type].apply(worker, message);
     } else {
-        console.log('worker does not have handler for ' + type, message);
+        log('worker does not have handler for ' + type, message);
     }
     
 };
 
+var waitingOn = 0;
 setInterval(
     function() {
         worker.processChunks();
+
+        var ts = Date.now();
+        var chunkIds = [];
+        waitingOn = 0;
+        // Request in the order the client wants them
+        for (var i = 0; i < worker.chunkPriority.length; i++) {
+            var chunkId = worker.chunkPriority[i];
+            if (!(chunkId in worker.neededChunks)) {
+                continue;
+            }
+            var lastRequested = worker.neededChunks[chunkId];
+            if (ts > lastRequested) {
+                if (debug) {
+                    log('Requesting ', chunkId);
+                }
+                chunkIds.push(chunkId);
+                
+                // Wait before requesting this chunk again
+                worker.neededChunks[ chunkId ] = ts + 10000;
+            }
+            waitingOn++;
+
+
+            // Only wait on 10 at a time
+            if (waitingOn > 9) {
+                break;
+            }
+        }
+
+        if (chunkIds.length > 0) {
+            worker.connection.emit('needChunks', chunkIds);
+        }
     },
     1000 / 10
 );
