@@ -1,7 +1,7 @@
 voxeling
 ====
 
-Inspired by voxel-engine, this is a multiplayer sandbox (like Minecraft creation mode) implemented in pure WebGL with very few dependencies. Very much a work in progress.
+Inspired by [voxel-engine](https://github.com/maxogden/voxel-engine) and [voxel.js](http://voxeljs.com), this is a multiplayer sandbox (like Minecraft creation mode) implemented in WebGL with very few dependencies. Very much a work in progress.
 
 Demo (Google Chrome only): http://voxeling.greaterscope.com
 
@@ -15,19 +15,19 @@ Gameplay Features
 ====
 
 * Multiplayer, with maxogden, substack and viking skins
-* Block creation and destruction
+* Block creation and destruction (batch operations, too)
 * Jumping and flying
 * First-person, over-shoulder, third person camera views (these need some love, though)
 * Building materials and material picker dialog
 * Gamepad support (80% complete)
-* Adjustable draw distance (adjust it according to your GPU speed and memory)
+* Adjustable draw distance (change it according to your GPU speed and memory)
 * World state is saved to files or mysql (install mysql npm module)
 
 
 What I'm working on
 ====
 
-* Sky, day/night transition, weather
+* Sun, sky, day/night transition, weather
 * Fixing race conditions with LRU cache
 * Point light sources (eventually)
 * Fix other server-side generators to match server-terraced API
@@ -50,6 +50,7 @@ Technical Features
 * All IO and chunk meshing is done in a web worker, which keeps the framerate very high
 * Frustum culling - only draw the stuff that's inside the viewport
 * Directional lighting
+* Day and night cycle (mostly working)
 
 See it in action in the demo (Google Chrome only): http://voxeling.greaterscope.com
 
@@ -62,7 +63,8 @@ Installation
 In terminal 1:
 
 ```
-cd /path/to/voxeling-engine
+# git clone the repo into voxeling folder
+cd /path/to/voxeling
 npm install
 
 # create folder for world chunks
@@ -82,6 +84,7 @@ node server.js
 In terminal 2:
 
 ```
+cd /path/to/voxeling
 # start the client
 ./client.sh
 ```
