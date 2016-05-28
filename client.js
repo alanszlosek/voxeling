@@ -51,15 +51,6 @@ var fillMaterials = function(textures) {
         html += '<div data-texturevalue="' + material.value + '"><img src="' + src + '" crossorigin="anonymous" />' + '<span>' + material.name + '</span></div>';
     }
     container.innerHTML = html;
-    $(container).on('click', function(e) {
-        var $el = $(e.target);
-        var $div = $el.closest('div');
-        $(self.container).find('div').removeClass('selected');
-        $div.addClass('selected');
-        e.preventDefault();
-        e.stopPropagation();
-        return false;
-    });
 };
 
 var fillSettings = function(textures) {
@@ -160,7 +151,7 @@ client.on('ready', function() {
             }
 
             sky.render(matrix, ts);
-            voxels.render(matrix, ts, camera.frustum, sky.directionalLight);
+            voxels.render(matrix, ts, camera.frustum, sky.ambientLightColor, sky.directionalLight);
             if (highlightOn) {
                 // Highlight of targeted bock can be turned off with Shift
                 lines.render(matrix);
@@ -328,11 +319,11 @@ client.on('ready', function() {
             highlightOn = (highlightOn ? false : true);
         });
 
-        inputHandler.on('to.menu', function() {
+        inputHandler.on('to.materials', function() {
             document.getElementById('overlay').className = 'textures';
         });
 
-        inputHandler.on('from.menu', function() {
+        inputHandler.on('from.materials', function() {
             document.getElementById('overlay').className = '';
         });
 
@@ -559,7 +550,7 @@ client.on('ready', function() {
         // Once every second
         setInterval(function() {
             // How many seconds to pass each tick
-            sky.tick(15);
+            sky.tick(300);
         }, 100);
     });
 });
