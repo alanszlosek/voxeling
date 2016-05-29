@@ -550,7 +550,7 @@ client.on('ready', function() {
         // Once every second
         setInterval(function() {
             // How many seconds to pass each tick
-            sky.tick(300);
+            sky.tick(30);
         }, 100);
     });
 });
