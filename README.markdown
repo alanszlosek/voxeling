@@ -7,8 +7,16 @@ Demo (Google Chrome only): http://voxeling.greaterscope.com
 
 More info: http://voxeling.tumblr.com/
 
-Textures provided by https://github.com/deathcap/ProgrammerArt and https://github.com/phionabrie
-Player skins from https://github.com/maxogden/voxel-client and https://github.com/deathcap/avatar
+Textures provided by:
+
+* http://bdcraft.net
+* https://github.com/deathcap/ProgrammerArt
+* https://github.com/phionabrie
+
+Player skins from:
+
+* https://github.com/maxogden/voxel-client
+* https://github.com/deathcap/avatar
 
 
 Gameplay Features
