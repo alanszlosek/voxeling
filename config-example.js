@@ -259,7 +259,11 @@ module.exports = {
             src: '/testbdcraft/wool_white.png'
         },
 
-
+        {
+            value: 101,
+            name: 'glass',
+            src: '/textures/glass.png'
+        },
 
         {
             value: 50,
