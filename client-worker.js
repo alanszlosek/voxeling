@@ -50,7 +50,12 @@ var worker = {
     neededChunks: {},
 
     emit: function(name, data) {
-        postMessage(Array.prototype.slice.apply(arguments));
+        var len = arguments.length;
+        var args = new Array(len);
+        for (var i = 0; i < len; i++) {
+            args[i] = arguments[i];
+        }
+        postMessage(args);
     },
 
 
