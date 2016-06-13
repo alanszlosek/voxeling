@@ -36,7 +36,6 @@ What I'm working on
 ====
 
 * Sun, sky, day/night transition, weather
-* Fixing race conditions with LRU cache
 * Point light sources (eventually)
 * Fix other server-side generators to match server-terraced API
 * Fix camera movement in over-shoulder and third-person views
@@ -58,7 +57,7 @@ Technical Features
 * All IO and chunk meshing is done in a web worker, which keeps the framerate very high
 * Frustum culling - only draw the stuff that's inside the viewport
 * Directional lighting
-* Day and night cycle (mostly working)
+* Day and night cycle (still needs some love)
 
 See it in action in the demo (Google Chrome only): http://voxeling.greaterscope.com
 
@@ -99,6 +98,11 @@ cd /path/to/voxeling
 
 Now, point your browser to http://127.0.0.1:9966. Read the introduction and enjoy!
 
+
+Contributing
+====
+
+See the CONTRIBUTING file
 
 
 License
