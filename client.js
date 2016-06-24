@@ -145,25 +145,24 @@ client.on('ready', function() {
         webgl.onRender(function(ts) {
             // what's the proper name for this matrix?
             // get inverse matrix from camera and pass to render() on other objects?
-            var matrix = camera.inverse;
             if (!ts) {
                 ts = 0;
             }
 
-            sky.render(matrix, ts);
-            voxels.render(matrix, ts, camera.frustum, sky.ambientLightColor, sky.directionalLight);
+            sky.render(camera.inverse, ts);
+            voxels.render(camera.inverse, ts, camera.frustum, sky.ambientLightColor, sky.directionalLight);
             if (highlightOn) {
                 // Highlight of targeted bock can be turned off with Shift
-                lines.render(matrix);
+                lines.render(camera.inverse);
             }
             
-            player.render(matrix, ts);
+            player.render(camera.inverse, ts);
             st.update();
 
 
             for (var id in players) {
                 var pl = players[id];
-                pl.model.render(matrix, ts);
+                pl.model.render(camera.inverse, ts);
             }
         });
 
