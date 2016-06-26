@@ -11,6 +11,7 @@
     "perlin": "~1.0.0",
     "sillyname": "0.0.3",
     "voxel-raycast": "0.2.1",
+    "voxel-trees": "^0.1.0",
     "ws": "0.8.1"
   }
 }

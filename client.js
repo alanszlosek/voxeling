@@ -30,6 +30,9 @@ var chunkSize = config.chunkSize;
 var coordinates = new Coordinates(chunkSize);
 var pool = require('./lib/object-pool');
 
+// other
+var trees = require('voxel-trees');
+
 var client = new VoxelingClient(config);
 
 
@@ -404,7 +407,8 @@ client.on('ready', function() {
                     - voxel value (texture number)
                 */
                 var out = {};
-                var details
+                var details;
+                var chunkID;
                 low[0] = Math.min(selectStart[0], currentNormalVoxel[0]);
                 low[1] = Math.min(selectStart[1], currentNormalVoxel[1]);
                 low[2] = Math.min(selectStart[2], currentNormalVoxel[2]);
@@ -414,13 +418,43 @@ client.on('ready', function() {
                 for (var i = low[0]; i <= high[0]; i++) {
                     for (var j = low[1]; j <= high[1]; j++) {
                         for (var k = low[2]; k <= high[2]; k++) {
-                            // details is an array: [voxelIndex, newValue, chunkID]
-                            details = game.setBlock(i, j, k, currentMaterial);
-                            chunkID = details.pop();
-                            if (chunkID in out) {
-                                Array.prototype.push.apply(out[chunkID], details);
+                            
+                            // TREES! use voxel-trees to make a full tree
+                            if (currentMaterial == 305) {
+                                function getRandomInt(min, max) {
+                                    return Math.floor(Math.random() * (max - min)) + min;
+                                }
+                                var treeTypes = ['subspace', 'guybrush'];
+                                var treeType = getRandomInt(0, 2);
+                                trees({
+                                    position: {
+                                        x: i,
+                                        y: j,
+                                        z: k
+                                    },
+                                    setBlock: function(position, material) {
+                                        details = game.setBlock(position.x, position.y, position.z, material);
+                                        chunkID = details.pop();
+                                        if (chunkID in out) {
+                                            Array.prototype.push.apply(out[chunkID], details);
+                                        } else {
+                                            out[chunkID] = details;
+                                        }
+                                    },
+                                    treeType: treeTypes[treeType],
+                                    bark: 24,
+                                    leaves: 100
+                                });
+
                             } else {
-                                out[chunkID] = details;
+                                // details is an array: [voxelIndex, newValue, chunkID]
+                                details = game.setBlock(i, j, k, currentMaterial);
+                                chunkID = details.pop();
+                                if (chunkID in out) {
+                                    Array.prototype.push.apply(out[chunkID], details);
+                                } else {
+                                    out[chunkID] = details;
+                                }
                             }
                         }
                     }
