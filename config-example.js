@@ -182,6 +182,11 @@ module.exports = {
             name: 'leaves',
             src: '/testbdcraft/default_leaves.png'
         },
+        {
+            value: 305,
+            name: 'full-tree',
+            src: '/testbdcraft/default_tree.png',
+        },
 
         {
             value: 27,
