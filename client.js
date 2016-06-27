@@ -244,11 +244,11 @@ client.on('ready', function() {
 
 
         // INPUT HANDLER SETUP
-        inputHandler.mouseDeltaCallback(function(delta) {
+        inputHandler.mouseDeltaCallback(function(deltaX, deltaY) {
             // Can I do these at the same time? Maybe a new quat, rotated by vector, multiplied into existing?
-            player.rotateY(-(delta.dx / 200));
+            player.rotateY(-(deltaX / 200.0));
             // Don't pitch player, just the camera
-            player.rotateX(-(delta.dy / 200));
+            player.rotateX(-(deltaY / 200.0));
         });
 
         inputHandler.on('to.start', function() {
