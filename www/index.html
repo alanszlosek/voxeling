@@ -70,6 +70,9 @@ canvas {
 #overlay.map, #overlay.map > div.map {
 	display: block;
 }
+#overlay.disconnected, #overlay.disconnected > div.disconnected {
+	display: block;
+}
 #overlay div.textures > div {
   width: 90px;
   height: 110px;
@@ -169,69 +172,74 @@ label {
 </head>
 <body>
 
-  <canvas id="herewego" style="border: none;"></canvas>
-  <div id="crosshair"></div>
-  <div id="coordinates"></div>
+	<canvas id="herewego" style="border: none;"></canvas>
+	<div id="crosshair"></div>
+	<div id="coordinates"></div>
 
-  <!-- in game inventory overlay -->
-  <div id="overlay" class="">
-    <div class="introduction"><div class="padding">
-      <h2>Controls</h2>
-      <p>
-        w - move forward<br />
-        s - move backward<br />
-        a - move left<br />
-        d - move right<br />
-        spacebar - jump<br />
-        f - fly<br />
-        <br />Use the mouse to look around
-        <br /><br />Left-click - remove block
-        <br />Left-click, drag and release - bulk remove
-        <br />Right-click - create block using current material
-        <br />Right-click, drag and release - bulk create
-        <br />e - show/hide material picker
-        <br />shift - toggle block highlight
-        <br />r - cycle first and third-person views
+	<!-- in game inventory overlay -->
+	<div id="overlay" class="">
+		<div class="introduction"><div class="padding">
+			<h2>Controls</h2>
+			<p>
+				w - move forward<br />
+				s - move backward<br />
+				a - move left<br />
+				d - move right<br />
+				spacebar - jump<br />
+				f - fly<br />
+				<br />Use the mouse to look around
+				<br /><br />Left-click - remove block
+				<br />Left-click, drag and release - bulk remove
+				<br />Right-click - create block using current material
+				<br />Right-click, drag and release - bulk create
+				<br />e - show/hide material picker
+				<br />shift - toggle block highlight
+				<br />r - cycle first and third-person views
 
-        <br /><br /><strong>Click on the game window to start playing</strong>
-      </p>
-      <label>Chat alias:</label> <input type="text" id="username" style="width: 200px;" />
+				<br /><br /><strong>Click on the game window to start playing</strong>
+			</p>
+			<label>Chat alias:</label> <input type="text" id="username" style="width: 200px;" />
 
-      <br /><br />
-      <label>Avatar:</label>
-      <select id="avatar">
-      	<option value="player">max ogden</option>
-      	<option value="substack">substack</option>
-      	<option value="viking">viking</option>
-      </select>
+			<br /><br />
+			<label>Avatar:</label>
+			<select id="avatar">
+				<option value="player">max ogden</option>
+				<option value="substack">substack</option>
+				<option value="viking">viking</option>
+			</select>
 
-      <br /><br />
-      <label>Draw Distance:</label> <input type="number" name="drawDistance" id="drawDistance" value="2" max="11" />
-      <br /><em>Adjust this value if you have a simple graphics card, or an awesome one.</em>
+			<br /><br />
+			<label>Draw Distance:</label> <input type="number" name="drawDistance" id="drawDistance" value="2" max="11" />
+			<br /><em>Adjust this value if you have a simple graphics card, or an awesome one.</em>
 
-      <br />
-      <p>If something's broken and you need someone to yell at: alan.szlosek@gmail.com
-		<br /><a href="https://github.com/alanszlosek/voxeling">Github project page</a> | <a href="http://voxeling.tumblr.com">Blog</a></p>
+			<br />
+			<p>If something's broken and you need someone to yell at: alan.szlosek@gmail.com
+			<br /><a href="https://github.com/alanszlosek/voxeling">Github project page</a> | <a href="http://voxeling.tumblr.com">Blog</a></p>
 
-      
-    </div></div>
 
-    <div class="textures" id="textureContainer">
-    </div>
+		</div></div>
 
-    <div class="map"><div class="padding">
-      <img id="mapImage" width="100%" />
-    </div></div>
+		<div class="textures" id="textureContainer">
+		</div>
 
-    <div class="settings"><div class="padding" id="settings">
-    </div></div>
-  </div>
+		<div class="map"><div class="padding">
+		<img id="mapImage" width="100%" />
+		</div></div>
 
-  <div id="chat">
-	<dl id="messages"></dl>
-	<input type="text" id="cmd" placeholder="Press <enter> to chat" /><br/>
-  </div>
+		<div class="settings"><div class="padding" id="settings">
+		</div></div>
 
-  <script src="/bundle.js"></script>
+		<div class="disconnected"><div class="padding">
+			<h2>Disconnected</h2>
+			<p>Bummer. The connection was lost. Please refresh to continue playing.</p>
+		</div></div>
+	</div>
+
+	<div id="chat">
+		<dl id="messages"></dl>
+		<input type="text" id="cmd" placeholder="Press <enter> to chat" /><br/>
+	</div>
+
+	<script src="/bundle.js"></script>
 </body>
 </html>

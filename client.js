@@ -77,9 +77,8 @@ var fillSettings = function(textures) {
     });
 };
 
-// Funny, this gets triggered if the initial connection fails
 client.on('close', function() {
-    alert('Disconnected');
+    document.getElementById('overlay').className = 'disconnected';
 });
 
 client.on('ready', function() {
@@ -478,6 +477,10 @@ client.on('ready', function() {
         });
 
         inputHandler.transition('start');
+
+        client.on('close', function() {
+            inputHandler.transition('disconnected');
+        });
 
 
         // This needs cleanup, and encapsulation, but it works
