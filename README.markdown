@@ -3,7 +3,7 @@ voxeling
 
 Inspired by [voxel-engine](https://github.com/maxogden/voxel-engine) and [voxel.js](http://voxeljs.com), this is a multiplayer sandbox (like Minecraft creation mode) implemented in WebGL with very few dependencies. Very much a work in progress.
 
-Demo (Google Chrome only): http://voxeling.greaterscope.com
+Demo: http://voxeling.greaterscope.com (Google Chrome and Firefox 46+)
 
 More info: http://voxeling.tumblr.com/
 
