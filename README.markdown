@@ -98,7 +98,7 @@ cd /path/to/voxeling
 ./client.sh
 ```
 
-Now, point your browser to http://127.0.0.1:9966. Read the introduction and enjoy!
+Now, point your browser to http://127.0.0.1:9966. Read the introduction for controls and keybindings. Enjoy!
 
 
 Contributing
