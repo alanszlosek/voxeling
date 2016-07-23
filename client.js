@@ -345,12 +345,6 @@ client.on('ready', function() {
         inputHandler.on('fire.up', function() {
             if (currentVoxel && selecting) {
                 /*
-                Regarding out:
-                - keys are chunkIDs
-                - each value is an array of pairs where subsequent elements are pairs:
-                    - voxel index
-                    - voxel value (texture number)
-                */
                 var out = {};
                 var details;
                 var chunkID;
@@ -369,6 +363,9 @@ client.on('ready', function() {
                             } else {
                                 // details is an array: [voxelIndex, newValue, chunkID]
                                 details = game.setBlock(i, j, k, 0);
+
+                                // We should re-mesh adjacent chunks if we destroy a block on the edge
+                                can use chunkID from details
                             }
                             chunkID = details.pop();
                             if (chunkID in out) {
@@ -379,9 +376,42 @@ client.on('ready', function() {
                         }
                     }
                 }
+                */
+
+                /*
+                {
+                    chunkId: [index, value, index2, value2 ...],
+                    ...
+                }
+                */
+                var chunkVoxelIndexValue = {};
+                low[0] = Math.min(selectStart[0], currentVoxel[0]);
+                low[1] = Math.min(selectStart[1], currentVoxel[1]);
+                low[2] = Math.min(selectStart[2], currentVoxel[2]);
+                high[0] = Math.max(selectStart[0], currentVoxel[0]);
+                high[1] = Math.max(selectStart[1], currentVoxel[1]);
+                high[2] = Math.max(selectStart[2], currentVoxel[2]);
+                if (inputHandler.state.alt) {
+                    console.log('Does this get called anymore?');
+                    coordinates.lowToHighEach(
+                        low,
+                        high,
+                        function(i, j, k) {
+                            game.setBlock(i, j, k, currentMaterial, chunkVoxelIndexValue);
+                        }
+                    );
+                } else {
+                    coordinates.lowToHighEach(
+                        low,
+                        high,
+                        function(i, j, k) {
+                            game.setBlock(i, j, k, 0, chunkVoxelIndexValue);
+                        }
+                    );
+                }
+
                 // details contains an array: [chunkID, voxelIndex, newValue]
-                client.worker.postMessage(['chunkVoxelIndexValue', out]);
-                out = {};
+                client.worker.postMessage(['chunkVoxelIndexValue', chunkVoxelIndexValue]);
             }
             selecting = false;
         });
@@ -405,61 +435,50 @@ client.on('ready', function() {
                     - voxel index
                     - voxel value (texture number)
                 */
-                var out = {};
-                var details;
-                var chunkID;
+                var chunkVoxelIndexValue = {};
                 low[0] = Math.min(selectStart[0], currentNormalVoxel[0]);
                 low[1] = Math.min(selectStart[1], currentNormalVoxel[1]);
                 low[2] = Math.min(selectStart[2], currentNormalVoxel[2]);
                 high[0] = Math.max(selectStart[0], currentNormalVoxel[0]);
                 high[1] = Math.max(selectStart[1], currentNormalVoxel[1]);
                 high[2] = Math.max(selectStart[2], currentNormalVoxel[2]);
-                for (var i = low[0]; i <= high[0]; i++) {
-                    for (var j = low[1]; j <= high[1]; j++) {
-                        for (var k = low[2]; k <= high[2]; k++) {
-                            
-                            // TREES! use voxel-trees to make a full tree
-                            if (currentMaterial == 305) {
-                                function getRandomInt(min, max) {
-                                    return Math.floor(Math.random() * (max - min)) + min;
-                                }
-                                var treeTypes = ['subspace', 'guybrush'];
-                                var treeType = getRandomInt(0, 2);
-                                trees({
-                                    position: {
-                                        x: i,
-                                        y: j,
-                                        z: k
-                                    },
-                                    setBlock: function(position, material) {
-                                        details = game.setBlock(position.x, position.y, position.z, material);
-                                        chunkID = details.pop();
-                                        if (chunkID in out) {
-                                            Array.prototype.push.apply(out[chunkID], details);
-                                        } else {
-                                            out[chunkID] = details;
-                                        }
-                                    },
-                                    treeType: treeTypes[treeType],
-                                    bark: 24,
-                                    leaves: 100
-                                });
-
-                            } else {
-                                // details is an array: [voxelIndex, newValue, chunkID]
-                                details = game.setBlock(i, j, k, currentMaterial);
-                                chunkID = details.pop();
-                                if (chunkID in out) {
-                                    Array.prototype.push.apply(out[chunkID], details);
-                                } else {
-                                    out[chunkID] = details;
-                                }
-                            }
-                        }
+                if (currentMaterial == 305) {
+                    function getRandomInt(min, max) {
+                        return Math.floor(Math.random() * (max - min)) + min;
                     }
+                    coordinates.lowToHighEach(
+                        low,
+                        high,
+                        function(i, j, k) {
+                            var treeTypes = ['subspace', 'guybrush'];
+                            var treeType = getRandomInt(0, 2);
+                            trees({
+                                position: {
+                                    x: i,
+                                    y: j,
+                                    z: k
+                                },
+                                setBlock: function(position, material) {
+                                    game.setBlock(position.x, position.y, position.z, material, chunkVoxelIndexValue);
+                                },
+                                treeType: treeTypes[treeType],
+                                bark: 24,
+                                leaves: 100
+                            });
+                        }
+                    );
+
+                } else {
+                    coordinates.lowToHighEach(
+                        low,
+                        high,
+                        function(i, j, k) {
+                            game.setBlock(i, j, k, currentMaterial, chunkVoxelIndexValue);
+                        }
+                    );
                 }
-                client.worker.postMessage(['chunkVoxelIndexValue', out]);
-                out = {};
+
+                client.worker.postMessage(['chunkVoxelIndexValue', chunkVoxelIndexValue]);
             }
             selecting = false;
         });
