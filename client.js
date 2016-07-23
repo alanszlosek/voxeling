@@ -345,46 +345,13 @@ client.on('ready', function() {
         inputHandler.on('fire.up', function() {
             if (currentVoxel && selecting) {
                 /*
-                var out = {};
-                var details;
-                var chunkID;
-                low[0] = Math.min(selectStart[0], currentVoxel[0]);
-                low[1] = Math.min(selectStart[1], currentVoxel[1]);
-                low[2] = Math.min(selectStart[2], currentVoxel[2]);
-                high[0] = Math.max(selectStart[0], currentVoxel[0]);
-                high[1] = Math.max(selectStart[1], currentVoxel[1]);
-                high[2] = Math.max(selectStart[2], currentVoxel[2]);
-                for (var i = low[0]; i <= high[0]; i++) {
-                    for (var j = low[1]; j <= high[1]; j++) {
-                        for (var k = low[2]; k <= high[2]; k++) {
-                            if (inputHandler.state.alt) {
-                                // details is an array: [voxelIndex, newValue, chunkID]
-                                details = game.setBlock(i, j, k, currentMaterial);
-                            } else {
-                                // details is an array: [voxelIndex, newValue, chunkID]
-                                details = game.setBlock(i, j, k, 0);
-
-                                // We should re-mesh adjacent chunks if we destroy a block on the edge
-                                can use chunkID from details
-                            }
-                            chunkID = details.pop();
-                            if (chunkID in out) {
-                                Array.prototype.push.apply(out[chunkID], details);
-                            } else {
-                                out[chunkID] = details;
-                            }
-                        }
-                    }
-                }
-                */
-
-                /*
                 {
                     chunkId: [index, value, index2, value2 ...],
                     ...
                 }
                 */
                 var chunkVoxelIndexValue = {};
+                var touching = {};
                 low[0] = Math.min(selectStart[0], currentVoxel[0]);
                 low[1] = Math.min(selectStart[1], currentVoxel[1]);
                 low[2] = Math.min(selectStart[2], currentVoxel[2]);
@@ -405,13 +372,12 @@ client.on('ready', function() {
                         low,
                         high,
                         function(i, j, k) {
-                            game.setBlock(i, j, k, 0, chunkVoxelIndexValue);
+                            game.setBlock(i, j, k, 0, chunkVoxelIndexValue, touching);
                         }
                     );
                 }
 
-                // details contains an array: [chunkID, voxelIndex, newValue]
-                client.worker.postMessage(['chunkVoxelIndexValue', chunkVoxelIndexValue]);
+                client.worker.postMessage(['chunkVoxelIndexValue', chunkVoxelIndexValue, touching]);
             }
             selecting = false;
         });
@@ -428,13 +394,6 @@ client.on('ready', function() {
         inputHandler.on('firealt.up', function() {
             // TODO: clean this up so we use the object pool for these arrays
             if (currentVoxel && selecting) {
-                /*
-                Regarding out:
-                - keys are chunkIDs
-                - each value is an array of pairs where subsequent elements are pairs:
-                    - voxel index
-                    - voxel value (texture number)
-                */
                 var chunkVoxelIndexValue = {};
                 low[0] = Math.min(selectStart[0], currentNormalVoxel[0]);
                 low[1] = Math.min(selectStart[1], currentNormalVoxel[1]);

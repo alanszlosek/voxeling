@@ -283,13 +283,18 @@ var worker = {
                 transferList
             );
             delete this.chunksToMesh[chunkId];
+
+            // Stop after sending 10 meshes, to make sure we send voxel data in a timely manner
+            if (i > 9) {
+                break;
+            }
         }
 
         this.chunksToDecodeAndMesh = {};
     },
 
     // Update our local cache and tell the server
-    chunkVoxelIndexValue: function(changes) {
+    chunkVoxelIndexValue: function(changes, touching) {
         var self = this;
         self.connection.emit('chunkVoxelIndexValue', changes);
         for (var chunkID in changes) {
@@ -302,6 +307,14 @@ var worker = {
                     chunk.voxels[index] = val;
                 }
                 // Re-mesh this chunk
+                self.chunksToMesh[ chunkID ] = true;
+            }
+        }
+
+        // Along with these voxel changes, there may be nearby chunks that we need to re-mesh
+        // so we don't "see through the world"
+        for (var chunkID in touching) {
+            if (chunkID in chunkCache) {
                 self.chunksToMesh[ chunkID ] = true;
             }
         }
