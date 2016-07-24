@@ -410,7 +410,8 @@ setInterval(
             worker.connection.emit('needChunks', chunkIds);
         }
     },
-    1000 / 10
+    // Ten times a second didn't seem fast enough
+    1000 / 20
 );
 
 setInterval(
