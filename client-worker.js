@@ -43,6 +43,8 @@ var worker = {
 
     // Chunk ids in the order we want them
     chunkPriority: [],
+    // Chunk ids we want meshes for
+    meshes: [],
     // Chunk ids we want voxels for
     voxels: [],
 
@@ -154,25 +156,26 @@ var worker = {
 
 
     // Client told us the order it wants to receive chunks in
-    updateNeeds: function(chunkIds, onlyTheseMeshes, onlyTheseVoxels, missingMeshes, missingVoxels) {
+    updateNeeds: function(chunkIds, onlyTheseVoxels, missingVoxels) {
+        // Prioritized list of meshes that we want
         this.chunkPriority = chunkIds;
         this.voxels = onlyTheseVoxels;
 
+        // Tell server that we only care about these chunks
         this.connection.emit('onlyTheseChunks', chunkIds);
-
 
         // Might be easier to process these later
         for (var i = 0; i < chunkIds.length; i++) {
             var chunkId = chunkIds[i];
 
             // Did client request this as a mesh?
-            if (missingMeshes.indexOf(chunkId) > -1) {
+            //if (missingMeshes.indexOf(chunkId) > -1) {
                 if (chunkId in chunkCache) {
                     this.chunksToMesh[ chunkId ] = true;
                 } else if (!(chunkId in this.neededChunks)) {
                     this.neededChunks[ chunkId ] = true;
                 }
-            }
+            //}
             if (missingVoxels.indexOf(chunkId) > -1) {
                 if (chunkId in chunkCache) {
                     this.voxelsToSend[ chunkId ] = true;

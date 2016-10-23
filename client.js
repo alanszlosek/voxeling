@@ -20,8 +20,8 @@ var Physics = require('./lib/physics');
 var Stats = require('./lib/stats');
 var VoxelingClient = require('./lib/client');
 var Coordinates = require('./lib/coordinates');
-var Voxels = require('./lib/voxels3');
-var Game = require('./lib/game2');
+var Voxels = require('./lib/voxels');
+var Game = require('./lib/game');
 var timer = require('./lib/timer');
 
 //var Meshing = require('../lib/meshers/non-blocked')
