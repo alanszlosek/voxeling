@@ -259,22 +259,24 @@ var worker = {
             for (var textureValue in mesh) {
                 var texture = mesh[textureValue];
 
-                // Just send over ArrayBuffers
+                // We pass data.buffer, the underlying ArrayBuffer
                 transfer[textureValue] = {
                     position: {
                         buffer: texture.position.data.buffer,
-                        offset: texture.position.offset
+                        offset: texture.position.offset,
+                        offsetBytes: texture.position.offset * 4
                     },
                     texcoord: {
                         buffer: texture.texcoord.data.buffer,
-                        offset: texture.texcoord.offset
+                        offset: texture.texcoord.offset,
+                        offsetBytes: texture.texcoord.offset * 4
                     },
                     normal: {
                         buffer: texture.normal.data.buffer,
-                        offset: texture.normal.offset
+                        offset: texture.normal.offset,
+                        offsetBytes: texture.normal.offset * 4
                     }
                 };
-                // Go past the Growable, to the underlying ArrayBuffer
                 transferList.push(texture.position.data.buffer);
                 transferList.push(texture.texcoord.data.buffer);
                 transferList.push(texture.normal.data.buffer);
