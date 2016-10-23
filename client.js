@@ -20,8 +20,8 @@ var Physics = require('./lib/physics');
 var Stats = require('./lib/stats');
 var VoxelingClient = require('./lib/client');
 var Coordinates = require('./lib/coordinates');
-var Voxels = require('./lib/voxels');
-var Game = require('./lib/game');
+var Voxels = require('./lib/voxels3');
+var Game = require('./lib/game2');
 var timer = require('./lib/timer');
 
 //var Meshing = require('../lib/meshers/non-blocked')
@@ -99,13 +99,12 @@ client.on('ready', function() {
         var player = client.player = new Player(webgl.gl, webgl.shaders.projectionViewPosition, textures.byName[ client.avatar ]);
         var players = {};
         var sky = new Sky(webgl.gl, webgl.shaders.projectionViewPosition, textures);
-        var voxels = new Voxels(webgl.gl, webgl.shaders.projectionPosition, textures);
-        var gameCallbacks = {
-            updateNeeds: function(priority, onlyTheseMeshes, onlyTheseVoxels, missingMeshes, missingVoxels) {
-                client.worker.postMessage(['updateNeeds', priority, onlyTheseMeshes, onlyTheseVoxels, missingMeshes, missingVoxels]);
-            },
-
-            releaseMesh: function(mesh) {
+        var voxels = new Voxels(
+            webgl.gl,
+            webgl.shaders.projectionPosition,
+            textures,
+            // releaseMeshCallback
+            function(mesh) {
                 // Release old mesh
                 var transferList = [];
                 for (var textureValue in mesh) {
@@ -120,18 +119,27 @@ client.on('ready', function() {
                     ['freeMesh', mesh],
                     transferList
                 );
-            },
-            releaseVoxels: function(voxels) {
-
             }
-        };
+        );
         var camera = new Camera(canvas, player);
-        var game = new Game(config, voxels, coordinates, player, camera.frustum, gameCallbacks);
+        var game = new Game(
+            config,
+            coordinates,
+            player,
+            camera.frustum,
+            // updateNeedsCallback
+            function(meshPriority, onlyTheseMeshes, onlyTheseVoxels, missingVoxels) {
+                voxels.meshesToShow(meshPriority, onlyTheseMeshes);
+
+                client.worker.postMessage(['updateNeeds', meshPriority, onlyTheseVoxels, missingVoxels]);
+            }
+        );
         var physics = new Physics(player, inputHandler.state, game);
         var lines = new Lines(webgl.gl);
         var highlightOn = true;
         
         client.game = game;
+        client.voxels = voxels;
 
         // add cube wireframe
         //lines.fill( Shapes.wire.cube([0,0,0], [1,1,1]) )
