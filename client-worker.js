@@ -41,10 +41,10 @@ var worker = {
     // When we get chunks from server and need to send voxel data to client, they're queued here
     voxelsToSend: {},
 
-    // Chunk ids in the order we want them
+    // Chunk ids (and meshes) in the order we want them
     chunkPriority: [],
-    // Chunk ids we want meshes for
-    meshes: [],
+    // Meshes we've recently sent
+    meshesSent: {},
     // Chunk ids we want voxels for
     voxels: [],
 
@@ -156,7 +156,7 @@ var worker = {
 
 
     // Client told us the order it wants to receive chunks in
-    updateNeeds: function(chunkIds, onlyTheseVoxels, missingVoxels) {
+    updateNeeds: function(chunkIds, meshHash, onlyTheseVoxels, missingVoxels) {
         // Prioritized list of meshes that we want
         this.chunkPriority = chunkIds;
         this.voxels = onlyTheseVoxels;
@@ -168,22 +168,31 @@ var worker = {
         for (var i = 0; i < chunkIds.length; i++) {
             var chunkId = chunkIds[i];
 
-            // Did client request this as a mesh?
-            //if (missingMeshes.indexOf(chunkId) > -1) {
+            // If we haven't recently sent this mesh to the client
+            if (!(chunkId in this.meshesSent)) {
                 if (chunkId in chunkCache) {
                     this.chunksToMesh[ chunkId ] = true;
                 } else if (!(chunkId in this.neededChunks)) {
+                    // Request this chunk from server if we haven't yet
                     this.neededChunks[ chunkId ] = true;
                 }
-            //}
+            }
             if (missingVoxels.indexOf(chunkId) > -1) {
                 if (chunkId in chunkCache) {
                     this.voxelsToSend[ chunkId ] = true;
                 }
             }
         }
+        
+        // We keep track of which meshes we've sent to the client,
+        // remove the ones we no longer care about
+        for (var chunkId in this.meshesSent) {
+            if (!(chunkId in meshHash)) {
+                delete this.meshesSent[chunkId];
+            }
+        }
 
-        // Clean up our request
+        // Ignore chunks we no longer care about
         var chunkIds = Object.keys(this.neededChunks);
         for (var i = 0; i < chunkIds.length; i++) {
             var chunkId = chunkIds[i];
@@ -288,6 +297,7 @@ var worker = {
                 transferList
             );
             delete this.chunksToMesh[chunkId];
+            this.meshesSent[chunkId] = true;
 
             // Stop after sending 10 meshes, to make sure we send voxel data in a timely manner
             if (i > 9) {

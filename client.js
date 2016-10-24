@@ -131,7 +131,7 @@ client.on('ready', function() {
             function(meshPriority, onlyTheseMeshes, onlyTheseVoxels, missingVoxels) {
                 voxels.meshesToShow(meshPriority, onlyTheseMeshes);
 
-                client.worker.postMessage(['updateNeeds', meshPriority, onlyTheseVoxels, missingVoxels]);
+                client.worker.postMessage(['updateNeeds', meshPriority, onlyTheseMeshes, onlyTheseVoxels, missingVoxels]);
             }
         );
         var physics = new Physics(player, inputHandler.state, game);
