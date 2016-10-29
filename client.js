@@ -99,7 +99,7 @@ client.on('ready', function() {
         var player = client.player = new Player(webgl.gl, webgl.shaders.projectionViewPosition, textures.byName[ client.avatar ]);
         var players = {};
         var sky = new Sky(webgl.gl, webgl.shaders.projectionViewPosition, textures);
-        var voxels = new Voxels(
+        var voxels = client.voxels = new Voxels(
             webgl.gl,
             webgl.shaders.projectionPosition,
             textures,
@@ -121,25 +121,19 @@ client.on('ready', function() {
                 );
             }
         );
-        var camera = new Camera(canvas, player);
-        var game = new Game(
+        var camera = client.camera = new Camera(canvas, player);
+        var game = client.game = new Game(
             config,
             coordinates,
             player,
-            camera.frustum,
-            // updateNeedsCallback
-            function(meshPriority, onlyTheseMeshes, onlyTheseVoxels, missingVoxels) {
-                voxels.meshesToShow(meshPriority, onlyTheseMeshes);
-
-                client.worker.postMessage(['updateNeeds', meshPriority, onlyTheseMeshes, onlyTheseVoxels, missingVoxels]);
+            // regionChangeCallback
+            function() {
+                client.regionChange();
             }
         );
         var physics = new Physics(player, inputHandler.state, game);
         var lines = new Lines(webgl.gl);
         var highlightOn = true;
-        
-        client.game = game;
-        client.voxels = voxels;
 
         // add cube wireframe
         //lines.fill( Shapes.wire.cube([0,0,0], [1,1,1]) )
@@ -149,7 +143,6 @@ client.on('ready', function() {
         st.domElement.style.position = 'absolute';
         st.domElement.style.bottom = '0px';
         document.body.appendChild(st.domElement);
-
         
 
         webgl.onRender(function(ts) {
@@ -160,7 +153,7 @@ client.on('ready', function() {
             }
 
             sky.render(camera.inverse, ts);
-            voxels.render(camera.inverse, ts, camera.frustum, sky.ambientLightColor, sky.directionalLight);
+            voxels.render(camera.inverse, ts, sky.ambientLightColor, sky.directionalLight);
             if (highlightOn) {
                 // Highlight of targeted bock can be turned off with Shift
                 lines.render(camera.inverse);
@@ -177,8 +170,10 @@ client.on('ready', function() {
         });
 
         player.translate(config.initialPosition);
+
+        client.worker.postMessage(['createFrustum', camera.verticalFieldOfView, camera.ratio, camera.farDistance]);
         // regionChange() triggers loading of world chunks from the server
-        game.regionChange([ 0, 0, 0 ]);
+        client.regionChange();
         webgl.start();
 
         client.on('players', function(others) {
@@ -294,7 +289,7 @@ client.on('ready', function() {
             config.drawDistance = value;
             config.removeDistance = value + 1;
 
-            game.regionChange(player.getPosition());
+            client.regionChange();
         });
         inputHandler.on('avatar', function(avatar) {
             client.avatar = avatar;

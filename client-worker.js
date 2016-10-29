@@ -7,6 +7,7 @@ var Coordinates = require('./lib/coordinates');
 var Textures = require('./lib/textures');
 var mesher = require('./lib/meshers/horizontal-merge');
 var ClientGenerator = require('./lib/generators/client.js');
+var Frustum = require('./lib/frustum');
 var timer = require('./lib/timer');
 var chunkArrayLength = config.chunkSize * config.chunkSize * config.chunkSize;
 var chunkCache = {};
@@ -32,8 +33,10 @@ chunk - sending a decoded, meshed chunk to the client
 
 
 var worker = {
+    coordinates: null,
     connected: false,
     connection: null,
+    frustum: null,
     // When we get chunks from the server, we queue them here
     chunksToDecodeAndMesh: {},
     // When we get chunks from server, or when user changed a voxel, we need to remesh. Queue them here
@@ -47,9 +50,14 @@ var worker = {
     meshesSent: {},
     // Chunk ids we want voxels for
     voxels: [],
+    currentVoxels: {},
 
     // Chunks we're in the process of requesting from the server
     neededChunks: {},
+
+    createFrustum: function(verticalFieldOfView, ratio, farDistance) {
+        this.frustum = new Frustum(verticalFieldOfView, ratio, 0.1, farDistance);
+    },
 
     emit: function(name, data) {
         var len = arguments.length;
@@ -63,7 +71,7 @@ var worker = {
 
     connect: function() {
         var self = this;
-        var coordinates = new Coordinates(config.chunkSize);
+        var coordinates = this.coordinates = new Coordinates(config.chunkSize);
         var textures = new Textures(config.textures);
         var websocket = this.connection = new WebSocketEmitter.client();
         var generator = new ClientGenerator(chunkCache, config.chunkSize);
@@ -152,6 +160,99 @@ var worker = {
         });
 
         this.connection.connect(config.server);
+    },
+
+    regionChange: function(playerPosition, rotationQuat, drawDistance, removeDistance) {
+        var self = this;
+
+        // TODO update the frustum
+        this.frustum.update(playerPosition, rotationQuat, drawDistance);
+
+        log('regionChange: playerPosition is', playerPosition);
+
+        // These help us remove voxels and meshes we no longer need
+        var nearbyVoxels = {};
+        // We tell our web worker about these, so it knows what to fetch and return
+        var onlyTheseVoxels = [];
+        var missingVoxels = [];
+
+        var meshHash = {};
+        var len = drawDistance * 3;
+        var priority = new Array(len);
+        for (var i = 0; i < len; i++) {
+            priority[i] = [];
+        }
+        var addPriority = function(level, chunkID) {
+            log('regionChange.addPriority: level', level);
+            priority[level].push(chunkID);
+        };
+
+        // Hmm, I seem to have removed the removeDistance logic. do we still want that 1 chunk buffer zone?
+
+        this.coordinates.nearbyChunkIDsEach(
+            playerPosition,
+            removeDistance,
+            function(chunkID, chunkPosition, distanceAway) {
+                // We only care about voxel data for the current chunk, and the ring around us
+                if (distanceAway < 3) {
+                    nearbyVoxels[chunkID] = 0;
+                    onlyTheseVoxels.push(chunkID);
+                    if (!(chunkID in self.currentVoxels)) {
+                        missingVoxels.push(chunkID);
+                    }
+                }
+                // We only care about meshes up to our draw distance
+                /*
+                if (distanceAway <= self.removeDistance) {
+                    nearbyMeshes[chunkID] = 0;
+                }
+                */
+                
+                // Set fetch priority
+                if (distanceAway < 2) {
+                    addPriority(distanceAway, chunkID);
+                    meshHash[ chunkID ] = 0;
+                } else if (distanceAway <= drawDistance) {
+                    // If outside frustum, add config.drawDistnace to distanceAway as priority
+                    // Use frustum to determine our fetch priority.
+                    // We want visible meshes to be fetched and drawn first
+                    if (self.frustum.chunkVisible(chunkID, chunkPosition)) {
+                        addPriority(distanceAway, chunkID);
+                    } else {
+                        addPriority(distanceAway + removeDistance, chunkID);
+                    }
+                    meshHash[ chunkID ] = 0;
+                } else if (distanceAway <= removeDistance) {
+
+                }
+            }
+        );
+
+        var prioritized = [];
+        for (var i = 0; i < priority.length; i++) {
+            Array.prototype.push.apply(prioritized, priority[i]);
+        }
+
+        self.updateNeeds(prioritized, meshHash, onlyTheseVoxels, missingVoxels);
+        postMessage(
+            ['meshesToShow', prioritized, meshHash]
+        );
+
+        log('nearbyVoxels', nearbyVoxels);
+
+        var chunkIds = Object.keys(self.currentVoxels);
+        for (var i = 0; i < chunkIds.length; i++) {
+            var chunkId = chunkIds[i];
+            // If a chunk is visible it should be in cache. If it's not visible, shouldn't be in chunkCache
+            if (chunkId in nearbyVoxels) {
+                continue;
+            }
+            log('ClientWorker.regionChange removing from currentVoxels', chunkId)
+
+            postMessage(
+                ['removeVoxels', chunkId]
+            );
+        }
     },
 
 
