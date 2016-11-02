@@ -176,7 +176,8 @@ var worker = {
         var onlyTheseVoxels = [];
         var missingVoxels = [];
 
-        var meshHash = {};
+        // Helps us ignore chunks we don't care about, and also prioritize re-drawing nearby chunks
+        var chunkDistances = {};
         var len = drawDistance * 3;
         var priority = new Array(len);
         for (var i = 0; i < len; i++) {
@@ -211,7 +212,7 @@ var worker = {
                 // Set fetch priority
                 if (distanceAway < 2) {
                     addPriority(distanceAway, chunkID);
-                    meshHash[ chunkID ] = 0;
+                    chunkDistances[ chunkID ] = distanceAway;
                 } else if (distanceAway <= drawDistance) {
                     // If outside frustum, add config.drawDistnace to distanceAway as priority
                     // Use frustum to determine our fetch priority.
@@ -221,7 +222,7 @@ var worker = {
                     } else {
                         addPriority(distanceAway + removeDistance, chunkID);
                     }
-                    meshHash[ chunkID ] = 0;
+                    chunkDistances[ chunkID ] = distanceAway;
                 } else if (distanceAway <= removeDistance) {
 
                 }
@@ -233,9 +234,9 @@ var worker = {
             Array.prototype.push.apply(prioritized, priority[i]);
         }
 
-        self.updateNeeds(prioritized, meshHash, onlyTheseVoxels, missingVoxels);
+        self.updateNeeds(prioritized, chunkDistances, onlyTheseVoxels, missingVoxels);
         postMessage(
-            ['meshesToShow', prioritized, meshHash]
+            ['meshesToShow', chunkDistances]
         );
 
         log('nearbyVoxels', nearbyVoxels);
@@ -257,7 +258,7 @@ var worker = {
 
 
     // Client told us the order it wants to receive chunks in
-    updateNeeds: function(chunkIds, meshHash, onlyTheseVoxels, missingVoxels) {
+    updateNeeds: function(chunkIds, chunkDistances, onlyTheseVoxels, missingVoxels) {
         // Prioritized list of meshes that we want
         this.chunkPriority = chunkIds;
         this.voxels = onlyTheseVoxels;
@@ -288,7 +289,7 @@ var worker = {
         // We keep track of which meshes we've sent to the client,
         // remove the ones we no longer care about
         for (var chunkId in this.meshesSent) {
-            if (!(chunkId in meshHash)) {
+            if (!(chunkId in chunkDistances)) {
                 delete this.meshesSent[chunkId];
             }
         }
@@ -374,7 +375,8 @@ var worker = {
                     position: {
                         buffer: texture.position.data.buffer,
                         offset: texture.position.offset,
-                        offsetBytes: texture.position.offset * 4
+                        offsetBytes: texture.position.offset * 4,
+                        tuples: texture.position.offset / 3
                     },
                     texcoord: {
                         buffer: texture.texcoord.data.buffer,

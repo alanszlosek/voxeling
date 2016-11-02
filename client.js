@@ -241,8 +241,10 @@ client.on('ready', function() {
         // Show coordinates
         var elCoordinates = document.getElementById('coordinates');
         setInterval(function() {
-            elCoordinates.textContent = player.getPosition().map(Math.floor).join(',');
-        }, 500);
+            elCoordinates.innerHTML = player.getPosition().map(Math.floor).join(',') + 
+                '<br />' +
+                game.lastRegion.join(',');
+        }, 1000);
 
 
         // INPUT HANDLER SETUP
