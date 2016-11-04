@@ -238,22 +238,11 @@ var worker = {
         postMessage(
             ['meshesToShow', chunkDistances]
         );
+        postMessage(
+            ['nearbyChunks', nearbyVoxels]
+        );
 
         log('nearbyVoxels', nearbyVoxels);
-
-        var chunkIds = Object.keys(self.currentVoxels);
-        for (var i = 0; i < chunkIds.length; i++) {
-            var chunkId = chunkIds[i];
-            // If a chunk is visible it should be in cache. If it's not visible, shouldn't be in chunkCache
-            if (chunkId in nearbyVoxels) {
-                continue;
-            }
-            log('ClientWorker.regionChange removing from currentVoxels', chunkId)
-
-            postMessage(
-                ['removeVoxels', chunkId]
-            );
-        }
     },
 
 
