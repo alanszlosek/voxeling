@@ -1,6 +1,5 @@
 var WebSocketEmitter = require('./lib/web-socket-emitter');
 var Server = require('./lib/server');
-var fs = require('fs');
 
 var chunkStore = require('./lib/chunk-stores/file');
 var chunkGenerator = require('./lib/generators/server-terraced');
@@ -68,19 +67,18 @@ server.on('chat', function(message) {
     }
 });
 
-/*
-server.on('client.frames', function(id, frames) {
-    console.log('got frame data from client');
-    var ts = Date.now();
-    var filename = id + '.' + ts;
-    fs.writeFile('./framelog/' + filename, JSON.stringify(frames));
-});
-*/
-
-
 server.on('error', function(error) {
     console.log(error);
 });
+
+function clientUsernames() {
+    var usernames = [];
+    for (var clientId in server.clients) {
+        var client = server.clients[clientId];
+        usernames.push( client.username );
+    }
+    console.log('Usernames:', usernames.join(','));
+}
 
 // WEBSOCKET SETUP
 var connectionLimit = config.maxPlayers;
