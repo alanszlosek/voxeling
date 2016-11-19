@@ -1,4 +1,4 @@
-var config = require('./config');
+var config = require('../config');
 
 var WebSocketEmitter = require('./lib/web-socket-emitter');
 var decoder = require('./lib/rle-decoder');

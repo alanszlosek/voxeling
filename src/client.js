@@ -5,7 +5,7 @@ var glm = require('gl-matrix'),
     quat = glm.quat;
 
 var randomName = require('sillyname');
-var config = require('./config');
+var config = require('../config');
 var raycast = require('voxel-raycast');
 var WebGL = require('./lib/webgl');
 var Camera = require('./lib/camera');
