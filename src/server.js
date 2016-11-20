@@ -4,7 +4,7 @@ var Server = require('./lib/server');
 var chunkStore = require('./lib/chunk-stores/file');
 var chunkGenerator = require('./lib/generators/server-terraced');
 var stats = require('./lib/voxel-stats');
-var config = require('./config');
+var config = require('../config');
 var debug = false;
 
 // This only gets filled by require if config.mysql isn't empty

@@ -36,7 +36,7 @@ What I'm working on
 ====
 
 * Optimizations, always and forever
-* Point light sources
+* Point light sources and shadow mapping
 
 
 Technical Features 
