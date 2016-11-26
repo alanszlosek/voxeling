@@ -8,9 +8,9 @@ var glm = require('gl-matrix'),
 
 var Node = function(gl) {
     this.gl = gl;
-	this.children = [];
-	this.localMatrix = mat4.create();
-	this.worldMatrix = mat4.create();
+    this.children = [];
+    this.localMatrix = mat4.create();
+    this.worldMatrix = mat4.create();
 };
 
 Node.prototype.setParent = function(parent) {
