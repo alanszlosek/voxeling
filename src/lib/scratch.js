@@ -2,6 +2,7 @@ var glm = require('gl-matrix');
 
 // place to house commonly used matrices and vectors
 module.exports = {
+    identityVec3: glm.vec3.create(),
     identityMat4: glm.mat4.create(),
     identityQuat: glm.quat.create(),
 

@@ -98,7 +98,7 @@ client.on('ready', function() {
         var ready = false;
         var player = client.player = new Player(webgl.gl, webgl.shaders.projectionViewPosition, textures.byName[ client.avatar ]);
         var players = {};
-        var sky = new Sky(webgl.gl, webgl.shaders.projectionViewPosition, textures);
+        var sky = new Sky(webgl.gl, webgl.shaders.projectionViewPosition, textures, player);
         var voxels = client.voxels = new Voxels(
             webgl.gl,
             webgl.shaders.projectionPosition,
@@ -562,15 +562,11 @@ client.on('ready', function() {
                     player.current[5]
                 );
                 player.model.isMoving = (summed > 0.05);
-                
             }
+
+            sky.tick(6);
         // What if we call this 30 times a second instead?
         }, 1000 / 60);
-        // Once every second
-        setInterval(function() {
-            // How many seconds to pass each tick
-            sky.tick(30);
-        }, 100);
     });
 });
 

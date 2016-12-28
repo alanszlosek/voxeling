@@ -6,13 +6,17 @@ var glm = require('gl-matrix'),
 
 // http://webglfundamentals.org/webgl/lessons/webgl-scene-graph.html
 
-var Node = function(gl) {
+var Node = function(gl, model) {
     this.gl = gl;
     this.children = [];
+    this.model = model;
+
     this.localMatrix = mat4.create();
     this.worldMatrix = mat4.create();
 };
 
+// setParent helps us prevent a child from being added to multiple parents
+/*
 Node.prototype.setParent = function(parent) {
     // remove us from our parent
     if (this.parent) {
@@ -28,25 +32,30 @@ Node.prototype.setParent = function(parent) {
     }
     this.parent = parent;
 };
+*/
+Node.prototype.addChild = function(node) {
+    this.children.push(node);
+};
 
-Node.prototype.render = function(projection) {
-    if (parentWorldMatrix) {
-        // a matrix was passed in so do the math and
-        // store the result in `this.worldMatrix`.
-        matrixMultiply(this.localMatrix, projection, this.worldMatrix);
-    } else {
-        // no matrix was passed in so just copy.
-        mat4.copy(this.localMatrix, projection);
+// Update 
+Node.prototype.tick = function(parentWorldMatrix, ts) {
+    this.model.tick(parentWorldMatrix, ts);
+
+    for (var i = 0; i < this.children.length; i++) {
+        var child = this.children[i];
+        // Don't really like that this reaches in
+        child.tick(this.model.worldMatrix, ts);
     }
+};
 
+Node.prototype.render = function(ts) {
     // Now render this item?
-    this.model.render(this.worldMatrix);
+    this.model.render(ts);
 
-    // now process all the children
-    var worldMatrix = this.worldMatrix;
-    this.children.forEach(function(child) {
-        child.updateWorldMatrix(worldMatrix);
-    });
+    for (var i = 0; i < this.children.length; i++) {
+        var child = this.children[i];
+        child.render(ts);
+    }
 };
 
 
