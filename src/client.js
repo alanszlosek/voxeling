@@ -152,6 +152,18 @@ client.on('ready', function() {
                 ts = 0;
             }
 
+            // START of non-render stuff
+            // Do these in sync with frame drawing so movement is smoother
+            inputHandler.tick();
+            // Wait until user clicks the canvas for the first time before we activate physics
+            // Otherwise player may fall through the world before we get the the initial voxel data
+            if (ready) {
+                // physics will somehow update player position, and thus, the camera
+                physics.tick();
+            }
+            // END of non-render stuff
+            camera.updateProjection();
+
             sky.render(camera.inverse, ts);
             voxels.render(camera.inverse, ts, sky.ambientLightColor, sky.directionalLight);
             if (highlightOn) {
@@ -530,14 +542,6 @@ client.on('ready', function() {
         // INTERVAL CALLBACKS NOT TIED TO FRAMERATE
         // 60 calls per second
         setInterval(function() {
-            inputHandler.tick();
-            // Wait until user clicks the canvas for the first time before we activate physics
-            // Otherwise player may fall through the world before we get the the initial voxel data
-            if (ready) {
-                // physics will somehow update player position, and thus, the camera
-                physics.tick();
-            }
-            camera.updateProjection();
             game.tick();
 
             //other.tick()
@@ -564,6 +568,7 @@ client.on('ready', function() {
                 player.model.isMoving = (summed > 0.05);
             }
 
+            // TODO: calculate delta in webgl render callback and move sky.tick there
             sky.tick(6);
         // What if we call this 30 times a second instead?
         }, 1000 / 60);
