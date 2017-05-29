@@ -73,9 +73,9 @@ var states = {
         // Chrome intercepts Escape key presses, so let's transition based on this event
         pointerlockchange: function(event) {
             if (document.pointerLockElement === this.canvas) {
-                console.log('The pointer lock status is now locked');
+                //console.log('The pointer lock status is now locked');
             } else {
-                console.log('The pointer lock status is now unlocked');
+                //console.log('The pointer lock status is now unlocked');
                 this.transition('start');
             }
         },
@@ -312,7 +312,7 @@ var gamepad;
 // movement handler.
 var InputHandler = function(bindToElement, canvas) {
     var self = this;
-    this.element = bindToElement;
+    this.bindToElement = bindToElement;
     this.canvas = canvas;
     this.state = controlStates;
     this.emitter = new EventEmitter();
@@ -334,7 +334,6 @@ var InputHandler = function(bindToElement, canvas) {
         },
         false
     );
-    console.log(states);
 };
 
 InputHandler.prototype.mouseDeltaCallback = function(callback) {
