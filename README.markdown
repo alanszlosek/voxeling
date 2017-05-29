@@ -82,10 +82,10 @@ cp config-example.js config.js
 vim config.js
 
 # generate web-worker JavaScript
-./worker.sh
+./scripts/worker.sh
 
 # start server
-node server.js
+./scripts/server.sh
 ```
 
 In terminal 2:
@@ -93,7 +93,7 @@ In terminal 2:
 ```
 cd /path/to/voxeling
 # start the client
-./client.sh
+./scripts/client.sh
 ```
 
 Now, point your browser to http://127.0.0.1:9966. Read the introduction for controls and keybindings. Enjoy!
