@@ -135,7 +135,7 @@ var states = {
             var code = event.which;
             var key;
             if (debug) console.log(event);
-            // Tab?
+            // Enter
             if (code == 13) {
                 this.transition('chat');
                 return false;
@@ -310,18 +310,20 @@ var gamepad;
 
 // Really want to proxy events, so that way I can convert controller events to mouse events and send them to the player/camera
 // movement handler.
-var InputHandler = function(keyboardElement, mouseLockElement, canvas) {
+var InputHandler = function(bindToElement, canvas) {
     var self = this;
-    this.keyboardElement = keyboardElement;
-    this.mouseLockElement = mouseLockElement;
+    this.element = bindToElement;
     this.canvas = canvas;
     this.state = controlStates;
     this.emitter = new EventEmitter();
 
+    this.boundStates = {};
+
     // Fix up states data structure with functions bound to this
     for (var state in states) {
+        this.boundStates[state] = {};
         for (var method in states[state]) {
-            states[state]['_' + method] = states[state][method].bind(this);
+            this.boundStates[state][method] = states[state][method].bind(this);
         }
     }
 
@@ -343,39 +345,39 @@ InputHandler.prototype.transition = function(newState) {
     var current;
     if (currentState) {
         // we might be starting at the null state
-        current = states[currentState];
+        current = this.boundStates[currentState];
         // Unbind current event handlers
         for (var method in current) {
-            if (method.substr(0, 4) == '_key' || method == '_change') {
-                this.keyboardElement.removeEventListener(method.substr(1), current[method], false);
-
-            } else if (method.substr(0, 6) == '_mouse') {
-                this.mouseLockElement.removeEventListener(method.substr(1), current[method], false);
-            } else if (method == '_pointerlockchange') {
-                document.removeEventListener(method.substr(1), current[method], false);
+            if (method == 'from' || method == 'to') {
+                continue;
+            }
+            if (method == 'pointerlockchange') {
+                document.removeEventListener(method, current[method], false);
+            } else {
+                this.bindToElement.removeEventListener(method, current[method], false);
             }
         }
-        if ('_from' in current) {
+        if ('from' in current) {
             current['from']();
         }
         this.emitter.emit('from.' + currentState);
     }
     if (newState in states) {
         currentState = newState;
-        current = states[currentState];
+        current = this.boundStates[currentState];
         // Bind new event handlers
         for (var method in current) {
-            if (method.substr(0, 4) == '_key' || method == '_change') {
-                this.keyboardElement.addEventListener(method.substr(1), current[method], false);
-
-            } else if (method.substr(0, 6) == '_mouse') {
-                this.mouseLockElement.addEventListener(method.substr(1), current[method], false);
-            } else if (method == '_pointerlockchange') {
-                document.addEventListener(method.substr(1), current[method], false);
+            if (method == 'from' || method == 'to') {
+                continue;
+            }
+            if (method == 'pointerlockchange') {
+                document.addEventListener(method, current[method], false);
+            } else {
+                this.bindToElement.addEventListener(method, current[method], false);
             }
         }
-        if ('_to' in current) {
-            current['_to']();
+        if ('to' in current) {
+            current['to']();
         }
         this.emitter.emit('to.' + newState);
     }
