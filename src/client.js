@@ -83,7 +83,7 @@ client.on('close', function() {
 
 client.on('ready', function() {
     var canvas = document.getElementById('herewego');
-    var inputHandler = new InputHandler(document.body, document.body);
+    var inputHandler = new InputHandler(document.body, document.body, canvas);
     var webgl;
     var textures;
 

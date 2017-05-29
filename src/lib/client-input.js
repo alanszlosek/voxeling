@@ -1,32 +1,6 @@
 var EventEmitter = require('events').EventEmitter;
 var debug = false;
 
-// pointer lock stuff
-function requestPointerLock(el) {
-    return el.requestPointerLock || el.webkitRequestPointerLock || el.mozRequestPointerLock || el.msRequestPointerLock || el.oRequestPointerLock || null;
-}
-
-function pointerlockelement() {
-    var doc = document;
-    return 0 || doc.pointerLockElement || doc.mozPointerLockElement || doc.webkitPointerLockElement || doc.msPointerLockElement || doc.oPointerLockElement || null;
-}
-
-var onpointerlockchange = function() {
-    if (!pointerlockelement()) {
-        // released
-        if (currentState == 'playing') {
-            self.transition('start');
-        }
-    }
-    if (debug) {
-        console.log('lock change');
-    }
-};
-
-var onpointerlockerror = function() {
-    if (debug) console.log('lock error');
-};
-
 var mouseCallback = function() {};
 
 var codeMap = {
@@ -64,6 +38,7 @@ var states = {
         mouseup: function(event) {
             // Only if event target is the canvas
             if (event.target.tagName == 'CANVAS') {
+                this.canvas.focus();
                 this.transition('playing');
                 return false;
             }
@@ -85,9 +60,7 @@ var states = {
             if (debug) {
                 console.log('entering playing state');
             }
-            var el = document.body;
-            var locker = requestPointerLock(el);
-            locker.call(el);
+            this.canvas.requestPointerLock();
         },
         from: function() {
             if (debug) {
@@ -97,8 +70,14 @@ var states = {
             for (var i in controlStates) {
                 controlStates[i] = false;
             }
-            if (pointerlockelement()) {
-                document.exitPointerLock();
+        },
+        // Chrome intercepts Escape key presses, so let's transition based on this event
+        pointerlockchange: function(event) {
+            if (document.pointerLockElement === this.canvas) {
+                console.log('The pointer lock status is now locked');
+            } else {
+                console.log('The pointer lock status is now unlocked');
+                this.transition('start');
             }
         },
         mousedown: function(event) {
@@ -126,6 +105,7 @@ var states = {
             );
         },
         keydown: function(event) {
+            if (debug) console.log(event);
             // E
             if (event.which == 69) {
                 this.transition('materials');
@@ -136,7 +116,12 @@ var states = {
                 this.transition('map');
                 return;
             }
-            if (debug) console.log(event);
+            // Escape
+            if (code == 27) {
+                console.log('escape');
+                // We shouldn't ever get here
+            }
+            
             var code = event.which;
             var key;
             if (code in codeMap) {
@@ -150,22 +135,24 @@ var states = {
         keyup: function(event) {
             var code = event.which;
             var key;
+            if (debug) console.log(event);
+            // Tab?
             if (code == 13) {
                 this.transition('chat');
                 return false;
             }
+            // Escape
             if (code == 27) {
-                // escape
-                this.transition('start');
-                return;
+                console.log('escape');
+                // We shouldn't ever get here
             }
+            // R
             if (code == 82) {
-                // R
                 this.emitter.emit('view');
                 return;
             }
+            // Shift
             if (code == 16) {
-                // Shift
                 this.emitter.emit('shift');
                 return;
             }
@@ -324,9 +311,11 @@ var gamepad;
 
 // Really want to proxy events, so that way I can convert controller events to mouse events and send them to the player/camera
 // movement handler.
-var InputHandler = function(keyboardElement, mouseLockElement) {
+var InputHandler = function(keyboardElement, mouseLockElement, canvas) {
+    var self = this;
     this.keyboardElement = keyboardElement;
     this.mouseLockElement = mouseLockElement;
+    this.canvas = canvas;
     this.state = controlStates;
     this.emitter = new EventEmitter();
 
@@ -336,6 +325,14 @@ var InputHandler = function(keyboardElement, mouseLockElement) {
             states[state]['_' + method] = states[state][method].bind(this);
         }
     }
+
+    document.addEventListener(
+        'pointerlockerror',
+        function(error) {
+            console.log('Pointer Lock Error', error);
+        },
+        false
+    );
     console.log(states);
 };
 
@@ -348,34 +345,38 @@ InputHandler.prototype.transition = function(newState) {
     if (currentState) {
         // we might be starting at the null state
         current = states[currentState];
-        if ('_from' in current) {
-            current['from']();
-        }
         // Unbind current event handlers
         for (var method in current) {
             if (method.substr(0, 4) == '_key' || method == '_change') {
-                this.keyboardElement.removeEventListener(method.substr(1), current[method]);
+                this.keyboardElement.removeEventListener(method.substr(1), current[method], false);
 
             } else if (method.substr(0, 6) == '_mouse') {
-                this.mouseLockElement.removeEventListener(method.substr(1), current[method]);
+                this.mouseLockElement.removeEventListener(method.substr(1), current[method], false);
+            } else if (method == '_pointerlockchange') {
+                document.removeEventListener(method.substr(1), current[method], false);
             }
+        }
+        if ('_from' in current) {
+            current['from']();
         }
         this.emitter.emit('from.' + currentState);
     }
     if (newState in states) {
         currentState = newState;
         current = states[currentState];
-        if ('_to' in current) {
-            current['_to']();
-        }
         // Bind new event handlers
         for (var method in current) {
             if (method.substr(0, 4) == '_key' || method == '_change') {
-                this.keyboardElement.addEventListener(method.substr(1), current[method]);
+                this.keyboardElement.addEventListener(method.substr(1), current[method], false);
 
             } else if (method.substr(0, 6) == '_mouse') {
-                this.mouseLockElement.addEventListener(method.substr(1), current[method]);
+                this.mouseLockElement.addEventListener(method.substr(1), current[method], false);
+            } else if (method == '_pointerlockchange') {
+                document.addEventListener(method.substr(1), current[method], false);
             }
+        }
+        if ('_to' in current) {
+            current['_to']();
         }
         this.emitter.emit('to.' + newState);
     }
