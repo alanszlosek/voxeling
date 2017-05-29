@@ -38,7 +38,6 @@ var states = {
         mouseup: function(event) {
             // Only if event target is the canvas
             if (event.target.tagName == 'CANVAS') {
-                this.canvas.focus();
                 this.transition('playing');
                 return false;
             }
