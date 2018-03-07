@@ -5,7 +5,7 @@ Inspired by [voxel-engine](https://github.com/maxogden/voxel-engine) and [voxel.
 
 Demo: http://voxeling.greaterscope.com (Google Chrome and Firefox 46+)
 
-Project blog: http://voxeling.tumblr.com/
+Project blog: https://blog.alanszlosek.com/tags/voxeling/
 
 Textures provided by:
 
