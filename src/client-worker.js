@@ -252,7 +252,7 @@ var worker = {
 
         var requestClosure = function(chunkId) {
             var req = new XMLHttpRequest();
-            req.open("GET", "http://localhost:10005/chunk/" + chunkId, true);
+            req.open("GET", config.httpServer + "/chunk/" + chunkId, true);
             req.responseType = "arraybuffer";
             req.onload = function (oEvent) {
                 if (!req.response) {
