@@ -1,13 +1,10 @@
-var EventEmitter = require('events').EventEmitter;
-
 // callback should match function(error, chunk)
 var ChunkStore = function(generator) {
-    this.emitter = new EventEmitter();
     this.generator = generator;
 };
 
 // Asyncronous
-ChunkStore.prototype.get = function(chunkID) {
+ChunkStore.prototype.get = function(chunkID, callback) {
 };
 
 ChunkStore.prototype.tick = function() {

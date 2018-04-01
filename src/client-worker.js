@@ -1,6 +1,5 @@
 var config = require('../config');
 
-var WebSocketEmitter = require('./lib/web-socket-emitter');
 var decoder = require('./lib/rle-decoder');
 var pool = require('./lib/object-pool');
 var Coordinates = require('./lib/coordinates');
@@ -30,6 +29,11 @@ close - websocket connection closed
 chunk - sending a decoded, meshed chunk to the client
 
 */
+
+
+var sendMessage = function(websocket, name, payload) {
+    websocket.send( JSON.stringify([name, payload]) );
+};
 
 
 var worker = {
@@ -73,93 +77,82 @@ var worker = {
         var self = this;
         var coordinates = this.coordinates = new Coordinates(config.chunkSize);
         var textures = new Textures(config.textures);
-        var websocket = this.connection = new WebSocketEmitter.client();
+        var websocket = this.connection = new WebSocket(config.server);
         var generator = new ClientGenerator(chunkCache, config.chunkSize);
 
         mesher.config(config.chunkSize, textures, coordinates, chunkCache);
 
-        websocket.on('open', function() {
+        websocket.onopen = function() {
             self.connected = true;
             if (debug) {
                 log('websocket connection opened');
             }
             self.emit('open');
-        });
+        };
 
-        websocket.on('close', function() {
+        websocket.onclose = function() {
             self.connected = false;
             if (debug) {
                 log('websocket connection closed');
             }
             self.emit('close');
-        });
+        };
 
-        websocket.on('error', function(message) {
+        websocket.onerror = function(message) {
             log('websocket error, ' + message);
-        });
+        };
 
-        websocket.on('settings', function(settings, id) {
-            if (debug) {
-                log('got settings', settings);
-            }
-            self.emit('settings', settings, id);
-        });
-
-        websocket.on('chunk', function(chunkID, encoded) {
-            if (debug) {
-                log('Websocket received chunk: ' + chunkID);
-            }
-            var index = self.chunkPriority.indexOf(chunkID);
-            if (index == -1) {
-                if (debug) {
-                    log('Got chunk, but we dont care about it', chunkID, self.chunkPriority);
-                }
-                return;
-            }
-            self.chunksToDecodeAndMesh[chunkID] = encoded;
-
-            // Cleanup
-            if (chunkID in self.neededChunks) {
-                delete self.neededChunks[ chunkID ];
-            }
-            
-        });
-
-        // fires when server sends us voxel edits [chunkID, voxelIndex, value, voxelIndex, value...]
-        websocket.on('chunkVoxelIndexValue', function(changes) {
-            // Tell the client
-            self.emit('chunkVoxelIndexValue', changes);
-            // Update our local cache
-            for (var chunkID in changes) {
-                if (self.chunkPriority.indexOf(chunkID) == -1) {
-                    continue;
-                }
-                if (chunkID in chunkCache) {
-                    var chunk = chunkCache[chunkID];
-                    var details = changes[chunkID];
-                    for (var i = 0; i < details.length; i += 2) {
-                        var index = details[i];
-                        var val = details[i + 1];
-                        chunk.voxels[index] = val;
+        websocket.onmessage = function(event) {
+            // Decode message
+            // Handle errors and exceptions
+            console.log('' + event.data);
+            var decoded = JSON.parse(event.data);
+            var type = decoded[0];
+            var payload = decoded[1];
+            switch (type) {
+                case 'settings':
+                    if (debug) {
+                        log('got settings', payload);
                     }
-                    // Re-mesh this chunk
-                    self.chunksToMesh[ chunkID ] = true;
-                    if (self.voxels.indexOf(chunkID) > -1) {
-                        self.voxelsToSend[ chunkID ] = true;
+                    self.emit('settings', payload['settings'], payload['id']);
+                    break;
+                // fires when server sends us voxel edits [chunkID, voxelIndex, value, voxelIndex, value...]
+                case 'chunkVoxelIndexValue':
+                    var changes = payload['changes'];
+                    // Tell the client
+                    self.emit('chunkVoxelIndexValue', changes);
+                    // Update our local cache
+                    for (var chunkID in changes) {
+                        if (self.chunkPriority.indexOf(chunkID) == -1) {
+                            continue;
+                        }
+                        if (chunkID in chunkCache) {
+                            var chunk = chunkCache[chunkID];
+                            var details = changes[chunkID];
+                            for (var i = 0; i < details.length; i += 2) {
+                                var index = details[i];
+                                var val = details[i + 1];
+                                chunk.voxels[index] = val;
+                            }
+                            // Re-mesh this chunk
+                            self.chunksToMesh[ chunkID ] = true;
+                            if (self.voxels.indexOf(chunkID) > -1) {
+                                self.voxelsToSend[ chunkID ] = true;
+                            }
+                        }
                     }
-                }
+                    break;
+
+                case 'chat':
+                    self.emit('chat', payload.message);
+                    break;
+
+                case 'player':
+                    self.emit('players', payload.players);
+                    break;
             }
-        });
+        };
 
-        websocket.on('chat', function(message) {
-            self.emit('chat', message);
-        });
-
-        websocket.on('players', function(players) {
-            self.emit('players', players);
-        });
-
-        this.connection.connect(config.server);
     },
 
     regionChange: function(playerPosition, rotationQuat, drawDistance, removeDistance) {
@@ -248,12 +241,36 @@ var worker = {
 
     // Client told us the order it wants to receive chunks in
     updateNeeds: function(chunkIds, chunkDistances, onlyTheseVoxels, missingVoxels) {
+        var self = this;
         // Prioritized list of meshes that we want
         this.chunkPriority = chunkIds;
         this.voxels = onlyTheseVoxels;
+        console.log('updateNeeds');
 
         // Tell server that we only care about these chunks
-        this.connection.emit('onlyTheseChunks', chunkIds);
+        sendMessage(this.connection, 'onlyTheseChunks', chunkIds);
+
+        var requestClosure = function(chunkId) {
+            var req = new XMLHttpRequest();
+            req.open("GET", "http://localhost:10005/chunk/" + chunkId, true);
+            req.responseType = "arraybuffer";
+            req.onload = function (oEvent) {
+                if (!req.response) {
+                    return;
+                } // Note: not oReq.responseText
+                var position = chunkId.split('|').map(function(value) {
+                    return Number(value);
+                });
+                var chunk = {
+                    chunkID: chunkId,
+                    position: position,
+                    voxels: new Uint8Array(req.response)
+                };
+                self.chunksToDecodeAndMesh[chunkId] = chunk;
+            };
+            req.send(null);
+            return req;
+        };
 
         // Might be easier to process these later
         for (var i = 0; i < chunkIds.length; i++) {
@@ -265,7 +282,8 @@ var worker = {
                     this.chunksToMesh[ chunkId ] = true;
                 } else if (!(chunkId in this.neededChunks)) {
                     // Request this chunk from server if we haven't yet
-                    this.neededChunks[ chunkId ] = true;
+                    // Keep handle to HTTP req, so we can cancel it
+                    self.neededChunks[chunkId] = requestClosure(chunkId);
                 }
             }
             if (missingVoxels.indexOf(chunkId) > -1) {
@@ -288,6 +306,7 @@ var worker = {
         for (var i = 0; i < chunkIds.length; i++) {
             var chunkId = chunkIds[i];
             if (this.chunkPriority.indexOf(chunkId) == -1) {
+                this.neededChunks[chunkId].abort();
                 delete this.neededChunks[chunkId];
             }
         }
@@ -304,19 +323,7 @@ var worker = {
             if (this.chunkPriority.indexOf(chunkID) == -1) {
                 continue;
             }
-            var encoded = this.chunksToDecodeAndMesh[chunkID];
-            var position = chunkID.split('|').map(function(value) {
-                return Number(value);
-            });
-            var data = pool.malloc('uint8', chunkArrayLength);
-
-            var start = Date.now();
-            var chunk = {
-                chunkID: chunkID,
-                position: position,
-                voxels: decoder(encoded, data)
-            };
-            timer.log('rle-decode', Date.now() - start);
+            var chunk = this.chunksToDecodeAndMesh[chunkID];
             // Cache in webworker
             // TODO: change this to an LRU cache
             chunkCache[chunkID] = chunk;
@@ -403,7 +410,7 @@ var worker = {
     // Update our local cache and tell the server
     chunkVoxelIndexValue: function(changes, touching) {
         var self = this;
-        self.connection.emit('chunkVoxelIndexValue', changes);
+        sendMessage(self.connection, 'chunkVoxelIndexValue', changes);
         for (var chunkID in changes) {
             if (chunkID in chunkCache) {
                 var chunk = chunkCache[chunkID];
@@ -429,7 +436,7 @@ var worker = {
 
     chat: function(message) {
         var self = this;
-        self.connection.emit('chat', message);
+        sendMessage(self.connection, 'chat', message);
     },
 
     /*
@@ -464,7 +471,7 @@ var worker = {
         if (!worker.connected) {
             return;
         }
-        worker.connection.emit('myPosition', position, yaw, pitch, avatar);
+        sendMessage(worker.connection, 'myPosition', [position, yaw, pitch, avatar]);
     }
 }
 
@@ -485,6 +492,7 @@ setInterval(
     function() {
         worker.processChunks();
 
+        /*
         var ts = Date.now();
         var chunkIds = [];
         waitingOn = 0;
@@ -516,6 +524,7 @@ setInterval(
         if (chunkIds.length > 0) {
             worker.connection.emit('needChunks', chunkIds);
         }
+        */
     },
     // Ten times a second didn't seem fast enough
     1000 / 20

@@ -42,14 +42,14 @@ var FileChunkStore = function(generator, chunkFolder) {
 module.exports = FileChunkStore;
 
 
-FileChunkStore.prototype.get = function(chunkID) {
+FileChunkStore.prototype.get = function(chunkID, callback) {
     var self = this;
     var chunk;
     var filename;
     var readCallback;
     chunk = cache.get(chunkID);
     if (!!chunk) {
-        this.emitter.emit('got', chunk);
+        callback(null, chunk);
         return;
     }
 
@@ -71,7 +71,7 @@ FileChunkStore.prototype.get = function(chunkID) {
             if (chunk) {
                 cache.set(chunkID, chunk);
                 self.toSave[chunkID] = chunk;
-                self.emitter.emit('got', chunk);
+                callback(null, chunk);
             } else {
                 console.log('no chunk?');
                 // For some reason our generator didn't return a chunk
@@ -91,7 +91,7 @@ FileChunkStore.prototype.get = function(chunkID) {
             voxels: new Uint8Array(data)
         };
         cache.set(chunkID, chunk);
-        self.emitter.emit('got', chunk);
+        callback(null, chunk);
     };
     concur.operation(function() {
         fs.readFile(self.chunkFolder + filename, concur.callback(readCallback));

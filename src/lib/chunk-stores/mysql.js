@@ -14,15 +14,17 @@ var MysqlChunkStore = function(generator, config) {
     // ChunkID -> chunk data structure
     this.toSave = {};
     this.changes = {};
-    this.requested = {};
+    //this.requested = {};
     this.mysqlPool = mysql.createPool(config);
 
     // We just loaded a chunk
+    /*
     this.emitter.on('got', function(chunk) {
         if (chunk.chunkID in self.requested) {
             delete self.requested[chunk.chunkID];
         }
     });
+    */
 
     setInterval(
         function() {
@@ -35,11 +37,11 @@ var MysqlChunkStore = function(generator, config) {
 module.exports = MysqlChunkStore;
 
 
-MysqlChunkStore.prototype.get = function(chunkID) {
+MysqlChunkStore.prototype.get = function(chunkID, callback) {
     var self = this;
     var chunk = cache.get(chunkID);
     if (chunk) {
-        this.emitter.emit('got', chunk);
+        callback(null, chunk);
         return;
     }
 
@@ -54,7 +56,7 @@ MysqlChunkStore.prototype.get = function(chunkID) {
     var sql = 'select voxels from chunk where x=? and y=? and z=?';
     this.mysqlPool.query(sql, position, function(error, results) {
         if (error) {
-            log('get', 'Error in chunk select query');
+            callback('Error getting chunk from MySQL: ' + error);
             return;
         }
         if (results.length == 0) {
@@ -63,7 +65,7 @@ MysqlChunkStore.prototype.get = function(chunkID) {
             if (chunk) {
                 log('get', 'generated. queueing for saving: ' + chunkID);
                 cache.set(chunkID, chunk);
-                self.emitter.emit('got', chunk);
+                callback(null, chunk);
                 self.toSave[chunkID] = chunk;
             } else {
                 log('get', 'generate failed for ' + chunkID);
@@ -82,10 +84,11 @@ MysqlChunkStore.prototype.get = function(chunkID) {
                 var chunk = {
                     position: position,
                     chunkID: chunkID,
-                    voxels: new Uint8Array(buffer)
+                    voxels: new Uint8Array(buffer),
+                    compressedVoxels: results[0].voxels
                 };
                 cache.set(chunkID, chunk);
-                self.emitter.emit('got', chunk);
+                callback(null, chunk);
             });
         }
     });
@@ -106,6 +109,7 @@ MysqlChunkStore.prototype.gotChunkChanges = function(chunks) {
     }
 };
 
+// TODO: this should be a sync queued operation
 MysqlChunkStore.prototype.applyChanges = function() {
     var self = this;
     for (var chunkID in self.changes) {

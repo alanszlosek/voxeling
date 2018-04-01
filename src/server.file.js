@@ -1,4 +1,5 @@
 //var WebSocketEmitter = require('./lib/web-socket-emitter');
+var http = require('http');
 var WebSocket = require('ws');
 var Server = require('./lib/server');
 
@@ -15,24 +16,12 @@ var clientSettings = {
     initialPosition: config.initialPosition
 };
 
-/*
+
 var chunkStore = new chunkStore(
     new chunkGenerator(config.chunkSize),
     config.chunkFolder
 );
-*/
-if (config.mysql) {
-    mysqlPool = require('mysql').createPool(config.mysql);
-    var chunkStore = new chunkStore(
-        new chunkGenerator(config.chunkSize),
-        config.mysql
-    );
-} else {
-    var chunkStore = new chunkStore(
-        new chunkGenerator(config.chunkSize),
-        config.chunkFolder
-    );
-}
+
 
 var serverSettings = {
     // test with memory chunk store for now
@@ -40,7 +29,7 @@ var serverSettings = {
     maxPlayers: config.maxPlayers || 10
 };
 
-var server = new Server(config, chunkStore, serverSettings, clientSettings);
+
 
 /*
 server.on('client.join', function(client) {
@@ -53,21 +42,7 @@ server.on('client.state', function(state) {
 });
 */
 
-server.on('chat', function(message) {
-    stats.count('chat.messages.sent');
-    if (mysqlPool) {
-        var row = {
-            created_ms: Date.now(),
-            username: message.user,
-            message: message.text
-        };
-        mysqlPool.query('insert into chat SET ?', row);
-    }
-});
 
-server.on('error', function(error) {
-    console.log(error);
-});
 
 function clientUsernames() {
     var usernames = [];
@@ -88,7 +63,7 @@ var connections = 0;
 
 var httpServer = new http.Server();
 
-httpServer.listen(config.websocketBindPort,: config.websocketBindAddress);
+httpServer.listen(config.websocketBindPort, config.websocketBindAddress);
 
 var wsServer = new WebSocket.Server({
 	  server: httpServer
@@ -116,5 +91,23 @@ wsServer.on('connection', function(connection) {
         connection.close();
         return;
     }
-    server.connectClient(connection);
+});
+
+
+var server = new Server(config, serverSettings, chunkStore, wsServer, httpServer);
+
+server.on('chat', function(message) {
+    stats.count('chat.messages.sent');
+    if (mysqlPool) {
+        var row = {
+            created_ms: Date.now(),
+            username: message.user,
+            message: message.text
+        };
+        mysqlPool.query('insert into chat SET ?', row);
+    }
+});
+
+server.on('error', function(error) {
+    console.log(error);
 });

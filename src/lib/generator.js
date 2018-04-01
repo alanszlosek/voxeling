@@ -1,3 +1,5 @@
+var zlib = require('zlib');
+
 //var stats = require('voxeling-stats')
 var debug = false;
 
@@ -29,7 +31,7 @@ Generator.prototype.get = function(chunkID) {
     var started = Date.now();
     var chunk = this.makeChunkStruct(chunkID);
     this.fillChunkVoxels(chunk, this.generateVoxel, this.chunkSize);
-    //stats('generateChunk', started);
+    chunk.compressedVoxels = zlib.gzipSync(chunk.voxels);
     return chunk;
 };
 
@@ -59,7 +61,8 @@ Generator.prototype.makeChunkStruct = function(chunkID) {
     return {
         position: position,
         chunkID: chunkID,
-        voxels: new Uint8Array(this.chunkArraySize)
+        voxels: new Uint8Array(this.chunkArraySize),
+        compressedVoxels: null
     };
 };
 
