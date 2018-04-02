@@ -1,6 +1,5 @@
 var config = require('../config');
 
-var decoder = require('./lib/rle-decoder');
 var pool = require('./lib/object-pool');
 var Coordinates = require('./lib/coordinates');
 var Textures = require('./lib/textures');
@@ -18,6 +17,10 @@ var debug = false;
 INCOMING WEBWORKER MESSAGES
 
 connect - client wants us to connect to the websocket server
+
+regionChange
+
+updateNeeds
 
 
 OUTGOING WEBWORKER MESSAGES
@@ -318,6 +321,7 @@ var worker = {
     */
     processChunks: function() {
 
+        // TODO: merge this loop into the bottom two, fix code that pushes into chunksToDecodeAndMesh
         for (var chunkID in this.chunksToDecodeAndMesh) {
             // Skip if we're no longer interested in this chunk
             if (this.chunkPriority.indexOf(chunkID) == -1) {
@@ -464,7 +468,7 @@ var worker = {
             textureMesh.normal.free();
         }
 
-        pool.free('uint8', chunk.voxels);
+        //pool.free('uint8', chunk.voxels);
     },
 
     playerPosition: function(position, yaw, pitch, avatar) {
@@ -487,44 +491,9 @@ onmessage = function(e) {
     
 };
 
-var waitingOn = 0;
 setInterval(
     function() {
         worker.processChunks();
-
-        /*
-        var ts = Date.now();
-        var chunkIds = [];
-        waitingOn = 0;
-        // Request in the order the client wants them
-        for (var i = 0; i < worker.chunkPriority.length; i++) {
-            var chunkId = worker.chunkPriority[i];
-            if (!(chunkId in worker.neededChunks)) {
-                continue;
-            }
-            var lastRequested = worker.neededChunks[chunkId];
-            if (ts > lastRequested) {
-                if (debug) {
-                    log('Requesting ', chunkId);
-                }
-                chunkIds.push(chunkId);
-                
-                // Wait before requesting this chunk again
-                worker.neededChunks[ chunkId ] = ts + 10000;
-            }
-            waitingOn++;
-
-
-            // Only wait on 10 at a time
-            if (waitingOn > 9) {
-                break;
-            }
-        }
-
-        if (chunkIds.length > 0) {
-            worker.connection.emit('needChunks', chunkIds);
-        }
-        */
     },
     // Ten times a second didn't seem fast enough
     1000 / 20

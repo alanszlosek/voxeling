@@ -4,7 +4,6 @@ var uuid = require('hat');
 
 // voxel dependencies
 var Coordinates = require('./coordinates');
-var encoder = require('./rle-encoder');
 var lru = require('./lru');
 var debug = false;
 
