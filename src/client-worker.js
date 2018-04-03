@@ -6,6 +6,7 @@ var Textures = require('./lib/textures');
 var mesher = require('./lib/meshers/horizontal-merge');
 var ClientGenerator = require('./lib/generators/client.js');
 var Frustum = require('./lib/frustum');
+var MaxConcurrent = require('./lib/max-concurrent')(10);
 var timer = require('./lib/timer');
 var chunkArrayLength = config.chunkSize * config.chunkSize * config.chunkSize;
 var chunkCache = {};
@@ -254,25 +255,29 @@ var worker = {
         sendMessage(this.connection, 'onlyTheseChunks', chunkIds);
 
         var requestClosure = function(chunkId) {
-            var req = new XMLHttpRequest();
-            req.open("GET", config.httpServer + "/chunk/" + chunkId, true);
-            req.responseType = "arraybuffer";
-            req.onload = function (oEvent) {
-                if (!req.response) {
-                    return;
-                } // Note: not oReq.responseText
-                var position = chunkId.split('|').map(function(value) {
-                    return Number(value);
-                });
-                var chunk = {
-                    chunkID: chunkId,
-                    position: position,
-                    voxels: new Uint8Array(req.response)
+            return function(done) {
+                var req = new XMLHttpRequest();
+                req.open("GET", config.httpServer + "/chunk/" + chunkId, true);
+                req.responseType = "arraybuffer";
+                req.onload = function (oEvent) {
+                    if (!req.response) {
+                        done();
+                        return;
+                    } // Note: not oReq.responseText
+                    var position = chunkId.split('|').map(function(value) {
+                        return Number(value);
+                    });
+                    var chunk = {
+                        chunkID: chunkId,
+                        position: position,
+                        voxels: new Uint8Array(req.response)
+                    };
+                    self.chunksToDecodeAndMesh[chunkId] = chunk;
+                    done();
                 };
-                self.chunksToDecodeAndMesh[chunkId] = chunk;
+                req.send(null);
+                return req;
             };
-            req.send(null);
-            return req;
         };
 
         // Might be easier to process these later
@@ -285,8 +290,9 @@ var worker = {
                     this.chunksToMesh[ chunkId ] = true;
                 } else if (!(chunkId in this.neededChunks)) {
                     // Request this chunk from server if we haven't yet
-                    // Keep handle to HTTP req, so we can cancel it
-                    self.neededChunks[chunkId] = requestClosure(chunkId);
+                    // TODO: Keep handle to HTTP req, so we can cancel it
+                    MaxConcurrent( requestClosure(chunkId) );
+                    self.neededChunks[chunkId] = true;
                 }
             }
             if (missingVoxels.indexOf(chunkId) > -1) {
@@ -309,7 +315,7 @@ var worker = {
         for (var i = 0; i < chunkIds.length; i++) {
             var chunkId = chunkIds[i];
             if (this.chunkPriority.indexOf(chunkId) == -1) {
-                this.neededChunks[chunkId].abort();
+                //this.neededChunks[chunkId].abort();
                 delete this.neededChunks[chunkId];
             }
         }

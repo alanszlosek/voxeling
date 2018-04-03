@@ -1,7 +1,7 @@
 var stats = require('../voxel-stats');
 var ChunkStore = require('../chunk-store');
 var fs = require('fs');
-var concur = require('../min-concurrent');
+var concur = require('../max-concurrent')(50);
 var lru = require('../lru');
 var cache = new lru(200);
 var debug = false;
@@ -61,40 +61,41 @@ FileChunkStore.prototype.get = function(chunkID, callback) {
     if (debug) {
         console.log('FileChunkStore:get ' + chunkID);
     }
-    readCallback = function(err, data) {
-        if (err) {
+    concur(function(done) {
+        fs.readFile(self.chunkFolder + filename, function(err, data) {
+            if (err) {
+                if (debug) {
+                    console.log('FileChunkStore:get chunk not found');
+                }
+                // File not found, generate it
+                chunk = self.generator.get(chunkID);
+                if (chunk) {
+                    cache.set(chunkID, chunk);
+                    self.toSave[chunkID] = chunk;
+                    callback(null, chunk);
+                } else {
+                    console.log('no chunk?');
+                    // For some reason our generator didn't return a chunk
+                }
+                done();
+                return;
+            }
             if (debug) {
-                console.log('FileChunkStore:get chunk not found');
+                console.log('Loaded ' + filename);
             }
-            // File not found, generate it
-            chunk = self.generator.get(chunkID);
-            if (chunk) {
-                cache.set(chunkID, chunk);
-                self.toSave[chunkID] = chunk;
-                callback(null, chunk);
-            } else {
-                console.log('no chunk?');
-                // For some reason our generator didn't return a chunk
-            }
-            return;
-        }
-        if (debug) {
-            console.log('Loaded ' + filename);
-        }
-        var position = chunkID.split('|').map(function(value) {
-            return Number(value);
+            var position = chunkID.split('|').map(function(value) {
+                return Number(value);
+            });
+            chunk = {
+                position: position,
+                chunkID: chunkID,
+                // TODO: fix this hardcoded value
+                voxels: new Uint8Array(data)
+            };
+            cache.set(chunkID, chunk);
+            callback(null, chunk);
+            done();
         });
-        chunk = {
-            position: position,
-            chunkID: chunkID,
-            // TODO: fix this hardcoded value
-            voxels: new Uint8Array(data)
-        };
-        cache.set(chunkID, chunk);
-        callback(null, chunk);
-    };
-    concur.operation(function() {
-        fs.readFile(self.chunkFolder + filename, concur.callback(readCallback));
     });
 };
 
@@ -141,24 +142,23 @@ FileChunkStore.prototype.save = function() {
     var self = this;
     // TODO: include saves in the same file handle queue as gets
     // is there an abstraction (npm module) to help with this?
-    var op = function(filename, chunk, callbackClosure) {
-        return function() {
-            fs.writeFile(self.chunkFolder + filename, new Buffer(chunk.voxels), callbackClosure);
-        };
-    };
-    var callbackClosure = function(chunkID) {
-        return function(err) {
-            if (err) {
-                return console.log(err);
-            }
-            console.log('Saved chunk ' + chunkID);
+    var op = function(filename, chunk) {
+        return function(done) {
+            fs.writeFile(self.chunkFolder + filename, new Buffer(chunk.voxels), function(err) {
+                if (err) {
+                    done();
+                    return console.log(err);
+                }
+                console.log('Saved chunk ' + chunkID);
+                done();
+            });
         };
     };
     for (var chunkID in this.toSave) {
         var filename = chunkID.replace(/\|/g, '.').replace(/-/g, 'n');
         var chunk = this.toSave[chunkID];
         if (chunk) {
-            concur.operation(op(filename, chunk, concur.callback(callbackClosure(chunkID))));
+            concur(op(filename, chunk));
         } else {
             console.log('Need to save chunk, but chunk was sent to us', chunkID);
         }
