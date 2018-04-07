@@ -2,9 +2,9 @@ var stats = require('../voxel-stats');
 var ChunkStore = require('../chunk-store');
 var mysql = require('mysql');
 var zlib = require('zlib');
-var lru = require('../lru');
+var HLRU = require('hashlru');
+var cache = HLRU(200);
 var log = require('../log')('MysqlChunkStore', false);
-var cache = new lru(200);
 
 var worldId = 1;
 

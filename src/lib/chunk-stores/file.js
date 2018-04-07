@@ -2,8 +2,8 @@ var stats = require('../voxel-stats');
 var ChunkStore = require('../chunk-store');
 var fs = require('fs');
 var concur = require('../max-concurrent')(50);
-var lru = require('../lru');
-var cache = new lru(200);
+var HLRU = require('hashlru');
+var cache = HLRU(200);
 var debug = false;
 
 if (debug) {

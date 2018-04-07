@@ -4,7 +4,7 @@ var uuid = require('hat');
 
 // voxel dependencies
 var Coordinates = require('./coordinates');
-var lru = require('./lru');
+var HLRU = require('hashlru');
 var debug = false;
 
 function getRandomInt(min, max) {
@@ -50,7 +50,7 @@ Server.prototype.initialize = function() {
     this.emitter = new EventEmitter();
     this.coords = Coordinates(self.config.chunkSize);
 
-    this.encodedChunkCache = new lru(10);
+    this.encodedChunkCache = new HLRU(10);
 
     // Prime our chunk store or LRU
     //self.requestNearbyChunks(this.clientSettings.initialPosition);
