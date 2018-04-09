@@ -23,6 +23,8 @@ function Voxels(gl, shader, textures, releaseMeshCallback) {
 
     this.farDistance = 2;
 
+    this.hazeDistance = 90.0;
+
     // Schedule prepareMeshBuffers()
     setInterval(
         function() {
@@ -279,6 +281,7 @@ Voxels.prototype.render = function(projection, ts, ambientLight, directionalLigh
     gl.uniform3fv(this.shader.uniforms.ambientLightColor, ambientLight);
     gl.uniform3fv(this.shader.uniforms.directionalLightColor, directionalLight.color);
     gl.uniform3fv(this.shader.uniforms.directionalLightPosition, directionalLight.position);
+    gl.uniform1f(this.shader.uniforms.hazeDistance, this.hazeDistance);
 
     for (var textureValue in this.nearBuffersByTexture) {
         var bufferBundle = this.nearBuffersByTexture[ textureValue ];

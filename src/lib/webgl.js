@@ -93,6 +93,7 @@ WebGL.prototype.createShaders = function() {
         "uniform vec3 u_ambientLightColor;" +
         "uniform vec3 u_directionalLightColor;" +
         "uniform vec3 u_directionalLightPosition;" + 
+        "uniform float u_hazeDistance;" +
 
         "varying vec4 v_position;" +
         "varying vec3 v_normal;" +
@@ -102,8 +103,7 @@ WebGL.prototype.createShaders = function() {
 
         "void main() {" +
             "vec4 texelColor = texture2D(u_texture, v_texcoord + vec2(0, u_textureOffset));" +
-            "vec3 temp;" +
-            "float hazeDistance = 70.0;" +
+            //"vec3 temp;" +
             
             "if(texelColor.a < 0.5) " +
                 "discard;" +
@@ -114,32 +114,13 @@ WebGL.prototype.createShaders = function() {
             "vec3 lightWeight = u_ambientLightColor + (u_directionalLightColor * directionalLightWeight);" +
 
             // Apply light before we apply the haze?
-            "temp = texelColor.rgb * lightWeight;" +
+            "gl_FragColor.rgb = texelColor.rgb * lightWeight;" +
 
-            /*
-            "float add = 0.0;" +
-            "if (distance > hazeDistance) {" +
-                "add = (distance - hazeDistance) / 130.0;" +
-                "temp[2] = temp[2] + add;" +
-            "}" +
-            */
-
-            // Fog calculations from three.js
-            "fogColor[0] = 255.0;" +
-            "fogColor[1] = 255.0;" +
-            "fogColor[2] = 255.0;" +
             "float depth = gl_FragCoord.z / gl_FragCoord.w;" +
-            //"float fogFactor = smoothstep( 80.0, 300.0, depth );" +
-            "float fogDensity = 0.00025;" +
-            "float fogFactor = 1.0 - clamp( exp2( - fogDensity * fogDensity * depth * depth * 1.442695 ), 0.0, 1.0 );" +
-
-            /*
-            - apply light color to texel
-            - shift to apply haze at a distance
-            */
+            // Start haze 1 chunk away, complete haze beyond 2.8 chunks away
+            "float fogFactor = smoothstep( 32.0, u_hazeDistance, depth );" +
             
-            "gl_FragColor.rgb = mix(temp, fogColor, fogFactor);" +
-            "gl_FragColor.a = texelColor.a;" +
+            "gl_FragColor.a = texelColor.a - fogFactor;" +
         "}";
 
 
@@ -171,7 +152,7 @@ WebGL.prototype.createShaders = function() {
         // attributes
         ['position', 'normal', 'texcoord'],
         // uniforms
-        ['projection', 'view', 'texture', 'textureOffset', 'ambientLightColor', 'directionalLightColor', 'directionalLightPosition']
+        ['projection', 'view', 'texture', 'textureOffset', 'ambientLightColor', 'directionalLightColor', 'directionalLightPosition', 'hazeDistance']
     );
 
 
@@ -200,7 +181,7 @@ WebGL.prototype.createShaders = function() {
         // attributes
         ['position', 'normal', 'texcoord'],
         // uniforms
-        ['projection', 'texture', 'textureOffset', 'ambientLightColor', 'directionalLightColor', 'directionalLightPosition']
+        ['projection', 'texture', 'textureOffset', 'ambientLightColor', 'directionalLightColor', 'directionalLightPosition', 'hazeDistance']
     );
 
 

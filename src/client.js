@@ -303,6 +303,8 @@ client.on('ready', function() {
             config.drawDistance = value;
             config.removeDistance = value + 1;
 
+            client.voxels.hazeDistance = (value * 32.0) - 4.0;
+
             client.regionChange();
         });
         inputHandler.on('avatar', function(avatar) {
