@@ -21,7 +21,6 @@ connect - client wants us to connect to the websocket server
 
 regionChange
 
-updateNeeds
 
 
 OUTGOING WEBWORKER MESSAGES
@@ -45,23 +44,28 @@ var worker = {
     connected: false,
     connection: null,
     frustum: null,
-    // When we get chunks from the server, we queue them here
-    chunksToDecodeAndMesh: {},
-    // When we get chunks from server, or when user changed a voxel, we need to remesh. Queue them here
-    chunksToMesh: {},
-    // When we get chunks from server and need to send voxel data to client, they're queued here
-    voxelsToSend: {},
 
-    // Chunk ids (and meshes) in the order we want them
+    /*
+    When we change regions:
+
+    - need to know which chunk voxel data we don't have
+        - compare previous chunkDistances with current chunkDistances
+    - which voxels need to be sent to the client
+        - compare previous sentVoxels with current setVoxels
+    - which voxels need to be meshed and sent to client
+        - compare previous sentMeshes with current sentMeshes
+    */
+    chunkDistances: {},
+    sentClientChunks: {},
+    sentClientMeshes: {},
     chunkPriority: [],
-    // Meshes we've recently sent
-    meshesSent: {},
-    // Chunk ids we want voxels for
-    voxels: [],
-    currentVoxels: {},
 
-    // Chunks we're in the process of requesting from the server
-    neededChunks: {},
+    // Voxel data we need that's not yet in cache
+    missingChunks: {},
+    requestedChunks: {},
+    clientMissingChunks: {},
+    clientMissingMeshes: {},
+
 
     createFrustum: function(verticalFieldOfView, ratio, farDistance) {
         this.frustum = new Frustum(verticalFieldOfView, ratio, 0.1, farDistance);
@@ -159,22 +163,27 @@ var worker = {
 
     },
 
-    regionChange: function(playerPosition, rotationQuat, drawDistance, removeDistance) {
+    regionChange: function(playerPosition, rotationQuat, drawDistance) {
         var self = this;
 
-        // TODO update the frustum
         this.frustum.update(playerPosition, rotationQuat, drawDistance);
 
         log('regionChange: playerPosition is', playerPosition);
 
-        // These help us remove voxels and meshes we no longer need
-        var nearbyVoxels = {};
-        // We tell our web worker about these, so it knows what to fetch and return
-        var onlyTheseVoxels = [];
-        var missingVoxels = [];
-
         // Helps us ignore chunks we don't care about, and also prioritize re-drawing nearby chunks
         var chunkDistances = {};
+        var sentClientChunks = {};
+        var sentClientMeshes = {};
+        var chunkPriority = [];
+
+        // Voxel data we need that's not yet in cache
+        var missingChunks = {};
+        var clientMissingChunks = {};
+        var clientMissingMeshes = {};
+
+        var nearbyVoxels = {};
+
+
         var len = drawDistance * 3;
         var priority = new Array(len);
         for (var i = 0; i < len; i++) {
@@ -185,43 +194,47 @@ var worker = {
             priority[level].push(chunkID);
         };
 
-        // Hmm, I seem to have removed the removeDistance logic. do we still want that 1 chunk buffer zone?
-
         this.coordinates.nearbyChunkIDsEach(
             playerPosition,
-            removeDistance,
-            function(chunkID, chunkPosition, distanceAway) {
+            drawDistance,
+            function(chunkId, chunkPosition, distanceAway) {
+
+                // TODO: how to square this with requestedChunks, and self.missingChunks
+                if (!(chunkId in chunkCache)) {
+                    missingChunks[chunkId] = true;
+                }
+
                 // We only care about voxel data for the current chunk, and the ring around us
                 if (distanceAway < 3) {
-                    nearbyVoxels[chunkID] = 0;
-                    onlyTheseVoxels.push(chunkID);
-                    if (!(chunkID in self.currentVoxels)) {
-                        missingVoxels.push(chunkID);
+                    // If we previous sent this voxel to the client, no need to re-send
+                    if (chunkId in self.sentClientChunks) {
+                        sentClientChunks[chunkId] = true;
+                    } else {
+                        clientMissingChunks[chunkId] = true;
                     }
+                    nearbyVoxels[chunkId] = true;
                 }
-                // We only care about meshes up to our draw distance
-                /*
-                if (distanceAway <= self.removeDistance) {
-                    nearbyMeshes[chunkID] = 0;
+
+                if (chunkId in self.sentClientMeshes) {
+                    sentClientMeshes[chunkId] = true;
+                } else {
+                    clientMissingMeshes[chunkId] = true;
                 }
-                */
                 
                 // Set fetch priority
                 if (distanceAway < 2) {
-                    addPriority(distanceAway, chunkID);
-                    chunkDistances[ chunkID ] = distanceAway;
+                    addPriority(distanceAway, chunkId);
+                    chunkDistances[ chunkId ] = distanceAway;
                 } else if (distanceAway <= drawDistance) {
                     // If outside frustum, add config.drawDistnace to distanceAway as priority
                     // Use frustum to determine our fetch priority.
                     // We want visible meshes to be fetched and drawn first
-                    if (self.frustum.chunkVisible(chunkID, chunkPosition)) {
-                        addPriority(distanceAway, chunkID);
+                    if (self.frustum.chunkVisible(chunkId, chunkPosition)) {
+                        addPriority(distanceAway, chunkId);
                     } else {
-                        addPriority(distanceAway + removeDistance, chunkID);
+                        addPriority(distanceAway + drawDistance, chunkId);
                     }
-                    chunkDistances[ chunkID ] = distanceAway;
-                } else if (distanceAway <= removeDistance) {
-
+                    chunkDistances[ chunkId ] = distanceAway;
                 }
             }
         );
@@ -231,7 +244,70 @@ var worker = {
             Array.prototype.push.apply(prioritized, priority[i]);
         }
 
-        self.updateNeeds(prioritized, chunkDistances, onlyTheseVoxels, missingVoxels);
+        self.chunkDistances = chunkDistances;
+        self.sentClientChunks = sentClientChunks;
+        self.sentClientMeshes = sentClientMeshes;
+        self.chunkPriority = chunkPriority;
+
+        // Voxel data we need that's not yet in cache
+        self.missingChunks = missingChunks;
+        //var requestedChunks = {};
+        self.clientMissingChunks = clientMissingChunks;
+        self.clientMissingMeshes = clientMissingMeshes;
+
+
+        var requestClosure = function(chunkId) {
+            return function(done) {
+                var req = new XMLHttpRequest();
+                req.open("GET", config.httpServer + "/chunk/" + chunkId, true);
+                req.responseType = "arraybuffer";
+                req.onload = function (oEvent) {
+                    delete self.requestedChunks[chunkId];
+
+                    if (!req.response) {
+                        done();
+                        return;
+                    } // Note: not oReq.responseText
+
+                    // No longer care about this chunk
+                    if (!(chunkId in self.chunkDistances)) {
+                        done();
+                        return;
+                    }
+
+                    var position = chunkId.split('|').map(function(value) {
+                        return Number(value);
+                    });
+                    chunkCache[chunkId] = {
+                        chunkID: chunkId,
+                        position: position,
+                        voxels: new Uint8Array(req.response)
+                    };
+                    done();
+                };
+                // Handle error
+                req.send(null);
+                return req;
+            };
+        };
+        // Fetch chunk voxel data that we need
+        for (var chunkId in self.missingChunks) {
+            if (!(chunkId in self.requestedChunks)) {
+                MaxConcurrent( requestClosure(chunkId) );
+                self.requestedChunks[chunkId] = true;
+            }
+        }
+
+        // Ignore chunks we no longer care about
+        var chunkIds = Object.keys(this.requestedChunks);
+        for (var i = 0; i < chunkIds.length; i++) {
+            var chunkId = chunkIds[i];
+            if (!(chunkId in chunkDistances)) {
+                //this.neededChunks[chunkId].abort();
+                delete this.requestedChunks[chunkId];
+            }
+        }
+
         postMessage(
             ['meshesToShow', chunkDistances]
         );
@@ -242,128 +318,30 @@ var worker = {
         log('nearbyVoxels', nearbyVoxels);
     },
 
-
-    // Client told us the order it wants to receive chunks in
-    updateNeeds: function(chunkIds, chunkDistances, onlyTheseVoxels, missingVoxels) {
-        var self = this;
-        // Prioritized list of meshes that we want
-        this.chunkPriority = chunkIds;
-        this.voxels = onlyTheseVoxels;
-        console.log('updateNeeds');
-
-        // Tell server that we only care about these chunks
-        sendMessage(this.connection, 'onlyTheseChunks', chunkIds);
-
-        var requestClosure = function(chunkId) {
-            return function(done) {
-                var req = new XMLHttpRequest();
-                req.open("GET", config.httpServer + "/chunk/" + chunkId, true);
-                req.responseType = "arraybuffer";
-                req.onload = function (oEvent) {
-                    if (!req.response) {
-                        done();
-                        return;
-                    } // Note: not oReq.responseText
-                    var position = chunkId.split('|').map(function(value) {
-                        return Number(value);
-                    });
-                    var chunk = {
-                        chunkID: chunkId,
-                        position: position,
-                        voxels: new Uint8Array(req.response)
-                    };
-                    self.chunksToDecodeAndMesh[chunkId] = chunk;
-                    done();
-                };
-                req.send(null);
-                return req;
-            };
-        };
-
-        // Might be easier to process these later
-        for (var i = 0; i < chunkIds.length; i++) {
-            var chunkId = chunkIds[i];
-
-            // If we haven't recently sent this mesh to the client
-            if (!(chunkId in this.meshesSent)) {
-                if (chunkId in chunkCache) {
-                    this.chunksToMesh[ chunkId ] = true;
-                } else if (!(chunkId in this.neededChunks)) {
-                    // Request this chunk from server if we haven't yet
-                    // TODO: Keep handle to HTTP req, so we can cancel it
-                    MaxConcurrent( requestClosure(chunkId) );
-                    self.neededChunks[chunkId] = true;
-                }
-            }
-            if (missingVoxels.indexOf(chunkId) > -1) {
-                if (chunkId in chunkCache) {
-                    this.voxelsToSend[ chunkId ] = true;
-                }
-            }
-        }
-        
-        // We keep track of which meshes we've sent to the client,
-        // remove the ones we no longer care about
-        for (var chunkId in this.meshesSent) {
-            if (!(chunkId in chunkDistances)) {
-                delete this.meshesSent[chunkId];
-            }
-        }
-
-        // Ignore chunks we no longer care about
-        var chunkIds = Object.keys(this.neededChunks);
-        for (var i = 0; i < chunkIds.length; i++) {
-            var chunkId = chunkIds[i];
-            if (this.chunkPriority.indexOf(chunkId) == -1) {
-                //this.neededChunks[chunkId].abort();
-                delete this.neededChunks[chunkId];
-            }
-        }
-    },
-
     /*
     We queue up chunks when we receive them from the server. This method decodes them and meshes them,
     in preparation for rendering.
     */
     processChunks: function() {
-
-        // TODO: merge this loop into the bottom two, fix code that pushes into chunksToDecodeAndMesh
-        for (var chunkID in this.chunksToDecodeAndMesh) {
-            // Skip if we're no longer interested in this chunk
-            if (this.chunkPriority.indexOf(chunkID) == -1) {
-                continue;
-            }
-            var chunk = this.chunksToDecodeAndMesh[chunkID];
-            // Cache in webworker
-            // TODO: change this to an LRU cache
-            chunkCache[chunkID] = chunk;
-
-            if (this.voxels.indexOf(chunkID) > -1) {
-                this.voxelsToSend[ chunkID ] = true;
-            }
-            this.chunksToMesh[ chunkID ] = true;
-        }
+        var self = this;
 
         // Transfer voxel data to client
-        var chunkIds = Object.keys(this.voxelsToSend);
-        for (var i = 0; i < chunkIds.length; i++) {
-            var chunkId = chunkIds[i];
+        for (var chunkId in self.clientMissingChunks) {
             if (chunkId in chunkCache) {
                 postMessage(
                     ['chunkVoxels', chunkCache[ chunkId ]]
                 );
-                delete this.voxelsToSend[chunkId];
-            } else {
-                //log('Error: attempted to send voxels that dont exist in chunkCache', chunkID)
+                delete self.clientMissingChunks[chunkId];
+                self.sentClientChunks[chunkId] = true;
             }
         }
 
-        var chunkIds = Object.keys(this.chunksToMesh);
+
+        var chunkIds = Object.keys(self.clientMissingMeshes);
         for (var i = 0; i < chunkIds.length; i++) {
             var chunkId = chunkIds[i];
             if (!(chunkId in chunkCache)) {
-                // Need to error here
-                log('Error: attempted to mesh a chunk not found in chunkCache', chunkID);
+                // Waiting for chunk data to arrive
                 continue;
             }
 
@@ -405,16 +383,14 @@ var worker = {
                 ['chunkMesh', chunkId, transfer],
                 transferList
             );
-            delete this.chunksToMesh[chunkId];
-            this.meshesSent[chunkId] = true;
+            delete self.clientMissingMeshes[chunkId];
+            self.sentClientMeshes[chunkId] = true;
 
             // Stop after sending 10 meshes, to make sure we send voxel data in a timely manner
             if (i > 9) {
                 break;
             }
         }
-
-        this.chunksToDecodeAndMesh = {};
     },
 
     // Update our local cache and tell the server
