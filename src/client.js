@@ -183,7 +183,6 @@ client.on('ready', function() {
 
         player.translate(config.initialPosition);
 
-        client.worker.postMessage(['createFrustum', camera.verticalFieldOfView, camera.ratio, camera.farDistance]);
         // regionChange() triggers loading of world chunks from the server
         client.regionChange();
         webgl.start();
