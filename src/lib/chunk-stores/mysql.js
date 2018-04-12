@@ -3,7 +3,7 @@ var ChunkStore = require('../chunk-store');
 var mysql = require('mysql');
 var zlib = require('zlib');
 var HLRU = require('hashlru');
-var cache = HLRU(200);
+var cache = HLRU(400);
 var log = require('../log')('MysqlChunkStore', false);
 
 var worldId = 1;
@@ -14,17 +14,7 @@ var MysqlChunkStore = function(generator, config) {
     // ChunkID -> chunk data structure
     this.toSave = {};
     this.changes = {};
-    //this.requested = {};
     this.mysqlPool = mysql.createPool(config);
-
-    // We just loaded a chunk
-    /*
-    this.emitter.on('got', function(chunk) {
-        if (chunk.chunkID in self.requested) {
-            delete self.requested[chunk.chunkID];
-        }
-    });
-    */
 
     setInterval(
         function() {
@@ -112,38 +102,41 @@ MysqlChunkStore.prototype.gotChunkChanges = function(chunks) {
 // TODO: this should be a sync queued operation
 MysqlChunkStore.prototype.applyChanges = function() {
     var self = this;
-    for (var chunkID in self.changes) {
+	var merge = function(chunk, changes) {
+        for (var i = 0; i < changes.length; i += 2) {
+            var index = changes[i];
+            var val = changes[i + 1];
+            var old = chunk.voxels[index];
+            chunk.voxels[index] = val;
+		}
+		// Schedule for saving
+	};
+	var ids = Object.keys(self.changes);
+	for (var i = 0; i < ids.length; i++) {
+		var chunkID = ids[i];
         var details;
         var chunk = cache.get(chunkID);
         if (!chunk) {
             // Request the chunk, so we can modify it and then save it
-            if (chunkID in self.requested) {
-                continue;
-            }
-            self.get(chunkID);
-            self.requested[chunkID] = true;
+            self.get(chunkID, function(error, chunk) {
+				//merge(chunk, self.changes[chunkID]);
+			});
             continue;
         }
-
         // If we have the chunk in our LRU cache, update it and queue for a save
-        details = self.changes[chunkID];
-        for (var i = 0; i < details.length; i += 2) {
-            var index = details[i];
-            var val = details[i + 1];
-            var old = chunk.voxels[index];
-            chunk.voxels[index] = val;
-            /*
-            if (old) {
-                if (val) {
-                    stats.count('blocks.changed');
-                } else {
-                    stats.count('blocks.destroyed');
-                }
-            } else {
-                stats.count('blocks.created');
-            }
-            */
-        }
+		merge(chunk, self.changes[chunkID]);
+		/*
+		if (old) {
+			if (val) {
+				stats.count('blocks.changed');
+			} else {
+				stats.count('blocks.destroyed');
+			}
+		} else {
+			stats.count('blocks.created');
+		}
+		*/
+
         self.toSave[chunkID] = chunk;
         delete self.changes[chunkID];
         log('applyChanges', 'queueing for saving: ' + chunkID);
