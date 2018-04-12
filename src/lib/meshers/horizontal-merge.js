@@ -1,6 +1,6 @@
 // TODO: clean this up. fewer globals
 
-var Growable = require('../growable');
+//var Growable = require('../growable');
 
 // TODO: use object pool for vector arrays
 var pool = require('../object-pool');
@@ -34,9 +34,18 @@ var addFace = function(basePosition, face, info) {
 
         // Going for no allocations
         out[textureValue] = {
-            position: new Growable('float32', 128000),
-            texcoord: new Growable('float32', 128000),
-            normal: new Growable('float32', 128000)
+            position: {
+                offset: 0,
+                data: pool.malloc('float32', 128000)
+            },
+            texcoord: {
+                offset: 0,
+                data: pool.malloc('float32', 128000)
+            },
+            normal: {
+                offset: 0,
+                data: pool.malloc('float32', 128000)
+            }
         };
         /*
         out[textureValue] = {
@@ -49,189 +58,328 @@ var addFace = function(basePosition, face, info) {
     var points = out[textureValue].position;
     var texcoord = out[textureValue].texcoord;
     var normals = out[textureValue].normal;
-    
-    // Is points large enough to fit another batch?
-    //points.need(18);
-    // Is texcoord large enough to fit another batch?
-    //texcoord.need(12);
-    //normals.need(18);
 
     // COUNTER CLOCKWISE
     // no need to translate face, we already have
     switch (face) {
         // front and back are wrong
         case 'back':
-            points.append([
-                startX, startY, startZ + 1, // A
-                endX + 1, startY, startZ + 1, // B
-                endX + 1, endY + 1, startZ + 1, // C
+            points.data[ points.offset++ ] = startX;
+            points.data[ points.offset++ ] = startY;
+            points.data[ points.offset++ ] = startZ + 1;
+            points.data[ points.offset++ ] = endX + 1;
+            points.data[ points.offset++ ] = startY;
+            points.data[ points.offset++ ] = startZ + 1;
+            points.data[ points.offset++ ] = endX + 1;
+            points.data[ points.offset++ ] = endY + 1;
+            points.data[ points.offset++ ] = startZ + 1;
+            points.data[ points.offset++ ] = startX;
+            points.data[ points.offset++ ] = startY;
+            points.data[ points.offset++ ] = startZ + 1;
+            points.data[ points.offset++ ] = endX + 1;
+            points.data[ points.offset++ ] = endY + 1;
+            points.data[ points.offset++ ] = startZ + 1;
+            points.data[ points.offset++ ] = startX;
+            points.data[ points.offset++ ] = endY + 1;
+            points.data[ points.offset++ ] = startZ + 1;
 
-                startX, startY, startZ + 1, // A
-                endX + 1, endY + 1, startZ + 1, // C
-                startX, endY + 1, startZ + 1
-            ]);
-            texcoord.append([
-                0, 0,
-                endX - startX + 1, 0,
-                endX - startX + 1, endY - startY + 1,
+            texcoord.data[ texcoord.offset++ ] = 0;
+            texcoord.data[ texcoord.offset++ ] = 0;
+            texcoord.data[ texcoord.offset++ ] = endX - startX + 1;
+            texcoord.data[ texcoord.offset++ ] = 0;
+            texcoord.data[ texcoord.offset++ ] = endX - startX + 1;
+            texcoord.data[ texcoord.offset++ ] = endY - startY + 1;
+            texcoord.data[ texcoord.offset++ ] = 0;
+            texcoord.data[ texcoord.offset++ ] = 0;
+            texcoord.data[ texcoord.offset++ ] = endX - startX + 1;
+            texcoord.data[ texcoord.offset++ ] = endY - startY + 1;
+            texcoord.data[ texcoord.offset++ ] = 0;
+            texcoord.data[ texcoord.offset++ ] = endY - startY + 1;
 
-                0, 0,
-                endX - startX + 1, endY - startY + 1,
-                0, endY - startY + 1
-            ]);
-            normals.append([
-                0.0,  0.0,  1.0,
-                0.0,  0.0,  1.0,
-                0.0,  0.0,  1.0,
-                0.0,  0.0,  1.0,
-                0.0,  0.0,  1.0,
-                0.0,  0.0,  1.0,
-            ]);
+            normals.data[ normals.offset++ ] = 0.0;
+            normals.data[ normals.offset++ ] = 0.0;
+            normals.data[ normals.offset++ ] = 1.0;
+            normals.data[ normals.offset++ ] = 0.0;
+            normals.data[ normals.offset++ ] = 0.0;
+            normals.data[ normals.offset++ ] = 1.0;
+            normals.data[ normals.offset++ ] = 0.0;
+            normals.data[ normals.offset++ ] = 0.0;
+            normals.data[ normals.offset++ ] = 1.0;
+            normals.data[ normals.offset++ ] = 0.0;
+            normals.data[ normals.offset++ ] = 0.0;
+            normals.data[ normals.offset++ ] = 1.0;
+            normals.data[ normals.offset++ ] = 0.0;
+            normals.data[ normals.offset++ ] = 0.0;
+            normals.data[ normals.offset++ ] = 1.0;
+            normals.data[ normals.offset++ ] = 0.0;
+            normals.data[ normals.offset++ ] = 0.0;
+            normals.data[ normals.offset++ ] = 1.0;
             break;
 
         case 'front':
-            points.append([
-                endX + 1, startY, startZ, // A
-                startX, startY, startZ, // B
-                startX, endY + 1, startZ, // C
+            points.data[ points.offset++ ] = endX + 1;
+            points.data[ points.offset++ ] = startY;
+            points.data[ points.offset++ ] = startZ;
+            points.data[ points.offset++ ] = startX;
+            points.data[ points.offset++ ] = startY;
+            points.data[ points.offset++ ] = startZ;
+            points.data[ points.offset++ ] = startX;
+            points.data[ points.offset++ ] = endY + 1;
+            points.data[ points.offset++ ] = startZ;
+            points.data[ points.offset++ ] = endX + 1;
+            points.data[ points.offset++ ] = startY;
+            points.data[ points.offset++ ] = startZ;
+            points.data[ points.offset++ ] = startX;
+            points.data[ points.offset++ ] = endY + 1;
+            points.data[ points.offset++ ] = startZ;
+            points.data[ points.offset++ ] = endX + 1;
+            points.data[ points.offset++ ] = endY + 1;
+            points.data[ points.offset++ ] = startZ;
 
-                endX + 1, startY, startZ, // A
-                startX, endY + 1, startZ, // C
-                endX + 1, endY + 1, startZ // D
-            ]);
-            texcoord.append([
-                0, 0,
-                endX - startX + 1, 0,
-                endX - startX + 1, endY - startY + 1,
+            texcoord.data[ texcoord.offset++ ] = 0;
+            texcoord.data[ texcoord.offset++ ] = 0;
+            texcoord.data[ texcoord.offset++ ] = endX - startX + 1;
+            texcoord.data[ texcoord.offset++ ] = 0;
+            texcoord.data[ texcoord.offset++ ] = endX - startX + 1;
+            texcoord.data[ texcoord.offset++ ] = endY - startY + 1;
+            texcoord.data[ texcoord.offset++ ] = 0;
+            texcoord.data[ texcoord.offset++ ] = 0;
+            texcoord.data[ texcoord.offset++ ] = endX - startX + 1;
+            texcoord.data[ texcoord.offset++ ] = endY - startY + 1;
+            texcoord.data[ texcoord.offset++ ] = 0;
+            texcoord.data[ texcoord.offset++ ] = endY - startY + 1;
 
-                0, 0,
-                endX - startX + 1, endY - startY + 1,
-                0, endY - startY + 1
-            ]);
-            normals.append([
-                0.0,  0.0, -1.0,
-                0.0,  0.0, -1.0,
-                0.0,  0.0, -1.0,
-                0.0,  0.0, -1.0,
-                0.0,  0.0, -1.0,
-                0.0,  0.0, -1.0
-            ]);
+            normals.data[ normals.offset++ ] =  0.0;
+            normals.data[ normals.offset++ ] =  0.0;
+            normals.data[ normals.offset++ ] = -1.0;
+            normals.data[ normals.offset++ ] = 0.0;
+            normals.data[ normals.offset++ ] =  0.0;
+            normals.data[ normals.offset++ ] = -1.0;
+            normals.data[ normals.offset++ ] = 0.0;
+            normals.data[ normals.offset++ ] =  0.0;
+            normals.data[ normals.offset++ ] = -1.0;
+            normals.data[ normals.offset++ ] = 0.0;
+            normals.data[ normals.offset++ ] =  0.0;
+            normals.data[ normals.offset++ ] = -1.0;
+            normals.data[ normals.offset++ ] = 0.0;
+            normals.data[ normals.offset++ ] =  0.0;
+            normals.data[ normals.offset++ ] = -1.0;
+            normals.data[ normals.offset++ ] = 0.0;
+            normals.data[ normals.offset++ ] =  0.0;
+            normals.data[ normals.offset++ ] = -1.0;
             break;
 
         case 'left':
-            points.append([
-                startX, startY, startZ, // A
-                startX, startY, endZ + 1, // B
-                startX, endY + 1, endZ + 1, // C
+            points.data[ points.offset++ ] = startX;
+            points.data[ points.offset++ ] = startY;
+            points.data[ points.offset++ ] = startZ;
+            points.data[ points.offset++ ] = startX;
+            points.data[ points.offset++ ] = startY;
+            points.data[ points.offset++ ] = endZ + 1;
+            points.data[ points.offset++ ] = startX;
+            points.data[ points.offset++ ] = endY + 1;
+            points.data[ points.offset++ ] = endZ + 1;
+            points.data[ points.offset++ ] = startX;
+            points.data[ points.offset++ ] = startY;
+            points.data[ points.offset++ ] = startZ;
+            points.data[ points.offset++ ] = startX;
+            points.data[ points.offset++ ] = endY + 1;
+            points.data[ points.offset++ ] = endZ + 1;
+            points.data[ points.offset++ ] = startX;
+            points.data[ points.offset++ ] = startY + 1;
+            points.data[ points.offset++ ] = startZ;
+            
+            texcoord.data[ texcoord.offset++ ] = 0;
+            texcoord.data[ texcoord.offset++ ] = 0;
+            texcoord.data[ texcoord.offset++ ] = endZ - startZ + 1;
+            texcoord.data[ texcoord.offset++ ] = 0;
+            texcoord.data[ texcoord.offset++ ] = endZ - startZ + 1;
+            texcoord.data[ texcoord.offset++ ] = endY - startY + 1;
+            texcoord.data[ texcoord.offset++ ] = 0;
+            texcoord.data[ texcoord.offset++ ] = 0;
+            texcoord.data[ texcoord.offset++ ] = endZ - startZ + 1;
+            texcoord.data[ texcoord.offset++ ] = endY - startY + 1;
+            texcoord.data[ texcoord.offset++ ] = 0;
+            texcoord.data[ texcoord.offset++ ] = endY - startY + 1;
 
-                startX, startY, startZ, // A
-                startX, endY + 1, endZ + 1, // C
-                startX, startY + 1, startZ
-            ]);
-            texcoord.append([
-                0, 0,
-                endZ - startZ + 1, 0,
-                endZ - startZ + 1, endY - startY + 1,
-
-                0, 0,
-                endZ - startZ + 1, endY - startY + 1,
-                0, endY - startY + 1
-            ]);
-            normals.append([
-                -1.0,  0.0,  0.0,
-                -1.0,  0.0,  0.0,
-                -1.0,  0.0,  0.0,
-                -1.0,  0.0,  0.0,
-                -1.0,  0.0,  0.0,
-                -1.0,  0.0,  0.0
-            ]);
+            normals.data[ normals.offset++ ] =  -1.0;
+            normals.data[ normals.offset++ ] =  0.0;
+            normals.data[ normals.offset++ ] =  0.0;
+            normals.data[ normals.offset++ ] = -1.0;
+            normals.data[ normals.offset++ ] =  0.0;
+            normals.data[ normals.offset++ ] =  0.0;
+            normals.data[ normals.offset++ ] = -1.0;
+            normals.data[ normals.offset++ ] =  0.0;
+            normals.data[ normals.offset++ ] =  0.0;
+            normals.data[ normals.offset++ ] = -1.0;
+            normals.data[ normals.offset++ ] =  0.0;
+            normals.data[ normals.offset++ ] =  0.0;
+            normals.data[ normals.offset++ ] = -1.0;
+            normals.data[ normals.offset++ ] =  0.0;
+            normals.data[ normals.offset++ ] =  0.0;
+            normals.data[ normals.offset++ ] = -1.0;
+            normals.data[ normals.offset++ ] =  0.0;
+            normals.data[ normals.offset++ ] =  0.0;
             break;
 
         case 'right':
-            points.append([
-                startX + 1, startY, endZ + 1, // A
-                startX + 1, startY, startZ, // B
-                startX + 1, startY + 1, startZ, // C
+            points.data[ points.offset++ ] = startX + 1;
+            points.data[ points.offset++ ] = startY;
+            points.data[ points.offset++ ] = endZ + 1;
+            points.data[ points.offset++ ] = startX + 1;
+            points.data[ points.offset++ ] = startY;
+            points.data[ points.offset++ ] = startZ;
+            points.data[ points.offset++ ] = startX + 1;
+            points.data[ points.offset++ ] = startY + 1;
+            points.data[ points.offset++ ] = startZ;
+            points.data[ points.offset++ ] = startX + 1;
+            points.data[ points.offset++ ] = startY;
+            points.data[ points.offset++ ] = endZ + 1;
+            points.data[ points.offset++ ] = startX + 1;
+            points.data[ points.offset++ ] = startY + 1;
+            points.data[ points.offset++ ] = startZ;
+            points.data[ points.offset++ ] = startX + 1;
+            points.data[ points.offset++ ] = endY + 1;
+            points.data[ points.offset++ ] = endZ + 1;
+            
+            texcoord.data[ texcoord.offset++ ] = 0;
+            texcoord.data[ texcoord.offset++ ] = 0;
+            texcoord.data[ texcoord.offset++ ] = endZ - startZ + 1;
+            texcoord.data[ texcoord.offset++ ] = 0;
+            texcoord.data[ texcoord.offset++ ] = endZ - startZ + 1;
+            texcoord.data[ texcoord.offset++ ] = endY - startY + 1;
+            texcoord.data[ texcoord.offset++ ] = 0;
+            texcoord.data[ texcoord.offset++ ] = 0;
+            texcoord.data[ texcoord.offset++ ] = endZ - startZ + 1;
+            texcoord.data[ texcoord.offset++ ] = endY - startY + 1;
+            texcoord.data[ texcoord.offset++ ] = 0;
+            texcoord.data[ texcoord.offset++ ] = endY - startY + 1;
 
-                startX + 1, startY, endZ + 1, // A
-                startX + 1, startY + 1, startZ, // C
-                startX + 1, endY + 1, endZ + 1
-            ]);
-            texcoord.append([
-                0, 0,
-                endZ - startZ + 1, 0,
-                endZ - startZ + 1, endY - startY + 1,
-
-                0, 0,
-                endZ - startZ + 1, endY - startY + 1,
-                0, endY - startY + 1
-            ]);
-            normals.append([
-                1.0,  0.0,  0.0,
-                1.0,  0.0,  0.0,
-                1.0,  0.0,  0.0,
-                1.0,  0.0,  0.0,
-                1.0,  0.0,  0.0,
-                1.0,  0.0,  0.0
-            ]);
+            normals.data[ normals.offset++ ] = 1.0;
+            normals.data[ normals.offset++ ] =  0.0;
+            normals.data[ normals.offset++ ] =  0.0;
+            normals.data[ normals.offset++ ] = 1.0;
+            normals.data[ normals.offset++ ] =  0.0;
+            normals.data[ normals.offset++ ] =  0.0;
+            normals.data[ normals.offset++ ] = 1.0;
+            normals.data[ normals.offset++ ] =  0.0;
+            normals.data[ normals.offset++ ] =  0.0;
+            normals.data[ normals.offset++ ] = 1.0;
+            normals.data[ normals.offset++ ] =  0.0;
+            normals.data[ normals.offset++ ] =  0.0;
+            normals.data[ normals.offset++ ] = 1.0;
+            normals.data[ normals.offset++ ] =  0.0;
+            normals.data[ normals.offset++ ] =  0.0;
+            normals.data[ normals.offset++ ] = 1.0;
+            normals.data[ normals.offset++ ] =  0.0;
+            normals.data[ normals.offset++ ] =  0.0;
             break;
 
         case 'top':
-            points.append([
-                startX, startY + 1, endZ + 1, // A
-                endX + 1, startY + 1, endZ + 1, // B
-                endX + 1, startY + 1, startZ, // C
+            points.data[ points.offset++ ] = startX;
+            points.data[ points.offset++ ] = startY + 1;
+            points.data[ points.offset++ ] = endZ + 1;
+            points.data[ points.offset++ ] = endX + 1;
+            points.data[ points.offset++ ] = startY + 1;
+            points.data[ points.offset++ ] = endZ + 1;
+            points.data[ points.offset++ ] = endX + 1;
+            points.data[ points.offset++ ] = startY + 1;
+            points.data[ points.offset++ ] = startZ;
+            points.data[ points.offset++ ] = startX;
+            points.data[ points.offset++ ] = startY + 1;
+            points.data[ points.offset++ ] = endZ + 1;
+            points.data[ points.offset++ ] = endX + 1;
+            points.data[ points.offset++ ] = startY + 1;
+            points.data[ points.offset++ ] = startZ;
+            points.data[ points.offset++ ] = startX;
+            points.data[ points.offset++ ] = startY + 1;
+            points.data[ points.offset++ ] = startZ;
+            
+            texcoord.data[ texcoord.offset++ ] = 0;
+            texcoord.data[ texcoord.offset++ ] = 0;
+            texcoord.data[ texcoord.offset++ ] = endX - startX + 1;
+            texcoord.data[ texcoord.offset++ ] = 0;
+            texcoord.data[ texcoord.offset++ ] = endX - startX + 1;
+            texcoord.data[ texcoord.offset++ ] = endZ - startZ + 1;
+            texcoord.data[ texcoord.offset++ ] = 0;
+            texcoord.data[ texcoord.offset++ ] = 0;
+            texcoord.data[ texcoord.offset++ ] = endX - startX + 1;
+            texcoord.data[ texcoord.offset++ ] = endZ - startZ + 1;
+            texcoord.data[ texcoord.offset++ ] = 0;
+            texcoord.data[ texcoord.offset++ ] = endZ - startZ + 1;
 
-                startX, startY + 1, endZ + 1, // A
-                endX + 1, startY + 1, startZ, // C
-                startX, startY + 1, startZ
-            ]);
-            texcoord.append([
-                0, 0,
-                endX - startX + 1, 0,
-                endX - startX + 1, endZ - startZ + 1,
-
-                0, 0,
-                endX - startX + 1, endZ - startZ + 1,
-                0, endZ - startZ + 1
-            ]);
-            normals.append([
-                0.0,  1.0,  0.0,
-                0.0,  1.0,  0.0,
-                0.0,  1.0,  0.0,
-                0.0,  1.0,  0.0,
-                0.0,  1.0,  0.0,
-                0.0,  1.0,  0.0
-            ]);
+            normals.data[ normals.offset++ ] = 0.0;
+            normals.data[ normals.offset++ ] =  1.0;
+            normals.data[ normals.offset++ ] =  0.0;
+            normals.data[ normals.offset++ ] = 0.0;
+            normals.data[ normals.offset++ ] =  1.0;
+            normals.data[ normals.offset++ ] =  0.0;
+            normals.data[ normals.offset++ ] = 0.0;
+            normals.data[ normals.offset++ ] =  1.0;
+            normals.data[ normals.offset++ ] =  0.0;
+            normals.data[ normals.offset++ ] = 0.0;
+            normals.data[ normals.offset++ ] =  1.0;
+            normals.data[ normals.offset++ ] =  0.0;
+            normals.data[ normals.offset++ ] = 0.0;
+            normals.data[ normals.offset++ ] =  1.0;
+            normals.data[ normals.offset++ ] =  0.0;
+            normals.data[ normals.offset++ ] = 0.0;
+            normals.data[ normals.offset++ ] =  1.0;
+            normals.data[ normals.offset++ ] =  0.0;
             break;
 
         case 'bottom':
             // bottom is
-            points.append([
-                startX, startY, startZ, // A
-                endX + 1, startY, startZ, // B
-                endX + 1, startY, endZ + 1, // C
-                startX, startY, startZ, // A
-                endX + 1, startY, endZ + 1, // C
-                startX, startY, endZ + 1
-            ]);
-            texcoord.append([
-                0, 0,
-                endX - startX + 1, 0,
-                endX - startX + 1, endZ - startZ + 1,
+            points.data[ points.offset++ ] = startX;
+            points.data[ points.offset++ ] = startY;
+            points.data[ points.offset++ ] = startZ;
+            points.data[ points.offset++ ] = endX + 1;
+            points.data[ points.offset++ ] = startY;
+            points.data[ points.offset++ ] = startZ;
+            points.data[ points.offset++ ] = endX + 1;
+            points.data[ points.offset++ ] = startY;
+            points.data[ points.offset++ ] = endZ + 1;
+            points.data[ points.offset++ ] = startX;
+            points.data[ points.offset++ ] = startY;
+            points.data[ points.offset++ ] = startZ;
+            points.data[ points.offset++ ] = endX + 1;
+            points.data[ points.offset++ ] = startY;
+            points.data[ points.offset++ ] = endZ + 1;
+            points.data[ points.offset++ ] = startX;
+            points.data[ points.offset++ ] = startY;
+            points.data[ points.offset++ ] = endZ + 1;
+            
+            texcoord.data[ texcoord.offset++ ] = 0;
+            texcoord.data[ texcoord.offset++ ] = 0;
+            texcoord.data[ texcoord.offset++ ] = endX - startX + 1;
+            texcoord.data[ texcoord.offset++ ] = 0;
+            texcoord.data[ texcoord.offset++ ] = endX - startX + 1;
+            texcoord.data[ texcoord.offset++ ] = endZ - startZ + 1;
+            texcoord.data[ texcoord.offset++ ] = 0;
+            texcoord.data[ texcoord.offset++ ] = 0;
+            texcoord.data[ texcoord.offset++ ] = endX - startX + 1;
+            texcoord.data[ texcoord.offset++ ] = endZ - startZ + 1;
+            texcoord.data[ texcoord.offset++ ] = 0;
+            texcoord.data[ texcoord.offset++ ] = endZ - startZ + 1;
 
-                0, 0,
-                endX - startX + 1, endZ - startZ + 1,
-                0, endZ - startZ + 1
-            ]);
-            normals.append([
-                0.0, -1.0,  0.0,
-                0.0, -1.0,  0.0,
-                0.0, -1.0,  0.0,
-                0.0, -1.0,  0.0,
-                0.0, -1.0,  0.0,
-                0.0, -1.0,  0.0
-            ]);
+            normals.data[ normals.offset++ ] = 0.0;
+            normals.data[ normals.offset++ ] = -1.0;
+            normals.data[ normals.offset++ ] =  0.0;
+            normals.data[ normals.offset++ ] = 0.0;
+            normals.data[ normals.offset++ ] = -1.0;
+            normals.data[ normals.offset++ ] =  0.0;
+            normals.data[ normals.offset++ ] = 0.0;
+            normals.data[ normals.offset++ ] = -1.0;
+            normals.data[ normals.offset++ ] =  0.0;
+            normals.data[ normals.offset++ ] = 0.0;
+            normals.data[ normals.offset++ ] = -1.0;
+            normals.data[ normals.offset++ ] =  0.0;
+            normals.data[ normals.offset++ ] = 0.0;
+            normals.data[ normals.offset++ ] = -1.0;
+            normals.data[ normals.offset++ ] =  0.0;
+            normals.data[ normals.offset++ ] = 0.0;
+            normals.data[ normals.offset++ ] = -1.0;
+            normals.data[ normals.offset++ ] =  0.0;
             break;
     }
 };
