@@ -356,7 +356,7 @@ var worker = {
                     chunk.voxels[index] = val;
                 }
                 // Re-mesh this chunk
-                self.chunksToMesh[ chunkID ] = true;
+                self.clientMissingMeshes[ chunkID ] = true;
             }
         }
 
@@ -364,7 +364,7 @@ var worker = {
         // so we don't "see through the world"
         for (var chunkID in touching) {
             if (chunkID in chunkCache) {
-                self.chunksToMesh[ chunkID ] = true;
+                self.clientMissingMeshes[ chunkID ] = true;
             }
         }
     },
