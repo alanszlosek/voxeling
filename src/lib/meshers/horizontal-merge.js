@@ -31,20 +31,30 @@ var addFace = function(basePosition, face, info) {
     if (!(textureValue in out)) {
         // Start points Growable at 1/10 of chunk with single texture, 353808 floats
         // nah, 1/20 = 88452 floats
+
+        // Going for no allocations
+        out[textureValue] = {
+            position: new Growable('float32', 128000),
+            texcoord: new Growable('float32', 128000),
+            normal: new Growable('float32', 128000)
+        };
+        /*
         out[textureValue] = {
             position: new Growable('float32', 256),
             texcoord: new Growable('float32', 256),
             normal: new Growable('float32', 256)
         };
+        */
     }
     var points = out[textureValue].position;
     var texcoord = out[textureValue].texcoord;
     var normals = out[textureValue].normal;
+    
     // Is points large enough to fit another batch?
-    points.need(18);
+    //points.need(18);
     // Is texcoord large enough to fit another batch?
-    texcoord.need(12);
-    normals.need(18);
+    //texcoord.need(12);
+    //normals.need(18);
 
     // COUNTER CLOCKWISE
     // no need to translate face, we already have
