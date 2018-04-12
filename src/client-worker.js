@@ -65,16 +65,6 @@ var worker = {
     clientMissingMeshes: {},
 
 
-    emit: function(name, data) {
-        var len = arguments.length;
-        var args = new Array(len);
-        for (var i = 0; i < len; i++) {
-            args[i] = arguments[i];
-        }
-        postMessage(args);
-    },
-
-
     connect: function() {
         var self = this;
         var coordinates = this.coordinates = new Coordinates(config.chunkSize);
@@ -89,7 +79,7 @@ var worker = {
             if (debug) {
                 log('websocket connection opened');
             }
-            self.emit('open');
+            postMessage(['open']);
         };
 
         websocket.onclose = function() {
@@ -97,7 +87,7 @@ var worker = {
             if (debug) {
                 log('websocket connection closed');
             }
-            self.emit('close');
+            postMessage(['close']);
         };
 
         websocket.onerror = function(message) {
@@ -116,13 +106,13 @@ var worker = {
                     if (debug) {
                         log('got settings', payload);
                     }
-                    self.emit('settings', payload['settings'], payload['id']);
+                    postMessage(['settings', payload['settings'], payload['id']]);
                     break;
                 // fires when server sends us voxel edits [chunkID, voxelIndex, value, voxelIndex, value...]
                 case 'chunkVoxelIndexValue':
                     var changes = payload['changes'];
                     // Tell the client
-                    self.emit('chunkVoxelIndexValue', changes);
+                    postMessage(['chunkVoxelIndexValue', changes]);
                     // Update our local cache
                     for (var chunkID in changes) {
                         if (!(chunkID in self.chunkDistances)) {
@@ -146,11 +136,11 @@ var worker = {
                     break;
 
                 case 'chat':
-                    self.emit('chat', payload.message);
+                    postMessage(['chat', payload.message]);
                     break;
 
                 case 'player':
-                    self.emit('players', payload.players);
+                    postMessage(['players', payload.players]);
                     break;
             }
         };
