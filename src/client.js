@@ -29,6 +29,7 @@ var mesher = require('./lib/meshers/horizontal-merge');
 var chunkSize = config.chunkSize;
 var coordinates = new Coordinates(chunkSize);
 var pool = require('./lib/object-pool');
+var cursor = require('./lib/cursor');
 
 // other
 var trees = require('voxel-trees');
@@ -134,6 +135,12 @@ client.on('ready', function() {
         var physics = new Physics(player, inputHandler.state, game);
         var lines = new Lines(webgl.gl);
         var highlightOn = true;
+        // Holds coordinates of the voxel being looked at
+        var currentVoxel = null;
+        var currentNormalVoxel = pool.malloc('array', 3);
+        var low = pool.malloc('array', 3);
+        var high = pool.malloc('array', 3);
+        var selecting = false;
 
         // add cube wireframe
         //lines.fill( Shapes.wire.cube([0,0,0], [1,1,1]) )
@@ -161,6 +168,37 @@ client.on('ready', function() {
                 // physics will somehow update player position, and thus, the camera
                 physics.tick();
             }
+
+            game.tick();
+
+            //other.tick()
+            //pointer();
+            cursor(game, inputHandler, player, camera, lines, currentVoxel, currentNormalVoxel, selecting, low, high);
+
+            // Update player positions
+            for (var id in players) {
+                var otherPlayer = players[id];
+                var summed = 0;
+                for (var i = 0; i < otherPlayer.adjustments.length; i++) {
+                    otherPlayer.current[i] += otherPlayer.adjustments[i];
+                    summed += Math.abs(otherPlayer.adjustments[i]);
+                }
+                otherPlayer.model.setTranslation(
+                    otherPlayer.current[0],
+                    otherPlayer.current[1],
+                    otherPlayer.current[2]
+                );
+                otherPlayer.model.setRotation(
+                    otherPlayer.current[3],
+                    otherPlayer.current[4],
+                    otherPlayer.current[5]
+                );
+                otherPlayer.model.isMoving = (summed > 0.05);
+            }
+
+            // TODO: calculate delta in webgl render callback and move sky.tick there
+            sky.tick(6);
+
             // END of non-render stuff
             camera.updateProjection();
 
@@ -240,10 +278,6 @@ client.on('ready', function() {
 
         // Material to build with. The material picker dialog changes this value
         var currentMaterial = 1;
-        // Holds coordinates of the voxel being looked at
-        var currentVoxel = null;
-        var currentNormalVoxel = pool.malloc('array', 3);
-
         // When doing bulk create/destroy, holds the coordinates of the start of the selected region
         var selectStart = pool.malloc('array', 3);
         
@@ -348,9 +382,6 @@ client.on('ready', function() {
 
 
         // Creation / destruction
-        var selecting = false;
-        var low = pool.malloc('array', 3);
-        var high = pool.malloc('array', 3);
         inputHandler.on('fire.down', function() {
             // Log current voxel we're pointing at
             if (currentVoxel) {
@@ -480,6 +511,7 @@ client.on('ready', function() {
 
 
         // This needs cleanup, and encapsulation, but it works
+        /*
         var voxelHit = pool.malloc('array', 3);
         var voxelNormal = pool.malloc('array', 3);
         var distance = 10;
@@ -538,10 +570,12 @@ client.on('ready', function() {
                 currentVoxel = null;
             }
         };
+        */
 
 
         // INTERVAL CALLBACKS NOT TIED TO FRAMERATE
         // 60 calls per second
+        /*
         setInterval(function() {
             game.tick();
 
@@ -573,6 +607,7 @@ client.on('ready', function() {
             sky.tick(6);
         // What if we call this 30 times a second instead?
         }, 1000 / 60);
+        */
     });
 });
 
