@@ -9,6 +9,7 @@
     "hat": "0.0.3",
     "inherits": "~2.0.1",
     "perlin": "~1.0.0",
+    "pngjs": "^3.3.3",
     "sillyname": "0.0.3",
     "voxel-raycast": "0.2.1",
     "voxel-trees": "^0.1.0",

@@ -90,7 +90,7 @@ Model.prototype.render = function(matrix, ts) {
     //gl.uniform4fv(this.shaderUniforms.color, [ 0, 255, 255, 1 ]);
 
     gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, this.texture.glTexture);
+    gl.bindTexture(gl.TEXTURE_2D, this.texture);
     // bind the texture to this handle
     gl.uniform1i(this.shader.uniforms.texture, 0);
 

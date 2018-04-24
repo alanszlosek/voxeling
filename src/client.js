@@ -5,7 +5,6 @@ var glm = require('gl-matrix'),
     quat = glm.quat;
 
 var randomName = require('sillyname');
-var config = require('../config');
 var raycast = require('voxel-raycast');
 var WebGL = require('./lib/webgl');
 var Camera = require('./lib/camera');
@@ -26,57 +25,35 @@ var timer = require('./lib/timer');
 
 //var Meshing = require('../lib/meshers/non-blocked')
 var mesher = require('./lib/meshers/horizontal-merge');
-var chunkSize = config.chunkSize;
-var coordinates = new Coordinates(chunkSize);
 var pool = require('./lib/object-pool');
 var cursor = require('./lib/cursor');
 
 // other
 var trees = require('voxel-trees');
 
+var config = require('../config');
+var textureOffsets = require('../texture-offsets');
+
+var chunkSize = config.chunkSize;
+var coordinates = new Coordinates(chunkSize);
+
 var client = new VoxelingClient(config);
 
 
 // UI DIALOG SETUP
-var fillMaterials = function(textures) {
+var fillMaterials = function(textureArray, voxels, textures) {
     var container = document.getElementById('textureContainer');
     var html = '';
-    for (var i = 0; i < textures.textureArray.length; i++) {
-        var material = textures.textureArray[i];
-        var src;
-        if ('hidden' in material && material.hidden) {
-            continue;
-        }
-        if ('sides' in material) {
-            src = textures.byValue[material.sides[0]].src;
-        } else {
-            src = material.src;
-        }
-        html += '<div data-texturevalue="' + material.value + '"><img src="' + src + '" crossorigin="anonymous" />' + '<span>' + material.name + '</span></div>';
+    for (var i = 0; i < textureArray.length; i++) {
+        var material = textureArray[i];
+        var voxel = voxels[material];
+        var textureValue = voxel.textures[0];
+        var src = textures[ textureValue ];
+        html += '<div data-texturevalue="' + textureValue + '"><img src="' + src + '" crossorigin="anonymous" />' + '<span>' + voxel.name + '</span></div>';
     }
     container.innerHTML = html;
 };
 
-var fillSettings = function(textures) {
-    var container = document.getElementById('settings');
-    var html = '';
-    for (var i = 0; i < textures.textureArray.length; i++) {
-        var index = i + 1;
-        var material = textures.textureArray[i];
-        if ('sides' in material) {
-            continue;
-        }
-        html += '<input name="' + matrial.name + '" data-id="' + material.value + '" value="' + material.src + '" /> ' + material.name + '<br />';
-    }
-    container.innerHTML = html;
-    $(container).on('blur', 'input', function(e) {
-        var $el = $(this);
-        var id = $el.data('id');
-        textures.byValue[id].src = $el.val();
-        // Now trigger reload ... need to modify the Textures object
-        return false;
-    });
-};
 
 client.on('close', function() {
     document.getElementById('overlay').className = 'disconnected';
@@ -91,7 +68,7 @@ client.on('ready', function() {
     canvas.width = canvas.clientWidth;
     canvas.height = canvas.clientHeight;
     webgl = new WebGL(canvas);
-    textures = new Textures(config.textures);
+    textures = new Textures(textureOffsets, config.players);
 
     // Wait until textures have fully loaded
     textures.load(webgl.gl, function() {
@@ -133,14 +110,20 @@ client.on('ready', function() {
             }
         );
         var physics = new Physics(player, inputHandler.state, game);
+
+        // Voxel modification stuff
         var lines = new Lines(webgl.gl);
         var highlightOn = true;
         // Holds coordinates of the voxel being looked at
-        var currentVoxel = null;
+        var currentVoxel = [null, null, null];
         var currentNormalVoxel = pool.malloc('array', 3);
         var low = pool.malloc('array', 3);
         var high = pool.malloc('array', 3);
         var selecting = false;
+        // Material to build with. The material picker dialog changes this value
+        var currentMaterial = 1;
+        // When doing bulk create/destroy, holds the coordinates of the start of the selected region
+        var selectStart = pool.malloc('array', 3);
 
         // add cube wireframe
         //lines.fill( Shapes.wire.cube([0,0,0], [1,1,1]) )
@@ -173,7 +156,7 @@ client.on('ready', function() {
 
             //other.tick()
             //pointer();
-            cursor(game, inputHandler, player, camera, lines, currentVoxel, currentNormalVoxel, selecting, low, high);
+            //cursor(game, inputHandler, player, camera, lines, currentVoxel, currentNormalVoxel, selecting, low, high);
 
             // Update player positions
             for (var id in players) {
@@ -202,7 +185,7 @@ client.on('ready', function() {
             // END of non-render stuff
             camera.updateProjection();
 
-            sky.render(camera.inverse, ts);
+            //sky.render(camera.inverse, ts);
             voxels.render(camera.inverse, ts, sky.ambientLightColor, sky.directionalLight);
             if (highlightOn) {
                 // Highlight of targeted bock can be turned off with Shift
@@ -276,12 +259,9 @@ client.on('ready', function() {
             }
         });
 
-        // Material to build with. The material picker dialog changes this value
-        var currentMaterial = 1;
-        // When doing bulk create/destroy, holds the coordinates of the start of the selected region
-        var selectStart = pool.malloc('array', 3);
         
-        fillMaterials(textures);
+        
+        fillMaterials(config.texturePicker, config.voxels, config.textures);
 
         // Show coordinates
         var elCoordinates = document.getElementById('coordinates');
@@ -384,7 +364,7 @@ client.on('ready', function() {
         // Creation / destruction
         inputHandler.on('fire.down', function() {
             // Log current voxel we're pointing at
-            if (currentVoxel) {
+            if (currentVoxel[0] != null) {
                 selecting = true;
                 selectStart[0] = currentVoxel[0];
                 selectStart[1] = currentVoxel[1];
@@ -392,7 +372,7 @@ client.on('ready', function() {
             }
         });
         inputHandler.on('fire.up', function() {
-            if (currentVoxel && selecting) {
+            if (currentVoxel[0] != null && selecting) {
                 /*
                 {
                     chunkId: [index, value, index2, value2 ...],
@@ -433,7 +413,7 @@ client.on('ready', function() {
 
         inputHandler.on('firealt.down', function() {
             // Log current voxel we're pointing at
-            if (currentVoxel) {
+            if (currentVoxel[0] != null) {
                 selecting = true;
                 selectStart[0] = currentNormalVoxel[0];
                 selectStart[1] = currentNormalVoxel[1];
@@ -442,7 +422,7 @@ client.on('ready', function() {
         });
         inputHandler.on('firealt.up', function() {
             // TODO: clean this up so we use the object pool for these arrays
-            if (currentVoxel && selecting) {
+            if (currentVoxel[0] != null && selecting) {
                 var chunkVoxelIndexValue = {};
                 low[0] = Math.min(selectStart[0], currentNormalVoxel[0]);
                 low[1] = Math.min(selectStart[1], currentNormalVoxel[1]);
@@ -511,7 +491,7 @@ client.on('ready', function() {
 
 
         // This needs cleanup, and encapsulation, but it works
-        /*
+
         var voxelHit = pool.malloc('array', 3);
         var voxelNormal = pool.malloc('array', 3);
         var distance = 10;
@@ -570,18 +550,17 @@ client.on('ready', function() {
                 currentVoxel = null;
             }
         };
-        */
 
 
         // INTERVAL CALLBACKS NOT TIED TO FRAMERATE
         // 60 calls per second
-        /*
         setInterval(function() {
-            game.tick();
+            //game.tick();
 
             //other.tick()
             pointer();
 
+            /*
             // Update player positions
             for (var id in players) {
                 var player = players[id];
@@ -605,9 +584,9 @@ client.on('ready', function() {
 
             // TODO: calculate delta in webgl render callback and move sky.tick there
             sky.tick(6);
+            */
         // What if we call this 30 times a second instead?
         }, 1000 / 60);
-        */
     });
 });
 

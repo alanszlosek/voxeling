@@ -12,7 +12,8 @@ var voxelArraySize = chunkSize * chunkSize * chunkSize;
 var tab = " ";
 var debug = false;
 var out = {};
-var texturesByValue;
+var voxelsToTextures;
+var textureOffsets;
 
 // helps us load a cube with more than 1 texture
 var addFace = function(basePosition, face, info) {
@@ -59,6 +60,14 @@ var addFace = function(basePosition, face, info) {
     var texcoord = out[textureValue].texcoord;
     var normals = out[textureValue].normal;
 
+    if (!(textureValue in textureOffsets)) {
+        console.log(textureValue + 'not in ', textureOffsets);
+    }
+
+    var textureBottom = textureOffsets[textureValue][0];
+    var textureTop = textureOffsets[textureValue][1];
+    var textureRight = textureOffsets[textureValue][2];
+
     // COUNTER CLOCKWISE
     // no need to translate face, we already have
     switch (face) {
@@ -84,17 +93,17 @@ var addFace = function(basePosition, face, info) {
             points.data[ points.offset++ ] = startZ + 1;
 
             texcoord.data[ texcoord.offset++ ] = 0;
+            texcoord.data[ texcoord.offset++ ] = textureBottom;
+            texcoord.data[ texcoord.offset++ ] = 1.0; //endX - startX + 1;
+            texcoord.data[ texcoord.offset++ ] = textureBottom;
+            texcoord.data[ texcoord.offset++ ] = 1.0;
+            texcoord.data[ texcoord.offset++ ] = textureTop; //endY - startY + 1 + textureOffset;
             texcoord.data[ texcoord.offset++ ] = 0;
-            texcoord.data[ texcoord.offset++ ] = endX - startX + 1;
+            texcoord.data[ texcoord.offset++ ] = textureTop;
+            texcoord.data[ texcoord.offset++ ] = 1.0;
+            texcoord.data[ texcoord.offset++ ] = textureTop;
             texcoord.data[ texcoord.offset++ ] = 0;
-            texcoord.data[ texcoord.offset++ ] = endX - startX + 1;
-            texcoord.data[ texcoord.offset++ ] = endY - startY + 1;
-            texcoord.data[ texcoord.offset++ ] = 0;
-            texcoord.data[ texcoord.offset++ ] = 0;
-            texcoord.data[ texcoord.offset++ ] = endX - startX + 1;
-            texcoord.data[ texcoord.offset++ ] = endY - startY + 1;
-            texcoord.data[ texcoord.offset++ ] = 0;
-            texcoord.data[ texcoord.offset++ ] = endY - startY + 1;
+            texcoord.data[ texcoord.offset++ ] = textureRight;
 
             normals.data[ normals.offset++ ] = 0.0;
             normals.data[ normals.offset++ ] = 0.0;
@@ -509,7 +518,7 @@ var calculate = function(basePosition, voxels) {
                     resetFaces(adjacent);
                     continue;
                 }
-                if (!(voxelTextureValue in texturesByValue)) {
+                if (!(voxelTextureValue in voxelsToTextures)) {
                     voxelTextureValue = 3;
                     console.log('falling back to 3');
                 }
@@ -519,12 +528,7 @@ var calculate = function(basePosition, voxels) {
                 // only loop through current pointer faces
                 for (var face in adjacent) {
                     var isBlocked = false;
-                    var textureValue;
-                    if ('sides' in texturesByValue[voxelTextureValue]) {
-                        textureValue = texturesByValue[voxelTextureValue].sides[faceIndex(face)];
-                    } else {
-                        textureValue = voxelTextureValue;
-                    }
+                    var textureValue = voxelsToTextures[voxelTextureValue].textures[faceIndex(face)];
                     isBlocked = isFaceBlocked(basePosition, voxels, chunkSize, face, x, y, z, textureValue);
                     if (debug) {
                         console.log('face: ' + face);
@@ -591,7 +595,7 @@ var calculate = function(basePosition, voxels) {
                     resetFaces(adjacent);
                     continue;
                 }
-                if (!(voxelTextureValue in texturesByValue)) {
+                if (!(voxelTextureValue in voxelsToTextures)) {
                     voxelTextureValue = 3;
                     console.log('falling back to 3');
                 }
@@ -601,12 +605,7 @@ var calculate = function(basePosition, voxels) {
                 // only loop through current pointer faces
                 for (var face in adjacent) {
                     var isBlocked = false;
-                    var textureValue;
-                    if ('sides' in texturesByValue[voxelTextureValue]) {
-                        textureValue = texturesByValue[voxelTextureValue].sides[faceIndex(face)];
-                    } else {
-                        textureValue = voxelTextureValue;
-                    }
+                    var textureValue = voxelsToTextures[voxelTextureValue].textures[faceIndex(face)];
                     isBlocked = isFaceBlocked(basePosition, voxels, chunkSize, face, x, y, z, textureValue);
                     if (debug) {
                         console.log('face: ' + face, 'blocked:', isBlocked);
@@ -667,10 +666,12 @@ if (!module) {
 }
 
 var Meshing = module.exports = {
-    config: function(cs, textures, coordinatorHandle, cache) {
+    config: function(cs, voxToTex, texOffsets, coordinatorHandle, cache) {
         chunkSize = cs;
         voxelArraySize = chunkSize * chunkSize * chunkSize;
-        texturesByValue = textures.byValue;
+        voxelsToTextures = voxToTex;
+        textureOffsets = texOffsets;
+        console.log(textureOffsets);
         Coordinator = coordinatorHandle;
         chunkCache = cache;
     },

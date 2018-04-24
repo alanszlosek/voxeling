@@ -1,9 +1,9 @@
 var config = require('../config');
+var textureOffsets = require('../texture-offsets');
 
 var pool = require('./lib/object-pool');
 var Coordinates = require('./lib/coordinates');
-var Textures = require('./lib/textures');
-var mesher = require('./lib/meshers/horizontal-merge');
+var mesher = require('./lib/meshers/horizontal-merge2');
 var ClientGenerator = require('./lib/generators/client.js');
 var MaxConcurrent = require('./lib/max-concurrent')(10);
 var timer = require('./lib/timer');
@@ -68,11 +68,10 @@ var worker = {
     connect: function() {
         var self = this;
         var coordinates = this.coordinates = new Coordinates(config.chunkSize);
-        var textures = new Textures(config.textures);
         var websocket = this.connection = new WebSocket(config.server);
         var generator = new ClientGenerator(chunkCache, config.chunkSize);
 
-        mesher.config(config.chunkSize, textures, coordinates, chunkCache);
+        mesher.config(config.chunkSize, config.voxels, textureOffsets, coordinates, chunkCache);
 
         websocket.onopen = function() {
             self.connected = true;
@@ -335,6 +334,7 @@ var worker = {
     // Update our local cache and tell the server
     chunkVoxelIndexValue: function(changes, touching) {
         var self = this;
+        console.log(changes);
         sendMessage(self.connection, 'chunkVoxelIndexValue', changes);
         for (var chunkID in changes) {
             if (chunkID in chunkCache) {

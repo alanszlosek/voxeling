@@ -127,6 +127,8 @@ Voxels.prototype.prepareMeshBuffers = function(near) {
     var currentBuffersByTexture;
     var currentMeshes;
 
+    var largestBuffer = 0;
+
     if (near) {
         currentBuffersByTexture = this.nearBuffersByTexture;
         currentMeshes = this.nearMeshes;
@@ -186,6 +188,7 @@ Voxels.prototype.prepareMeshBuffers = function(near) {
             var newLength;
             buffers = currentBuffersByTexture[ textureValue ];
             buffers.tuples = 0;
+            /*
             // Destroy and re-create as double if not large enough
             if (buffers.positionBytes < bytes.position) {
                 newLength = buffers.positionBytes * 2;
@@ -216,7 +219,11 @@ Voxels.prototype.prepareMeshBuffers = function(near) {
                 
                 buffers.texcoordBytes = newLength;
             }
+            largestBuffer = Math.max(largestBuffer, buffers.positionBytes, buffers.texcoordBytes);
+            */
+
         } else {
+            var blen = 32000000;
             // Destroy and create if not large enough, otherwise re-use
             buffers = {
                 position: gl.createBuffer(),
@@ -227,13 +234,15 @@ Voxels.prototype.prepareMeshBuffers = function(near) {
                 texcoordBytes: bytes.texcoord
             };
             gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
-            gl.bufferData(gl.ARRAY_BUFFER, bytes.position, gl.STATIC_DRAW);
+            gl.bufferData(gl.ARRAY_BUFFER, blen, gl.STATIC_DRAW);
             
             gl.bindBuffer(gl.ARRAY_BUFFER, buffers.normal);
-            gl.bufferData(gl.ARRAY_BUFFER, bytes.position, gl.STATIC_DRAW);
+            gl.bufferData(gl.ARRAY_BUFFER, blen, gl.STATIC_DRAW);
             
             gl.bindBuffer(gl.ARRAY_BUFFER, buffers.texcoord);
-            gl.bufferData(gl.ARRAY_BUFFER, bytes.texcoord, gl.STATIC_DRAW);
+            gl.bufferData(gl.ARRAY_BUFFER, blen, gl.STATIC_DRAW);
+
+            largestBuffer = Math.max(largestBuffer, bytes.position, bytes.texcoord);
         }
 
         var attributeQueue = attributesByTexture[ textureValue ];
@@ -261,6 +270,7 @@ Voxels.prototype.prepareMeshBuffers = function(near) {
 
         buffersByTexture[ textureValue ] =  buffers;
     }
+
     // This will replace nearBuffersByTexture or farBuffersByTexture
     if (near) {
         this.nearBuffersByTexture = buffersByTexture;
@@ -268,7 +278,7 @@ Voxels.prototype.prepareMeshBuffers = function(near) {
         this.farBuffersByTexture = buffersByTexture;
     }
 
-    timer.log('Voxels.prepareMeshBuffers', Date.now() - start);
+    timer.log('Voxels.prepareMeshBuffers ' + blen, Date.now() - start, largestBuffer);
 };
 
 
@@ -282,6 +292,13 @@ Voxels.prototype.render = function(projection, ts, ambientLight, directionalLigh
     gl.uniform3fv(this.shader.uniforms.directionalLightColor, directionalLight.color);
     gl.uniform3fv(this.shader.uniforms.directionalLightPosition, directionalLight.position);
     gl.uniform1f(this.shader.uniforms.hazeDistance, this.hazeDistance);
+
+    // do the texture stuff ourselves ... too convoluted otherwise
+    gl.activeTexture(gl.TEXTURE0);
+    // set which of the 32 handles we want this bound to
+    gl.bindTexture(gl.TEXTURE_2D, this.textures.byValue[0]);
+    // bind the texture to this handle
+    gl.uniform1i(this.shader.uniforms.texture, 0);
 
     for (var textureValue in this.nearBuffersByTexture) {
         var bufferBundle = this.nearBuffersByTexture[ textureValue ];
@@ -304,13 +321,13 @@ Voxels.prototype.render = function(projection, ts, ambientLight, directionalLigh
             //gl.uniform1f(this.shaderUniforms.textureOffset, ts / 10000);
         }
         // do the texture stuff ourselves ... too convoluted otherwise
-        gl.activeTexture(gl.TEXTURE0);
+        //gl.activeTexture(gl.TEXTURE0);
 
         // set which of the 32 handles we want this bound to
-        gl.bindTexture(gl.TEXTURE_2D, this.textures.byValue[textureValue].glTexture);
+        //gl.bindTexture(gl.TEXTURE_2D, this.textures.byValue[textureValue].glTexture);
 
         // bind the texture to this handle
-        gl.uniform1i(this.shader.uniforms.texture, 0);
+        //gl.uniform1i(this.shader.uniforms.texture, 0);
 
         gl.bindBuffer(gl.ARRAY_BUFFER, bufferBundle.position);
         gl.enableVertexAttribArray(this.shader.attributes.position);
@@ -348,13 +365,13 @@ Voxels.prototype.render = function(projection, ts, ambientLight, directionalLigh
             //gl.uniform1f(this.shaderUniforms.textureOffset, ts / 10000);
         }
         // do the texture stuff ourselves ... too convoluted otherwise
-        gl.activeTexture(gl.TEXTURE0);
+        //gl.activeTexture(gl.TEXTURE0);
 
         // set which of the 32 handles we want this bound to
-        gl.bindTexture(gl.TEXTURE_2D, this.textures.byValue[textureValue].glTexture);
+        //gl.bindTexture(gl.TEXTURE_2D, this.textures.byValue[textureValue].glTexture);
 
         // bind the texture to this handle
-        gl.uniform1i(this.shader.uniforms.texture, 0);
+        //gl.uniform1i(this.shader.uniforms.texture, 0);
 
         gl.bindBuffer(gl.ARRAY_BUFFER, bufferBundle.position);
         gl.enableVertexAttribArray(this.shader.attributes.position);

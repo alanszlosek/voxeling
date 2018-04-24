@@ -99,7 +99,7 @@ Model.prototype.render = function(ts) {
         var mesh = meshes[i];
 
         gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, mesh.texture.glTexture);
+        gl.bindTexture(gl.TEXTURE_2D, mesh.texture);
         // bind the texture to this handle
         gl.uniform1i(this.shader.uniforms.texture, 0);
 

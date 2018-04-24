@@ -22,7 +22,9 @@ module.exports = function(game, inputHandler, player, camera, lines, currentVoxe
         voxelHit[2] = Math.floor(voxelHit[2]);
 
         // Give us access to the current voxel and the voxel at it's normal
-        currentVoxel = voxelHit;
+        currentVoxel[0] = voxelHit[0];
+        currentVoxel[1] = voxelHit[1];
+        currentVoxel[2] = voxelHit[2];
         currentNormalVoxel[0] = voxelHit[0] + voxelNormal[0];
         currentNormalVoxel[1] = voxelHit[1] + voxelNormal[1];
         currentNormalVoxel[2] = voxelHit[2] + voxelNormal[2];
@@ -61,6 +63,7 @@ module.exports = function(game, inputHandler, player, camera, lines, currentVoxe
     } else {
         // clear
         lines.skip(true);
-        currentVoxel = null;
+        // Only need to clear the first element
+        currentVoxel[0] = null;
     }
 };
