@@ -188,7 +188,6 @@ Voxels.prototype.prepareMeshBuffers = function(near) {
             var newLength;
             buffers = currentBuffersByTexture[ textureValue ];
             buffers.tuples = 0;
-            /*
             // Destroy and re-create as double if not large enough
             if (buffers.positionBytes < bytes.position) {
                 newLength = buffers.positionBytes * 2;
@@ -219,8 +218,7 @@ Voxels.prototype.prepareMeshBuffers = function(near) {
                 
                 buffers.texcoordBytes = newLength;
             }
-            largestBuffer = Math.max(largestBuffer, buffers.positionBytes, buffers.texcoordBytes);
-            */
+            //largestBuffer = Math.max(largestBuffer, buffers.positionBytes, buffers.texcoordBytes);
 
         } else {
             var blen = 32000000;
@@ -234,15 +232,15 @@ Voxels.prototype.prepareMeshBuffers = function(near) {
                 texcoordBytes: bytes.texcoord
             };
             gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
-            gl.bufferData(gl.ARRAY_BUFFER, blen, gl.STATIC_DRAW);
+            gl.bufferData(gl.ARRAY_BUFFER, bytes.position, gl.STATIC_DRAW);
             
             gl.bindBuffer(gl.ARRAY_BUFFER, buffers.normal);
-            gl.bufferData(gl.ARRAY_BUFFER, blen, gl.STATIC_DRAW);
+            gl.bufferData(gl.ARRAY_BUFFER, bytes.position, gl.STATIC_DRAW);
             
             gl.bindBuffer(gl.ARRAY_BUFFER, buffers.texcoord);
-            gl.bufferData(gl.ARRAY_BUFFER, blen, gl.STATIC_DRAW);
+            gl.bufferData(gl.ARRAY_BUFFER, bytes.texcoord, gl.STATIC_DRAW);
 
-            largestBuffer = Math.max(largestBuffer, bytes.position, bytes.texcoord);
+            //largestBuffer = Math.max(largestBuffer, bytes.position, bytes.texcoord);
         }
 
         var attributeQueue = attributesByTexture[ textureValue ];
@@ -278,7 +276,7 @@ Voxels.prototype.prepareMeshBuffers = function(near) {
         this.farBuffersByTexture = buffersByTexture;
     }
 
-    timer.log('Voxels.prepareMeshBuffers ' + blen, Date.now() - start, largestBuffer);
+    timer.log('Voxels.prepareMeshBuffers ' + blen, Date.now() - start); //, largestBuffer);
 };
 
 
@@ -308,7 +306,7 @@ Voxels.prototype.render = function(projection, ts, ambientLight, directionalLigh
 
         if (textureValue == 6) {
             // poor man's water animation
-            gl.uniform1f(this.shader.uniforms.textureOffset, ts / 10000);
+            //gl.uniform1f(this.shader.uniforms.textureOffset, ts / 10000);
 
         } else if (textureValue < 100) {
             // Don't do face culling when drawing textures with opacity
@@ -352,7 +350,7 @@ Voxels.prototype.render = function(projection, ts, ambientLight, directionalLigh
 
         if (textureValue == 6) {
             // poor man's water animation
-            gl.uniform1f(this.shader.uniforms.textureOffset, ts / 10000);
+            //gl.uniform1f(this.shader.uniforms.textureOffset, ts / 10000);
 
         } else if (textureValue < 100) {
             // Don't do face culling when drawing textures with opacity
