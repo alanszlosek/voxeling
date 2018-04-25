@@ -346,8 +346,8 @@ var shouldSkipFace = function(currentVoxelValue, opposingVoxelValue) {
 var calculate = function(basePosition, voxels) {
     var outside = chunkSize - 1;
 
-    var xFaceLength = pool.malloc('array', 4);
-    var xFaceTexture = pool.malloc('array', 4);
+    var xFaceLength = [0,0,0,0]
+    var xFaceTexture = [0,0,0,0]
     var zFaceLength = [
         [0,0],
         [0,0],
@@ -438,6 +438,10 @@ var calculate = function(basePosition, voxels) {
 
             for (var x = 0; x < chunkSize; x++) {
                 var voxelValue = voxels[index + x];
+
+                if (voxelValue == 16) {
+                    voxelValue = 5;
+                }
 
                 if (voxelValue == 0) {
                     // Top, front, back, bottom
