@@ -19,14 +19,20 @@ while ($height < $desiredHeight) {
 
 
 $combined = imagecreatetruecolor($width, $height);
+imagealphablending($combined, false);
+$col = imagecolorallocatealpha($combined, 255, 255, 255, 127);
+imagefilledrectangle($combined, 0, 0, $width, $height, $col);
+imagealphablending($combined, true);
 
 $yOffset = 0;
 $out = array();
 foreach ($json['textures'] as $value => $path) {
             
     $image = imagecreatefrompng('../www' . $path);
-    imagescale($image, $width, $width);
-	imagecopy($combined, $image, 0, $yOffset, 0, 0, $width, $width);
+    //$resized = imagescale($image, $width, $width);
+    //imagedestroy($image);
+    imagecopyresampled($combined, $image, 0, $yOffset, 0, 0, $width, $width, imagesx($image), imagesy($image));
+    imagealphablending($combined, true);
 
     $texcoordHeight = 128 / $height;
     $texcoordWidth = 128 / $width;
@@ -38,4 +44,5 @@ foreach ($json['textures'] as $value => $path) {
 }
 file_put_contents('../texture-offsets.js', 'module.exports=' . json_encode($out));
 
+imagesavealpha($combined, true);
 imagepng($combined, '../www/textures.png');
