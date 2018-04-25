@@ -36,8 +36,6 @@ foreach ($json['textures'] as $value => $path) {
     $out[$value] = [$texcoordBottom, $texcoordTop, $texcoordWidth];
     $yOffset += $width;
 }
-var_dump($out);
 file_put_contents('../texture-offsets.js', 'module.exports=' . json_encode($out));
 
-imagetruecolortopalette($combined, true, 255);
 imagepng($combined, '../www/textures.png');
