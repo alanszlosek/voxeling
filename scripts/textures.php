@@ -29,17 +29,17 @@ $out = array();
 foreach ($json['textures'] as $value => $path) {
             
     $image = imagecreatefrompng('../www' . $path);
-    //$resized = imagescale($image, $width, $width);
-    //imagedestroy($image);
+    
+    // bool imagecopyresampled ($dst_image, $src_image, $dst_x, $dst_y, $src_x, $src_y, $dst_w, $dst_h, $src_w, $src_h )
     imagecopyresampled($combined, $image, 0, $yOffset, 0, 0, $width, $width, imagesx($image), imagesy($image));
     imagealphablending($combined, true);
 
     $texcoordHeight = 128 / $height;
-    $texcoordWidth = 128 / $width;
-    $texcoordTop = 1.0 - ($yOffset / $height);
-    $texcoordBottom = $texcoordTop - $texcoordHeight;
+    $texcoordTop = $yOffset / $height;
+    // texture bottom-most pixel is 1 pix less than texture height
+    $texcoordBottom = $texcoordTop + (127 / $height);
 
-    $out[$value] = [$texcoordBottom, $texcoordTop, $texcoordWidth];
+    $out[$value] = [$texcoordBottom, $texcoordTop, 1.0];
     $yOffset += $width;
 }
 file_put_contents('../texture-offsets.js', 'module.exports=' . json_encode($out));
