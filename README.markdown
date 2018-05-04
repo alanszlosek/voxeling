@@ -3,13 +3,15 @@ voxeling
 
 Inspired by [voxel-engine](https://github.com/maxogden/voxel-engine) and [voxel.js](http://voxeljs.com), this is a multiplayer sandbox (like Minecraft creative mode) implemented in WebGL with very few dependencies. Very much a work in progress.
 
-Demo: http://voxeling.greaterscope.com (Google Chrome and Firefox 46+)
+Demo: https://voxeling.greaterscope.com (Google Chrome and Firefox 46+)
 
 Project blog: https://blog.alanszlosek.com/tags/voxeling/
 
-Textures provided by:
+Preferred texture set:
 
-* http://bdcraft.net
+* http://bdcraft.net/purebdcraft-minetest
+
+Past textures provided by:
 * https://github.com/deathcap/ProgrammerArt
 * https://github.com/phionabrie
 
@@ -44,20 +46,19 @@ Technical Features
 
 * Client and Server (ported bits from my voxel-client and voxel-server forks)
 * Simple physics engine for player movements
-* Meshing algorithms
+* My own "horizonal merge" meshing algorithm
 * Sample world generators
-* Improved websocket emitter - disconnects are handled gracefully
+* Websocket connection for chat messages, player positions, world changes
+* Chunk data is fetched via AJAX and gzipped
 * Object pool to reduce memory allocations and garbage-collection pauses
 * voxel-highlight replacement
-* Simple run-length encoder/decoder (voxel-crunch did bitwise ops, and was buggy across node versions)
-* LRU cache for minimizing trips to the file-system or database for frequently requested chunks
+* Uses hashlru for minimizing trips to the file-system or database for frequently requested chunks
 * Relatively flat architecture means it's easy to get a WebGL handle and the inverse camera matrix for drawing
 * All IO and chunk meshing is done in a web worker, which keeps the framerate very high
-* Uses view frustum to prioritize world chunk fetching
 * Directional lighting
 * Day and night cycle (still needs some love)
 
-See it in action in the demo (Google Chrome or Firefox): http://voxeling.greaterscope.com
+See it in action in the demo (Google Chrome or Firefox): https://voxeling.greaterscope.com
 
 Or follow the installation instructions below to run it locally.
 
