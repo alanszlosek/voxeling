@@ -73,6 +73,13 @@ In terminal 1:
 cd /path/to/voxeling
 # Download textures from http://bdcraft.net/purebdcraft-minetest (256x256 version)
 # Extract to www/testbdcraft
+
+# Generate combined texture file (cuts down on WebGL bindTexture calls)
+# You'll need PHP with gd/imagemagick. Once I get node version working, you won't need PHP
+cd scripts
+# This generates www/textures.png and texture-offsets.js
+php textures.php
+
 npm install
 
 # create folder for world chunks
