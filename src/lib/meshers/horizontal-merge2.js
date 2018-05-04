@@ -231,6 +231,21 @@ var addFace = function(basePosition, x, y, z, face, len, textureValue) {
     texcoord.data[ texcoord.offset++ ] = textureTop;
     texcoord.data[ texcoord.offset++ ] = 0;
     texcoord.data[ texcoord.offset++ ] = textureTop;
+    
+    /*
+    texcoord.data[ texcoord.offset++ ] = 0.0;
+    texcoord.data[ texcoord.offset++ ] = textureBottom;
+    texcoord.data[ texcoord.offset++ ] = 1.0;
+    texcoord.data[ texcoord.offset++ ] = textureBottom;
+    texcoord.data[ texcoord.offset++ ] = 1.0;
+    texcoord.data[ texcoord.offset++ ] = textureTop; //endY - startY + 1 + textureOffset;
+    texcoord.data[ texcoord.offset++ ] = 0;
+    texcoord.data[ texcoord.offset++ ] = textureBottom;
+    texcoord.data[ texcoord.offset++ ] = 1.0;
+    texcoord.data[ texcoord.offset++ ] = textureTop;
+    texcoord.data[ texcoord.offset++ ] = 0;
+    texcoord.data[ texcoord.offset++ ] = textureTop;
+    */
 
     normals.data[ normals.offset++ ] = n[0];
     normals.data[ normals.offset++ ] = n[1];
