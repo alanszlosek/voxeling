@@ -18,276 +18,268 @@ module.exports = {
     websocketBindPort: 10005,
     maxPlayers: 10,
 
-    textures: [
-        {
-            value: 1,
+    voxelRemap: {
+        16: 0,
+        20: 0
+    },
+    texturePicker: [
+        1, 14, 17, 3,
+        2, 4, 13, 19,
+        18, 11, 15, 7,
+        6, 8, 22, 24,
+        100, 27, 34, 32,
+        29, 28, 30, 33,
+        31, 35, 39, 37,
+        38, 21, 36, 5,
+        101
+
+    ],
+    voxels: {
+        1: {
             name: 'grass+dirt',
-            sides: [
+            /*
+            top: 0,
+            front: 1,
+            left: 2,
+            back: 3,
+            right: 4,
+            bottom: 5
+            */
+            textures: [
                 14,
                 302, 302, 302, 302,
                 3
             ]
         },
-        {
-            value: 14,
+        14: {
             name: 'grass',
-            src: '/testbdcraft/default_grass.png'
+            textures: [14, 14, 14, 14, 14, 14]
         },
-        {
-            value: 17,
+        17: {
             name: 'grass2',
-            src: '/testbdcraft/default_grass_footsteps.png'
+            textures: [17, 17, 17, 17, 17, 17]
         },
-        {
-            value: 3,
+        3: {
             name: 'dirt',
-            src: '/testbdcraft/default_dirt.png'
+            textures: [3, 3, 3, 3, 3, 3]
         },
-        {
-            value: 302,
-            name: 'grass_dirt',
-            src: '/testbdcraft/default_grass_side.png',
-            hidden: true
-        },
-
-        {
-            value: 2,
+        2: {
             name: 'brick',
-            src: '/testbdcraft/default_brick.png'
+            src: '/testbdcraft/default_brick.png',
+            textures: [2, 2, 2, 2, 2, 2]
         },
-        {
-            value: 9,
+        9: {
             name: 'brick2',
-            src: '/testbdcraft/default_brick.png',
+            textures: [9, 9, 9, 9, 9, 9],
             hidden: true
         },
-        {
-            value: 10,
+        10: {
             name: 'brick3',
-            src: '/testbdcraft/default_brick.png',
+            textures: [10, 10, 10, 10, 10, 10],
             hidden: true
         },
 
-        {
-            value: 4,
+        4: {
             name: 'coal',
-            src: '/testbdcraft/default_mineral_coal.png'
+            textures: [4, 4, 4, 4, 4, 4]
         },
-        {
-            value: 13,
+        13: {
             name: 'iron',
-            src: '/testbdcraft/default_mineral_iron.png'
+            textures: [13, 13, 13, 13, 13, 13]
         },
-        {
-            value: 19,
+        19: {
             name: 'clay',
-            src: '/testbdcraft/default_clay.png'
+            textures: [19, 19, 19, 19, 19, 19]
         },
-        {
-            value: 18,
+        18: {
             name: 'sandstone',
-            src: '/testbdcraft/default_sandstone.png'
+            textures: [18, 18, 18, 18, 18, 18]
         },
-        {
-            value: 11,
+        11: {
             name: 'cobble',
-            src: '/testbdcraft/default_cobble.png'
+            textures: [11, 11, 11, 11, 11, 11]
         },
-        {
-            value: 12,
+        12: {
             name: 'cobble2',
-            src: '/testbdcraft/default_cobble.png',
+            textures: [12, 12, 12, 12, 12, 12],
             hidden: true
         },
-        {
-            value: 15,
+        15: {
             name: 'moss cobble',
-            src: '/testbdcraft/default_mossycobble.png'
+            textures: [15, 15, 15, 15, 15, 15]
         },
 
-        {
-            value: 7,
+        7: {
             name: 'lava',
-            src: '/testbdcraft/default_lava.png'
+            textures: [7, 7, 7, 7, 7, 7]
         },
         
-        {
-            value: 6,
+        6: {
             name: 'water',
-            src: '/testbdcraft/default_water.png'
+            textures: [6, 6, 6, 6, 6, 6]
         },
-        {
-            value: 16,
+        16: {
             name: 'ice',
-            src: '/textures/ice.png',
+            textures: [16, 16, 16, 16, 16],
             hidden: true
         },
-        {
-            value: 20,
+        20: {
             name: 'snow',
-            src: '/textures/sparkly_snow.png',
+            textures: [20, 20, 20, 20, 20, 20],
             hidden: true
         },
 
-        {
-            value: 8,
+        8: {
             name: 'chest',
-            sides: [
+            textures: [
                 300,
                 301, 301, 301, 301,
                 301
             ]
         },
-        {
-            value: 300,
-            name: 'chest top',
-            src: '/testbdcraft/default_chest_top.png',
-            hidden: true
-        },
-        {
-            value: 301,
-            name: 'chest side',
-            src: '/testbdcraft/default_chest_side.png',
-            hidden: true
-        },
         
-        {
-            value: 22,
+        22: {
             name: 'wood',
-            src: '/testbdcraft/default_wood.png'
+            textures: [22, 22, 22, 22, 22, 22]
         },
-        {
-            value: 24,
+        24: {
             name: 'tree',
-            sides: [
+            textures: [
                 303,
                 304, 304, 304, 304,
                 303
             ]
         },
-        {
-            value: 303,
-            name: 'tree_top',
-            src: '/testbdcraft/default_tree_top.png',
-            hidden: true
-        },
-        {
-            value: 304,
-            name: 'tree_side',
-            src: '/testbdcraft/default_tree.png',
-            hidden: true
-        },
-        {
-            value: 100,
+        100: {
             name: 'leaves',
-            src: '/testbdcraft/default_leaves.png'
-        },
-        {
-            value: 305,
-            name: 'full-tree',
-            src: '/testbdcraft/default_tree.png',
+            textures: [100, 100, 100, 100, 100, 100]
         },
 
-        {
-            value: 27,
+        27: {
             name: 'black wool',
-            src: '/testbdcraft/wool_black.png'
+            textures: [27, 27, 27, 27, 27, 27]
         },
-        {
-            value: 34,
+        34: {
             name: 'grey wool',
-            src: '/testbdcraft/wool_grey.png'
+            textures: [34, 34, 34, 34, 34, 34]
         },
-        {
-            value: 32,
+        32: {
             name: 'dk grey wool',
-            src: '/testbdcraft/wool_dark_grey.png'
+            textures: [32, 32, 32, 32, 32, 32]
         },
-        {
-            value: 29,
+        29: {
             name: 'brown wool',
-            src: '/testbdcraft/wool_brown.png'
+            textures: [29, 29, 29, 29, 29, 29]
         },
-        {
-            value: 28,
+        28: {
             name: 'blue wool',
-            src: '/testbdcraft/wool_blue.png'
+            textures: [28, 28, 28, 28, 28, 28]
         },
-        {
-            value: 30,
+        30: {
             name: 'cyan wool',
-            src: '/testbdcraft/wool_cyan.png'
+            textures: [30, 30, 30, 30, 30, 30]
         },
-        {
-            value: 33,
+        33: {
             name: 'green wool',
-            src: '/testbdcraft/wool_green.png'
+            textures: [33, 33, 33, 33, 33, 33]
         },
-        {
-            value: 31,
+        31: {
             name: 'dk green wool',
-            src: '/testbdcraft/wool_dark_green.png'
+            textures: [31, 31, 31, 31, 31, 31]
         },
-        {
-            value: 35,
+        35: {
             name: 'magenta wool',
-            src: '/testbdcraft/wool_magenta.png'
+            textures: [35, 35, 35, 35, 35, 35]
         },
-        {
-            value: 39,
+        39: {
             name: 'violet wool',
-            src: '/testbdcraft/wool_violet.png'
+            textures: [39, 39, 39, 39, 39, 39]
         },
-        {
-            value: 37,
+        37: {
             name: 'pink wool',
-            src: '/testbdcraft/wool_pink.png'
+            textures: [37, 37, 37, 37, 37, 37]
         },
-        {
-            value: 38,
+        38: {
             name: 'red wool',
-            src: '/testbdcraft/wool_red.png'
+            textures: [38, 38, 38, 38, 38, 38]
         },
-        {
-            value: 21,
+        21: {
             name: 'yellow wool',
-            src: '/testbdcraft/wool_yellow.png'
+            textures: [21, 21, 21, 21, 21, 21]
         },
-        {
-            value: 36,
+        36: {
             name: 'orange wool',
-            src: '/testbdcraft/wool_orange.png'
+            textures: [36, 36, 36, 36, 36, 36]
         },
-        {
-            value: 5,
+        5: {
             name: 'white wool',
-            src: '/testbdcraft/wool_white.png'
+            textures: [5, 5, 5, 5, 5, 5]
         },
 
-        {
-            value: 101,
+        101: {
             name: 'glass',
-            src: '/textures/glass.png'
-        },
+            textures: [101, 101, 101, 101, 101, 101]
+        }
+    },
 
-        {
-            value: 50,
+    textures: {
+        14: '/testbdcraft/default_grass.png',
+        17: '/testbdcraft/default_grass_footsteps.png',
+        3: '/testbdcraft/default_dirt.png',
+        302: '/testbdcraft/default_grass_side.png',
+        2: '/testbdcraft/default_brick.png',
+        9: '/testbdcraft/default_brick.png',
+        10: '/testbdcraft/default_brick.png',
+        4: '/testbdcraft/default_mineral_coal.png',
+        13: '/testbdcraft/default_mineral_iron.png',
+        19: '/testbdcraft/default_clay.png',
+        18: '/testbdcraft/default_sandstone.png',
+        11: '/testbdcraft/default_cobble.png',
+        12: '/testbdcraft/default_cobble.png',
+        15: '/testbdcraft/default_mossycobble.png',
+        7: '/testbdcraft/default_lava.png',
+        6: '/testbdcraft/default_water.png',
+        //16: '/textures/ice.png',
+        //20: '/textures/sparkly_snow.png',
+        300: '/testbdcraft/default_chest_top.png',
+        301: '/testbdcraft/default_chest_side.png',
+        22: '/testbdcraft/default_wood.png',
+        303: '/testbdcraft/default_tree_top.png',
+        304: '/testbdcraft/default_tree.png',
+        100: '/testbdcraft/default_leaves.png',
+        27: '/testbdcraft/wool_black.png',
+        34: '/testbdcraft/wool_grey.png',
+        32: '/testbdcraft/wool_dark_grey.png',
+        29: '/testbdcraft/wool_brown.png',
+        28: '/testbdcraft/wool_blue.png',
+        30: '/testbdcraft/wool_cyan.png',
+        33: '/testbdcraft/wool_green.png',
+        31: '/testbdcraft/wool_dark_green.png',
+        35: '/testbdcraft/wool_magenta.png',
+        39: '/testbdcraft/wool_violet.png',
+        37: '/testbdcraft/wool_pink.png',
+        38: '/testbdcraft/wool_red.png',
+        21: '/testbdcraft/wool_yellow.png',
+        36: '/testbdcraft/wool_orange.png',
+        5: '/testbdcraft/wool_white.png',
+        101: '/textures/glass.png'
+    },
+    players: {
+        1001: {
             name: 'player',
             src: '/textures/player.png',
             hidden: true
         },
-        {
-            value: 51,
+        1002: {
             name: 'substack',
             src: '/textures/substack.png',
             hidden: true
         },
-        {
+        1003: {
             value: 52,
             name: 'viking',
             src: '/textures/viking.png',
             hidden: true
         }
-        
-    ]
+    }
 }
