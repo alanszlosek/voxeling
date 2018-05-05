@@ -8,9 +8,11 @@ $json = json_decode($text, true);
 $numTextures = count($json['textures']);
 //var_dump($numTextures);exit;
 
-$width = 128;
-$desiredHeight = 128 * $numTextures;
-$height = 128;
+// lets try to include 3 of a texture vertically, so mipmapping is more accurate
+
+$width = 128.0;
+$desiredHeight = $width * $numTextures * 3;
+$height = $width;
 
 
 while ($height < $desiredHeight) {
@@ -29,18 +31,23 @@ $out = array();
 foreach ($json['textures'] as $value => $path) {
             
     $image = imagecreatefrompng('../www' . $path);
-    
-    // bool imagecopyresampled ($dst_image, $src_image, $dst_x, $dst_y, $src_x, $src_y, $dst_w, $dst_h, $src_w, $src_h )
-    imagecopyresampled($combined, $image, 0, $yOffset, 0, 0, $width, $width, imagesx($image), imagesy($image));
-    imagealphablending($combined, true);
+    $imageWidth = imagesx($image);
+    $imageHeight = imagesy($image);
 
-    $texcoordHeight = 128 / $height;
-    $texcoordTop = $yOffset / $height;
-    // texture bottom-most pixel is 1 pix less than texture height
-    $texcoordBottom = $texcoordTop + (127 / $height);
+    for ($i = 0; $i < 3; $i++) {
+        // bool imagecopyresampled ($dst_image, $src_image, $dst_x, $dst_y, $src_x, $src_y, $dst_w, $dst_h, $src_w, $src_h )
+        imagecopyresampled($combined, $image, 0, $yOffset, 0, 0, $width, $width, $imageWidth, $imageHeight);
+        imagealphablending($combined, true);
 
-    $out[$value] = [$texcoordBottom, $texcoordTop, 1.0];
-    $yOffset += $width;
+        if ($i == 1) {
+            $texcoordTop = $yOffset / $height;
+            // texture bottom-most pixel is 1 pix less than texture height
+            $texcoordBottom = $texcoordTop + (($width - 1) / $height);
+            $out[$value] = [$texcoordBottom, $texcoordTop, 1.0];
+        }
+        $yOffset += $width;
+    }
+    $yOffset += 2;
 }
 file_put_contents('../texture-offsets.js', 'module.exports=' . json_encode($out));
 
