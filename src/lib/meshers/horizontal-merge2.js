@@ -1,6 +1,7 @@
 // TODO: clean this up. fewer globals
 
 // TODO: use object pool for vector arrays
+var Growable = require('../growable');
 var pool = require('../object-pool');
 var timer = require('../timer');
 var Coordinator;
@@ -29,19 +30,16 @@ var addFace = function(basePosition, x, y, z, face, len, textureValue) {
 
         // Going for no allocations
         out[textureValue] = {
-            position: {
-                offset: 0,
-                data: pool.malloc('float32', 128000)
-            },
-            texcoord: {
-                offset: 0,
-                data: pool.malloc('float32', 128000)
-            },
-            normal: {
-                offset: 0,
-                data: pool.malloc('float32', 128000)
-            }
+            position: new Growable('float32', 32000),
+            texcoord: new Growable('float32', 32000),
+            normal: new Growable('float32', 32000)
         };
+    } else {
+        // Is points large enough to fit another batch?
+        out[textureValue].position.need(18);
+        // Is texcoord large enough to fit another batch?
+        out[textureValue].texcoord.need(12);
+        out[textureValue].normal.need(18);
     }
     var points = out[textureValue].position;
     var texcoord = out[textureValue].texcoord;
@@ -55,6 +53,7 @@ var addFace = function(basePosition, x, y, z, face, len, textureValue) {
     var textureBottom = textureOffsets[textureValue][0];
     var textureTop = textureOffsets[textureValue][1];
     var textureRight = textureOffsets[textureValue][2];
+
 
     // Default winding for WebGL is counter clockwise
     /*
