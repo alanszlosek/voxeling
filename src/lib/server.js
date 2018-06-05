@@ -71,6 +71,11 @@ Server.prototype.initialize = function() {
                 response.end();
                 return;
             }
+            // Bail if someone requested a chunk outside our world radius
+            if (!self.isChunkInBounds(chunkId)) {
+                response.end();
+                return;
+            }
             self.chunkStore.get(chunkId, function(error, chunk) {
                 var acceptEncoding = request.headers['accept-encoding'] || '';
 
@@ -165,11 +170,14 @@ Server.prototype.initialize = function() {
                     self.chunkStore.gotChunkChanges(changes);
 
                     // Re-broadcast this to the other players, too
-                    for (var chunkID in changes) {
+                    for (var chunkId in changes) {
                         var chunkChanges = {};
-                        chunkChanges[chunkID] = changes[chunkID];
+                        if (!self.isChunkInBounds(chunkId)) {
+                            continue;
+                        }
+                        chunkChanges[chunkId] = changes[chunkId];
 
-                        self.encodedChunkCache.remove(chunkID);
+                        self.encodedChunkCache.remove(chunkId);
                         for (var clientId in self.clients) {
                             var client;
                             var connection;

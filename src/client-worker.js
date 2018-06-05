@@ -64,6 +64,19 @@ var worker = {
     clientMissingChunks: {},
     clientMissingMeshes: {},
 
+    // Keep track of world boundaries
+    lastWorldChunks: [
+        // Lower chunk
+        -(config.chunkSize * config.worldRadius),
+        -(config.chunkSize * config.worldRadius),
+        -(config.chunkSize * config.worldRadius),
+
+        // Farther chunk
+        config.chunkSize * config.worldRadius,
+        config.chunkSize * config.worldRadius,
+        config.chunkSize * config.worldRadius
+    ],
+
 
     connect: function() {
         var self = this;
@@ -200,6 +213,11 @@ var worker = {
             playerPosition,
             drawDistance,
             function(chunkId, chunkPosition, distanceAway) {
+                // Don't request chunks beyond our world radius
+                if (self.chunkOutOfBounds(chunkPosition)) {
+                    return;
+                }
+
                 if (!(chunkId in chunkCache)) {
                     if (!(chunkId in self.requestedChunks)) {
                         MaxConcurrent( requestClosure(chunkId, chunkPosition) );
@@ -397,6 +415,20 @@ var worker = {
             return;
         }
         sendMessage(worker.connection, 'myPosition', [position, yaw, pitch, avatar]);
+    },
+
+    chunkOutOfBounds: function(position) {
+        var self = this;
+        if (
+            // Check lower bound
+            position[0] < self.lastWorldChunks[0] || position[1] < self.lastWorldChunks[1] || position[2] < self.lastWorldChunks[2]
+            ||
+            // Check upper bound
+            position[0] > self.lastWorldChunks[3] || position[1] > self.lastWorldChunks[4] || position[2] > self.lastWorldChunks[5]
+        ) {
+            return true;
+        }
+        return false;
     }
 }
 
