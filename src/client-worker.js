@@ -122,7 +122,7 @@ var worker = {
                     break;
                 // fires when server sends us voxel edits [chunkID, voxelIndex, value, voxelIndex, value...]
                 case 'chunkVoxelIndexValue':
-                    var changes = payload['changes'];
+                    var changes = payload;
                     // Tell the client
                     postMessage(['chunkVoxelIndexValue', changes]);
                     // Update our local cache
@@ -137,6 +137,8 @@ var worker = {
                                 var index = details[i];
                                 var val = details[i + 1];
                                 chunk.voxels[index] = val;
+
+                                // TODO: If changes are along a chunk boundary, re-mesh adjacent chunk
                             }
                             // Re-mesh this chunk
                             self.clientMissingMeshes[ chunkID ] = true;
@@ -148,11 +150,11 @@ var worker = {
                     break;
 
                 case 'chat':
-                    postMessage(['chat', payload.message]);
+                    postMessage(['chat', payload]);
                     break;
 
                 case 'player':
-                    postMessage(['players', payload.players]);
+                    postMessage(['players', payload]);
                     break;
             }
         };
