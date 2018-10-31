@@ -153,7 +153,7 @@ var worker = {
                     postMessage(['chat', payload]);
                     break;
 
-                case 'player':
+                case 'players':
                     postMessage(['players', payload]);
                     break;
             }

@@ -232,7 +232,7 @@ client.on('ready', function() {
                         current: updatedPlayerInfo.positions,
                         adjustments: [0, 0, 0, 0, 0, 0],
 
-                        model: new Player(webgl.gl, webgl.shaders.projectionViewPosition, textures.byName['player'])
+                        model: new Player(webgl.gl, webgl.shaders.projectionViewPosition2, textures.byName['player'])
                     };
 
                     player.model.setTranslation(
@@ -560,7 +560,6 @@ client.on('ready', function() {
             //other.tick()
             pointer();
 
-            /*
             // Update player positions
             for (var id in players) {
                 var player = players[id];
@@ -583,8 +582,7 @@ client.on('ready', function() {
             }
 
             // TODO: calculate delta in webgl render callback and move sky.tick there
-            sky.tick(6);
-            */
+            //sky.tick(6);
         // What if we call this 30 times a second instead?
         }, 1000 / 60);
     });
