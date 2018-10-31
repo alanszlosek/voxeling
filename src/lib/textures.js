@@ -23,6 +23,7 @@ Textures.prototype.load = function(gl, callback) {
     // skip null (empty block) texture
     var done = function() {
         toLoad--;
+        console.log('loaded');
         if (toLoad == 0) {
             callback();
         }
@@ -47,7 +48,7 @@ Textures.prototype.load = function(gl, callback) {
     // http://www.realtimerendering.com/blog/gpus-prefer-premultiplication/
     gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
     // PNGs require this
-    //gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
     // Load combined texture file
     var glTexture = gl.createTexture();

@@ -52,4 +52,6 @@ foreach ($json['textures'] as $value => $path) {
 file_put_contents('../texture-offsets.js', 'module.exports=' . json_encode($out));
 
 imagesavealpha($combined, true);
+// flip it since browser expects PNGs to be upside down
+imageflip($combined, IMG_FLIP_VERTICAL);
 imagepng($combined, '../www/textures.png');

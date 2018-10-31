@@ -82,8 +82,8 @@ Model.prototype.render = function(matrix, ts) {
 
     // rotate light source
     quat.rotateY(tempQuat, scratch.identityQuat, this.movable.getYaw());
-    vec3.transformQuat(tempVector, directionalLightVector, tempQuat);
-    gl.uniform3fv(this.shader.uniforms.directionalLightVector, tempVector);
+    //vec3.transformQuat(tempVector, directionalLightVector, tempQuat);
+    //gl.uniform3fv(this.shader.uniforms.directionalLightVector, tempVector);
 
     gl.uniformMatrix4fv(this.shader.uniforms.projection, false, matrix);
     //gl.uniformMatrix4fv(this.shaderUniforms.player, false, model);

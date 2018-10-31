@@ -74,7 +74,7 @@ client.on('ready', function() {
     textures.load(webgl.gl, function() {
         // ready=false stops physics from running early
         var ready = false;
-        var player = client.player = new Player(webgl.gl, webgl.shaders.projectionViewPosition, textures.byName[ client.avatar ]);
+        var player = client.player = new Player(webgl.gl, webgl.shaders.projectionViewPosition2, textures.byName[ client.avatar ]);
         var players = {};
         var sky = new Sky(webgl.gl, webgl.shaders.projectionViewPosition, textures, player);
         var voxels = client.voxels = new Voxels(

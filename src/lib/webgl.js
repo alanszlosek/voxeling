@@ -156,6 +156,35 @@ WebGL.prototype.createShaders = function() {
     );
 
 
+    fragmentShaderCode = 
+        "precision mediump float;" +
+
+        "uniform sampler2D u_texture;" +
+
+        "varying vec4 v_position;" +
+        "varying vec3 v_normal;" +
+        "varying vec2 v_texcoord;" +
+
+        "vec3 fogColor;" +
+
+        "void main() {" +
+            "vec4 texelColor = texture2D(u_texture, v_texcoord);" +
+
+            // Apply light before we apply the haze?
+            "gl_FragColor.rgb = texelColor.rgb;" +
+            "gl_FragColor.a = texelColor.a;" +
+        "}";
+    this.shaders.projectionViewPosition2 = createShader(
+        this.gl,
+        vertexShaderCode,
+        fragmentShaderCode,
+        // attributes
+        ['position', 'normal', 'texcoord'],
+        // uniforms
+        ['projection', 'view', 'texture']
+    );
+
+
     vertexShaderCode = 
         "uniform mat4 u_projection;" +
 
@@ -183,7 +212,6 @@ WebGL.prototype.createShaders = function() {
         // uniforms
         ['projection', 'texture', 'textureOffset', 'ambientLightColor', 'directionalLightColor', 'directionalLightPosition', 'hazeDistance']
     );
-
 
 };
 
