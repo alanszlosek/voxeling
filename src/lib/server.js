@@ -18,7 +18,7 @@ var sendMessage = function(websocket, name, payload) {
 module.exports = Server;
 
 function Server(config, clientSettings, chunkStore, wsServer, httpServer) {
-    // force instantiation via `new` keyword 
+    // force instantiation via `new` keyword
     //if(!(this instanceof Server)) { return new Server(serverSettings || {}, clientSettings || {}) }
     this.config = config;
     this.clientSettings = clientSettings;
@@ -96,7 +96,7 @@ Server.prototype.initialize = function() {
         }
     });
 
-    this.wsServer.on('connection', function(connection) {
+    self.wsServer.on('connection', function(connection) {
         var id = uuid();
         self.clients[id] = {
             id: id,
@@ -297,4 +297,3 @@ Server.prototype.isChunkInBounds = function(chunkID) {
 Server.prototype.on = function(name, callback) {
     this.emitter.on(name, callback);
 };
-
