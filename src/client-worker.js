@@ -156,6 +156,9 @@ var worker = {
                 case 'players':
                     postMessage(['players', payload]);
                     break;
+                default:
+                    console.log('WebWorker received unexpected message type from server: ' + type);
+                    break;
             }
         };
 
