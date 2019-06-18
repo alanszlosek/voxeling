@@ -41,7 +41,7 @@ What I'm working on
 * Point light sources and shadow mapping
 
 
-Technical Features 
+Technical Features
 ====
 
 * Client and Server (ported bits from my voxel-client and voxel-server forks)
@@ -87,6 +87,10 @@ mkdir -p chunks/your-world
 
 # copy the default config and customize
 cp config-example.js config.js
+# NOTES
+# Be sure to change websocketBindAddress to the address of the interface you want to listen on
+# The server config key tells the browser where to connect for a websocket connection.
+# Use the "wss://" protocol for secure websocket connection from the browser, "ws://" otherwise
 vim config.js
 
 # generate web-worker JavaScript
