@@ -230,7 +230,7 @@ var addFace = function(basePosition, x, y, z, face, len, textureValue) {
     texcoord.data[ texcoord.offset++ ] = textureTop;
     texcoord.data[ texcoord.offset++ ] = 0;
     texcoord.data[ texcoord.offset++ ] = textureTop;
-    
+
     /*
     texcoord.data[ texcoord.offset++ ] = 0.0;
     texcoord.data[ texcoord.offset++ ] = textureBottom;
@@ -354,7 +354,7 @@ var shouldSkipFace = function(currentVoxelValue, opposingVoxelValue) {
     if (opposingVoxelValue > 0) {
         return true;
     }
-    return false;    
+    return false;
 };
 
 var calculate = function(basePosition, voxels) {
@@ -481,14 +481,14 @@ var calculate = function(basePosition, voxels) {
                 }
                 if (!(voxelValue in voxelsToTextures)) {
                     voxelValue = 3;
-                    console.log('falling back to 3');
+                    console.log(voxelValue + ' not in voxelsToTextures, falling back to 3');
                 }
 
                 var textures = voxelsToTextures[voxelValue].textures;
                 var faces = [0, 1, 3, 5];
                 for (var i = 0; i < faces.length; i++) {
                     var face = faces[i];
-                    // Is a face blocked? If so, do we have 
+                    // Is a face blocked? If so, do we have
                     var textureValue = textures[face];
                     var isBlocked = isFaceBlocked(basePosition, voxels, chunkSize, face, x, y, z, textureValue);
 
@@ -517,7 +517,7 @@ var calculate = function(basePosition, voxels) {
                 var faces = [2, 4];
                 for (var i = 0; i < faces.length; i++) {
                     var face = faces[i];
-                    // Is a face blocked? If so, do we have 
+                    // Is a face blocked? If so, do we have
                     var textureValue = textures[face];
                     var isBlocked = isFaceBlocked(basePosition, voxels, chunkSize, face, x, y, z, textureValue);
 

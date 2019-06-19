@@ -91,6 +91,8 @@ cp config-example.js config.js
 # Be sure to change websocketBindAddress to the address of the interface you want to listen on
 # The server config key tells the browser where to connect for a websocket connection.
 # Use the "wss://" protocol for secure websocket connection from the browser, "ws://" otherwise
+# TODO: put note about server vs httpServer params in config
+# Also sample Caddy config for running websocket through same domain assets are served through
 vim config.js
 
 # generate web-worker JavaScript

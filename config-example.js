@@ -14,13 +14,14 @@ module.exports = {
         host: 'localhost'
     },
     server: 'ws://127.0.0.1:10005',
+    httpServer: 'ws://127.0.0.1:10005',
     websocketBindAddress: '127.0.0.1',
     websocketBindPort: 10005,
     maxPlayers: 10,
 
     voxelRemap: {
-        16: 0,
-        20: 0
+        16: 5,
+        20: 5
     },
     texturePicker: [
         1, 14, 17, 3,
@@ -113,7 +114,7 @@ module.exports = {
             name: 'lava',
             textures: [7, 7, 7, 7, 7, 7]
         },
-        
+
         6: {
             name: 'water',
             textures: [6, 6, 6, 6, 6, 6]
@@ -137,7 +138,7 @@ module.exports = {
                 301
             ]
         },
-        
+
         22: {
             name: 'wood',
             textures: [22, 22, 22, 22, 22, 22]

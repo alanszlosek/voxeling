@@ -24,7 +24,6 @@ var Game = require('./lib/game');
 var timer = require('./lib/timer');
 
 //var Meshing = require('../lib/meshers/non-blocked')
-var mesher = require('./lib/meshers/horizontal-merge');
 var pool = require('./lib/object-pool');
 var cursor = require('./lib/cursor');
 
@@ -133,7 +132,7 @@ client.on('ready', function() {
         st.domElement.style.position = 'absolute';
         st.domElement.style.bottom = '0px';
         document.body.appendChild(st.domElement);
-        
+
 
         webgl.onRender(function(ts) {
             // what's the proper name for this matrix?
@@ -191,7 +190,7 @@ client.on('ready', function() {
                 // Highlight of targeted bock can be turned off with Shift
                 lines.render(camera.inverse);
             }
-            
+
             player.render(camera.inverse, ts);
             st.update();
 
@@ -246,7 +245,7 @@ client.on('ready', function() {
                         updatedPlayerInfo.positions[5]
                     );
                 }
-                
+
                 player.model.setTexture( textures.byName[updatedPlayerInfo.avatar] );
             }
             // Compare players to others, remove old players
@@ -259,14 +258,14 @@ client.on('ready', function() {
             }
         });
 
-        
-        
+
+
         fillMaterials(config.texturePicker, config.voxels, config.textures);
 
         // Show coordinates
         var elCoordinates = document.getElementById('coordinates');
         setInterval(function() {
-            elCoordinates.innerHTML = player.getPosition().map(Math.floor).join(',') + 
+            elCoordinates.innerHTML = player.getPosition().map(Math.floor).join(',') +
                 '<br />' +
                 game.lastRegion.join(',');
         }, 1000);

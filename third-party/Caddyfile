@@ -1,0 +1,11 @@
+localhost:9966 {
+    root /Users/alanszlosek/Projects/voxeling3/www
+
+    timeouts 2h
+    proxy /ws localhost:10005 {
+        websocket
+        transparent
+    }
+    proxy /chunk localhost:10005 {
+        transparent
+    }
