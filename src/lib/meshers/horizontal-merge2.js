@@ -480,8 +480,8 @@ var calculate = function(basePosition, voxels) {
                     continue;
                 }
                 if (!(voxelValue in voxelsToTextures)) {
-                    voxelValue = 3;
                     console.log(voxelValue + ' not in voxelsToTextures, falling back to 3');
+                    voxelValue = 3;
                 }
 
                 var textures = voxelsToTextures[voxelValue].textures;
