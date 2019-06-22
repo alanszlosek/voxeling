@@ -48,7 +48,7 @@ var fillMaterials = function(textureArray, voxels, textures) {
         var voxel = voxels[material];
         var textureValue = voxel.textures[0];
         var src = textures[ textureValue ];
-        html += '<div data-texturevalue="' + textureValue + '"><img src="' + src + '" crossorigin="anonymous" />' + '<span>' + voxel.name + '</span></div>';
+        html += '<div data-texturevalue="' + material + '"><img src="' + src + '" crossorigin="anonymous" />' + '<span>' + voxel.name + '</span></div>';
     }
     container.innerHTML = html;
 };
