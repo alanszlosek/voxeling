@@ -47,7 +47,7 @@ var addFace = function(basePosition, x, y, z, face, len, textureValue) {
     var n = [0.0, 0.0, 0.0];
 
     if (!(textureValue in textureOffsets)) {
-        console.log(textureValue + 'not in ', textureOffsets);
+        console.log(textureValue + 'not in ' + textureOffsets);
     }
 
     var textureBottom = textureOffsets[textureValue][0];
@@ -454,6 +454,9 @@ var calculate = function(basePosition, voxels) {
                 var voxelValue = voxels[index + x];
 
                 if (voxelValue == 16) {
+                    voxelValue = 5;
+                }
+                if (voxelValue == 20) {
                     voxelValue = 5;
                 }
 
