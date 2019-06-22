@@ -163,7 +163,7 @@ MysqlChunkStore.prototype.save = function() {
 
 MysqlChunkStore.prototype.saveVoxels = function(chunkID, chunk) {
     var self = this;
-    zlib.gzip(new Buffer(chunk.voxels), function(error, buffer) {
+    zlib.gzip(Buffer.from(chunk.voxels), function(error, buffer) {
         if (error) {
             console.log('Error compressing voxels', error);
             return;
