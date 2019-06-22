@@ -82,7 +82,15 @@ Server.prototype.initialize = function() {
                 // Note: This is not a conformant accept-encoding parser.
                 // See https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.3
                 if (/\bgzip\b/.test(acceptEncoding)) {
-                    response.writeHead(200, { 'Content-Type': 'application/octet-stream', 'Content-Encoding': 'gzip', 'Access-Control-Allow-Origin': '*' });
+                    response.writeHead(
+                        200,
+                        {
+                            'Content-Type': 'application/octet-stream',
+                            'Content-Encoding': 'gzip',
+                            'Access-Control-Allow-Origin': '*',
+                            'Cache-Control': 'no-cache'
+                        }
+                    );
                     if ('compressedVoxels' in chunk && chunk.compressedVoxels) {
                         response.end( chunk.compressedVoxels );
                     } else {
