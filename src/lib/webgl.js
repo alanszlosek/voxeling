@@ -75,7 +75,7 @@ function WebGL(canvas) {
     gl.enable(gl.DEPTH_TEST);
     // if our fragment has a depth value that is less than the one that is currently there, use our new one
     gl.depthFunc(gl.LESS);
-    
+
     // TODO: resize events might need to call this again
     gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -85,14 +85,14 @@ function WebGL(canvas) {
 
 WebGL.prototype.createShaders = function() {
     // Common
-    var fragmentShaderCode = 
+    var fragmentShaderCode =
         "precision mediump float;" +
 
         "uniform sampler2D u_texture;" +
         "uniform float u_textureOffset;" +
         "uniform vec3 u_ambientLightColor;" +
         "uniform vec3 u_directionalLightColor;" +
-        "uniform vec3 u_directionalLightPosition;" + 
+        "uniform vec3 u_directionalLightPosition;" +
         "uniform float u_hazeDistance;" +
 
         "varying vec4 v_position;" +
@@ -104,7 +104,7 @@ WebGL.prototype.createShaders = function() {
         "void main() {" +
             "vec4 texelColor = texture2D(u_texture, v_texcoord + vec2(0, u_textureOffset));" +
             //"vec3 temp;" +
-            
+
             "if(texelColor.a < 0.5) " +
                 "discard;" +
 
@@ -119,13 +119,13 @@ WebGL.prototype.createShaders = function() {
             "float depth = gl_FragCoord.z / gl_FragCoord.w;" +
             // Start haze 1 chunk away, complete haze beyond 2.8 chunks away
             "float fogFactor = smoothstep( 32.0, u_hazeDistance, depth );" +
-            
+
             "gl_FragColor.a = texelColor.a - fogFactor;" +
         "}";
 
 
     // projection * view * position vertex shader
-    var vertexShaderCode = 
+    var vertexShaderCode =
         "uniform mat4 u_projection;" +
         "uniform mat4 u_view;" +
 
@@ -156,7 +156,7 @@ WebGL.prototype.createShaders = function() {
     );
 
 
-    fragmentShaderCode = 
+    var fragmentShaderCode2 =
         "precision mediump float;" +
 
         "uniform sampler2D u_texture;" +
@@ -177,7 +177,7 @@ WebGL.prototype.createShaders = function() {
     this.shaders.projectionViewPosition2 = createShader(
         this.gl,
         vertexShaderCode,
-        fragmentShaderCode,
+        fragmentShaderCode2,
         // attributes
         ['position', 'normal', 'texcoord'],
         // uniforms
@@ -185,7 +185,7 @@ WebGL.prototype.createShaders = function() {
     );
 
 
-    vertexShaderCode = 
+    var vertexShaderCode2 =
         "uniform mat4 u_projection;" +
 
         "attribute vec4 a_position;" +
@@ -195,7 +195,7 @@ WebGL.prototype.createShaders = function() {
         "varying vec4 v_position;" +
         "varying vec3 v_normal;" +
         "varying vec2 v_texcoord;" +
-        
+
         "void main() {" +
             "v_position = u_projection * a_position;" +
             "v_normal = a_normal;" +
@@ -205,7 +205,7 @@ WebGL.prototype.createShaders = function() {
         "}";
     this.shaders.projectionPosition = createShader(
         this.gl,
-        vertexShaderCode,
+        vertexShaderCode2,
         fragmentShaderCode,
         // attributes
         ['position', 'normal', 'texcoord'],
