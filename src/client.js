@@ -184,7 +184,7 @@ client.on('ready', function() {
             // END of non-render stuff
             camera.updateProjection();
 
-            //sky.render(camera.inverse, ts);
+            sky.render(camera.inverse, ts);
             voxels.render(camera.inverse, ts, sky.ambientLightColor, sky.directionalLight);
             if (highlightOn) {
                 // Highlight of targeted bock can be turned off with Shift
