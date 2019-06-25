@@ -22,7 +22,17 @@ var chunkStore = new chunkStore(
     config.chunkFolder
 );
 */
-if (false) {// and config.mysql) {
+
+// Use mysql chunk storage if the mysql module is installed
+var useMysql = false;
+try {
+    require.resolve('mysql);
+    useMysql = true;
+} catch(e){}
+if (useMysql) {
+    if (!('mysql' in config)) {
+        throw new Error('Attempted to use mysql for chunk storage, but no mysql params found in config');
+    }
     mysqlPool = require('mysql').createPool(config.mysql);
     var chunkStore = new chunkStore(
         new chunkGenerator(config.chunkSize),
