@@ -21,7 +21,7 @@ var MysqlChunkStore = function(generator, config) {
             self.applyChanges();
             self.save();
         },
-        500
+        5000
     );
 };
 module.exports = MysqlChunkStore;
