@@ -19,6 +19,11 @@ var MysqlChunkStore = function(generator, config) {
     setInterval(
         function() {
             self.applyChanges();
+        },
+        500
+    );
+    setInterval(
+        function() {
             self.save();
         },
         5000
@@ -34,6 +39,7 @@ MysqlChunkStore.prototype.get = function(chunkID, callback) {
         callback(null, chunk);
         return;
     }
+    //console.log('Chunk not found in HLRU cache, fetching from mysql');
 
     // Check filesystem
     log('get', chunkID);
@@ -102,40 +108,43 @@ MysqlChunkStore.prototype.gotChunkChanges = function(chunks) {
 // TODO: this should be a sync queued operation
 MysqlChunkStore.prototype.applyChanges = function() {
     var self = this;
-	var merge = function(chunk, changes) {
+    var merge = function(chunk, changes) {
         for (var i = 0; i < changes.length; i += 2) {
             var index = changes[i];
             var val = changes[i + 1];
             var old = chunk.voxels[index];
             chunk.voxels[index] = val;
-		}
-		// Schedule for saving
-	};
-	var ids = Object.keys(self.changes);
-	for (var i = 0; i < ids.length; i++) {
-		var chunkID = ids[i];
+        }
+    // Schedule for saving
+    };
+    var ids = Object.keys(self.changes);
+    for (var i = 0; i < ids.length; i++) {
+        var chunkID = ids[i];
         var details;
         var chunk = cache.get(chunkID);
         if (!chunk) {
-            // Request the chunk, so we can modify it and then save it
+            // Request the chunk from ourselves, the mysql store, so we can modify it and then save it
             self.get(chunkID, function(error, chunk) {
-				//merge(chunk, self.changes[chunkID]);
-			});
+                //merge(chunk, self.changes[chunkID]);
+            });
             continue;
         }
         // If we have the chunk in our LRU cache, update it and queue for a save
-		merge(chunk, self.changes[chunkID]);
-		/*
-		if (old) {
-			if (val) {
-				stats.count('blocks.changed');
-			} else {
-				stats.count('blocks.destroyed');
-			}
-		} else {
-			stats.count('blocks.created');
-		}
-		*/
+        merge(chunk, self.changes[chunkID]);
+        chunk.compressedVoxels = false;
+        // Update LRU cache
+        cache.set(chunkID, chunk);
+        /*
+        if (old) {
+            if (val) {
+                stats.count('blocks.changed');
+            } else {
+                stats.count('blocks.destroyed');
+            }
+        } else {
+            stats.count('blocks.created');
+        }
+        */
 
         self.toSave[chunkID] = chunk;
         delete self.changes[chunkID];
