@@ -144,7 +144,7 @@ FileChunkStore.prototype.save = function() {
     // is there an abstraction (npm module) to help with this?
     var op = function(filename, chunk) {
         return function(done) {
-            fs.writeFile(self.chunkFolder + filename, new Buffer(chunk.voxels), function(err) {
+            fs.writeFile(self.chunkFolder + filename, Buffer.from(chunk.voxels), function(err) {
                 if (err) {
                     done();
                     return console.log(err);

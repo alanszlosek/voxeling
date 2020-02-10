@@ -26,7 +26,7 @@ var chunkStore = new chunkStore(
 // Use mysql chunk storage if the mysql module is installed
 var useMysql = false;
 try {
-    require.resolve('mysql);
+    require.resolve('mysql');
     useMysql = true;
 } catch(e){}
 if (useMysql) {

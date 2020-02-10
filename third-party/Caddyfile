@@ -9,3 +9,4 @@ localhost:9966 {
     proxy /chunk localhost:10005 {
         transparent
     }
+}

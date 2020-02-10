@@ -95,19 +95,21 @@ cp config-example.js config.js
 # Also sample Caddy config for running websocket through same domain assets are served through
 vim config.js
 
-# generate web-worker JavaScript
-./scripts/worker.sh
+# Build and bundle the client code into a single file
+node node_modules/browserify/bin/cmd.js src/client.js -o www/bundle.js
+# dO the same for the web worker code
+node node_modules/browserify/bin/cmd.js src/client-worker.js -o www/client-worker.js
 
 # start server
-./scripts/server.sh
+node src/server.js
 ```
 
 In terminal 2:
 
 ```
 cd /path/to/voxeling
-# start the client
-./scripts/client.sh
+# Start Caddy to serve the HTML, JavaScript, CSS and chunk files
+caddy -conf ./third-party/Caddyfile
 ```
 
 Now, point your browser to http://127.0.0.1:9966. Read the introduction for controls and keybindings. Enjoy!
