@@ -1,11 +1,12 @@
+// TODO: fix
 var glm = require('gl-matrix'),
     vec3 = glm.vec3,
     vec4 = glm.vec4,
     mat4 = glm.mat4,
     quat = glm.quat;
 
-var pool = require('../lib/object-pool');
-var log = require('./log')('lib/game', false);
+import { Log } from '../log';
+var log = Log('lib/game', false);
 
 // miscellaneous state
 var previousTimeStamp = 0;

@@ -1,4 +1,4 @@
-var distances = require('./distances.js')
+import { distances } from './distances';
 
 module.exports = function(opts) {
     return new Coordinates(opts)

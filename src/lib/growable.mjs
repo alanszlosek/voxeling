@@ -1,5 +1,5 @@
 // maybe replace pool with a version that handles types of objects too
-var pool = require('./object-pool');
+import { pool } from './object-pool';
 
 var Growable = function(type, initialSize) {
     this.type = type;
@@ -42,4 +42,4 @@ Growable.prototype.free = function() {
     pool.free(this.type, this.data);
 };
 
-module.exports = Growable;
+export { Growable };

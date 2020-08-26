@@ -11,7 +11,6 @@ ChunkStore.prototype.tick = function() {
     // Extend this class and do stuff
 };
 
-module.exports = ChunkStore;
 
 
 /*
@@ -23,3 +22,4 @@ ChunkStore.prototype.gotChunkChanges = function(chunks) {
     // Can't do much since this chunk store doesn't store any chunks
 };
 
+export { ChunkStore };

@@ -1,12 +1,11 @@
-var stats = require('../voxel-stats');
-var ChunkStore = require('../chunk-store');
+import { stats } from '../voxel-stats';
+import { ChunkStore } from '../chunk-store';
 
 // Stores chunks in an object, keyed by chunkID
 var MemoryChunkStore = function(generator) {
     ChunkStore.call(this, generator);
     this.chunkCache = {};
 };
-module.exports = MemoryChunkStore;
 
 
 MemoryChunkStore.prototype.get = function(chunkID) {
@@ -58,3 +57,4 @@ MemoryChunkStore.prototype.gotChunkChanges = function(chunks) {
     }
 };
 
+export {MemoryChunkStore };

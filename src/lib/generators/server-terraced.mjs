@@ -1,4 +1,6 @@
-var Generator = require('../generator');
+import { Generator } from '../generator';
+
+// TODO: fix me
 var inherits = require('util').inherits;
 var debug = false;
 
@@ -48,5 +50,5 @@ var ServerGenerator = function(chunkSize) {
 };
 inherits(ServerGenerator, Generator);
 
-module.exports = ServerGenerator;
+export { ServerGenerator };
 

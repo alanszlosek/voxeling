@@ -3,7 +3,7 @@ var glm = require('gl-matrix'),
     vec4 = glm.vec4,
     mat4 = glm.mat4,
     quat = glm.quat;
-var raycast = require('voxel-raycast');
+import { raycast } from 'voxel-raycast';
 
 var debug = false;
 // ticks per second

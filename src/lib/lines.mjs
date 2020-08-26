@@ -105,4 +105,4 @@ Lines.prototype.skip = function(yesno) {
     this.skipDraw = yesno;
 };
 
-module.exports = Lines;
+export { Lines };

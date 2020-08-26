@@ -1,6 +1,7 @@
+// TODO: fix me
 var EventEmitter = require('events').EventEmitter;
-var pool = require('./object-pool');
-var log = require('./log')('lib/client', false);
+import { Log } from '../log';
+var log = Log('lib/client', false);
 
 function Client(settings) {
     var self = this;
@@ -135,4 +136,4 @@ Client.prototype.on = function(name, callback) {
     this.emitter.on(name, callback);
 };
 
-module.exports = Client;
+export { Client };

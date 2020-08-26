@@ -1,9 +1,9 @@
 // TODO: clean this up. fewer globals
 
 // TODO: use object pool for vector arrays
-var Growable = require('../growable');
-var pool = require('../object-pool');
-var timer = require('../timer');
+import { Growable } from '../growable';
+import { timer } from '../timer';
+
 var Coordinator;
 var chunkCache;
 var chunkSize = 2;

@@ -1,13 +1,13 @@
+// TODO: fix me
 var glm = require('../gl-matrix'),
     vec3 = glm.vec3,
     vec4 = glm.vec4,
     mat4 = glm.mat4,
     quat = glm.quat;
-var scratch = require('../scratch');
-
-var Shapes = require('../shapes2');
-var Model = require('../model2');
-var Scene = require('../scene-graph');
+import { scratch } from '../scratch';
+import { Shapes } from '../shapes2';
+import { Model } from '../model2';
+import { Scene } from '../scene-graph';
 
 function Sun(gl, shader, textures, player) {
     var self = this;
@@ -115,4 +115,4 @@ Sun.prototype.render = function(parentView, ts) {
     this.hierarchy.render(scratch.identityMat4, ts);
 };
 
-module.exports = Sun;
+export { Sun };

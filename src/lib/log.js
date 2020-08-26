@@ -7,7 +7,7 @@ var stub = function() {
 
 // enabled param allow us to turn log output on/off when we initialize the logging module
 // removes the need for a separate debug boolean in each file, and the associated conditionals
-module.exports = function(moduleName, enabled) {
+export default function(moduleName, enabled) {
 
     if (!enabled) {
         return stub;

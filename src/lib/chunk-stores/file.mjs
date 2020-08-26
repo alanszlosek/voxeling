@@ -1,8 +1,9 @@
-var stats = require('../voxel-stats');
-var ChunkStore = require('../chunk-store');
-var fs = require('fs');
-var concur = require('../max-concurrent')(50);
-var HLRU = require('hashlru');
+import { stats } from '../voxel-stats';
+import { ChunkStore } from '../chunk-store';
+import { fs } from 'fs';
+import { MaxConcurrent } from '../max-concurrent';
+import { HLRU } from 'hashlru';
+var concurrent = MaxConcurrent(50);
 var cache = HLRU(200);
 var debug = false;
 
@@ -39,7 +40,6 @@ var FileChunkStore = function(generator, chunkFolder) {
         3000
     );
 };
-module.exports = FileChunkStore;
 
 
 FileChunkStore.prototype.get = function(chunkID, callback) {
@@ -166,3 +166,4 @@ FileChunkStore.prototype.save = function() {
     this.toSave = {};
 };
 
+export { FileChunkStore };

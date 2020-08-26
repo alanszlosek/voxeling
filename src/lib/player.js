@@ -5,9 +5,10 @@ var glm = require('gl-matrix'),
     quat = glm.quat;
 
 var inherits = require('inherits');
-var Movable = require('./movable');
-var Shapes = require('./shapes');
-var Model = require('./model');
+
+import { Shapes } from '../shapes';
+import { Movable } from '../movable';
+import { Model } from '../model';
 
 function Player(gl, shader, texture) {
     var self = this;
@@ -173,4 +174,5 @@ Player.prototype.render = function(projection, ts) {
     this.model.render(projection, ts);
 };
 
-module.exports = Player;
+
+export { Player };

@@ -482,4 +482,4 @@ if (!module) {
     module = {};
 }
 
-module.exports = InputHandler;
+export { InputHandler };

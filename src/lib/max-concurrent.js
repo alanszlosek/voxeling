@@ -1,4 +1,4 @@
-module.exports = function(batchSize) {
+export default function(batchSize) {
     var activeCount = 0;
     var pending = [];
 

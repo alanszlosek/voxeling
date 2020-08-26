@@ -1,4 +1,4 @@
-var zlib = require('zlib');
+import { zlib } from 'zlib';
 
 //var stats = require('voxeling-stats')
 var debug = false;
@@ -21,7 +21,6 @@ var Generator = function(chunkSize) {
     this.chunkArraySize = this.chunkSize * this.chunkSize * this.chunkSize;
     this.generateVoxel = generateVoxel;
 }
-module.exports = Generator
 
 
 Generator.prototype.get = function(chunkID) {
@@ -66,3 +65,4 @@ Generator.prototype.makeChunkStruct = function(chunkID) {
     };
 };
 
+export { Generator };

@@ -1,8 +1,7 @@
-var Generator = require('../generator');
+import { Generator } from '../generator';
 
+// TODO: fix
 var inherits = require('util').inherits;
-
-module.exports = ClientGenerator;
 
 var debug = false;
 
@@ -33,3 +32,5 @@ ClientGenerator.prototype.generateChunks = function() {
     this.emitter.emit('needChunks', chunkIDs);
     this.chunksToRequest = {};
 };
+
+export { ClientGenerator };

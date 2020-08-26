@@ -1,8 +1,5 @@
 var glm = require('gl-matrix'),
-    vec3 = glm.vec3,
-    vec4 = glm.vec4,
-    mat4 = glm.mat4,
-    quat = glm.quat;
+    mat4 = glm.mat4;
 
 // http://webglfundamentals.org/webgl/lessons/webgl-scene-graph.html
 
@@ -59,6 +56,4 @@ Node.prototype.render = function(ts) {
 };
 
 
-module.exports = {
-    Node: Node
-};
+export { Node };

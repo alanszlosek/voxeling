@@ -1,3 +1,5 @@
+// TODO: fix me
+
 var glm = require('gl-matrix'),
     vec3 = glm.vec3,
     vec4 = glm.vec4,
@@ -6,8 +8,8 @@ var glm = require('gl-matrix'),
 
 var inherits = require('inherits');
 
-var Movable = require('./movable');
-var scratch = require('./scratch');
+import { Movable } from '../movable';
+import { scratch } from '../scratch';
 
 function Camera(canvas, follow) {
     Movable.call(this);
@@ -84,4 +86,4 @@ Camera.prototype.nextView = function() {
     }
 };
 
-module.exports = Camera;
+export { Camera };

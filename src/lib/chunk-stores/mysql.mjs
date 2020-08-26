@@ -1,10 +1,11 @@
-var stats = require('../voxel-stats');
-var ChunkStore = require('../chunk-store');
-var mysql = require('mysql');
-var zlib = require('zlib');
-var HLRU = require('hashlru');
+import { stats } from '../voxel-stats';
+import { ChunkStore } from '../chunk-store';
+import { mysql } from 'mysql';
+import { zlib } from 'zlib';
+import { HLRU } from 'hashlru';
+import { Log } from '../log';
 var cache = HLRU(400);
-var log = require('../log')('MysqlChunkStore', false);
+var log = Log('MysqlChunkStore', false);
 
 var worldId = 1;
 
@@ -29,7 +30,6 @@ var MysqlChunkStore = function(generator, config) {
         5000
     );
 };
-module.exports = MysqlChunkStore;
 
 
 MysqlChunkStore.prototype.get = function(chunkID, callback) {
@@ -194,3 +194,5 @@ MysqlChunkStore.prototype.saveVoxels = function(chunkID, chunk) {
         );
     });
 };
+
+export { MysqlChunkStore };
