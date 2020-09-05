@@ -1,9 +1,8 @@
-import { stats } from '../voxel-stats';
-import { ChunkStore } from '../chunk-store';
+import ChunkStore from '../chunk-store';
+import { HLRU } from 'hashlru';
+import Log from '../log';
 import { mysql } from 'mysql';
 import { zlib } from 'zlib';
-import { HLRU } from 'hashlru';
-import { Log } from '../log';
 var cache = HLRU(400);
 var log = Log('MysqlChunkStore', false);
 

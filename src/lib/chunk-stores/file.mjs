@@ -1,8 +1,7 @@
-import { stats } from '../voxel-stats';
-import { ChunkStore } from '../chunk-store';
-import { fs } from 'fs';
-import { MaxConcurrent } from '../max-concurrent';
-import { HLRU } from 'hashlru';
+import ChunkStore from '../chunk-store';
+import fs from 'fs';
+import HLRU from 'hashlru';
+import MaxConcurrent from '../max-concurrent';
 var concurrent = MaxConcurrent(50);
 var cache = HLRU(200);
 var debug = false;

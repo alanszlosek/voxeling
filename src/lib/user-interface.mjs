@@ -1,4 +1,9 @@
-var EventEmitter = require('events').EventEmitter;
+//import EventEmitter from 'EventEmitter';
+
+import { Tickable } from './ecs/tickable.mjs';
+import { WebGL } from './webgl.mjs';
+import { EventEmitter } from 'eventemitter3';
+
 var debug = false;
 
 var mouseCallback = function() {};
@@ -310,77 +315,181 @@ var gamepad;
 
 // Really want to proxy events, so that way I can convert controller events to mouse events and send them to the player/camera
 // movement handler.
-var InputHandler = function(bindToElement, canvas) {
-    var self = this;
-    this.bindToElement = bindToElement;
-    this.canvas = canvas;
-    this.state = controlStates;
-    this.emitter = new EventEmitter();
+class UserInterface extends Tickable {
+    constructor(game) {
+        super();
 
-    this.boundStates = {};
+        this.game = game;
+        this.state = controlStates;
+    }
 
-    // Fix up states data structure with functions bound to this
-    for (var state in states) {
-        this.boundStates[state] = {};
-        for (var method in states[state]) {
-            this.boundStates[state][method] = states[state][method].bind(this);
+    init() {
+        let canvas = document.getElementById('herewego');
+        canvas.width = canvas.clientWidth;
+        canvas.height = canvas.clientHeight;
+        this.canvas = canvas;
+
+        this.webgl = new WebGL(canvas);
+
+        this.bindToElement = document.body;
+        this.emitter = new EventEmitter();
+
+        this.boundStates = {};
+
+        // Fix up states data structure with functions bound to this
+        for (var state in states) {
+            this.boundStates[state] = {};
+            for (var method in states[state]) {
+                this.boundStates[state][method] = states[state][method].bind(this);
+            }
+        }
+
+        document.addEventListener(
+            'pointerlockerror',
+            function(error) {
+                console.log('Pointer Lock Error', error);
+            },
+            false
+        );
+
+        // TODO: handle control change .... inventory gamepads whennew one is connected
+        return Promise.resolve();
+    }
+
+    
+    mouseDeltaCallback(callback) {
+        mouseCallback = callback;
+    }
+
+    transition(newState) {
+        var current;
+        if (currentState) {
+            // we might be starting at the null state
+            current = this.boundStates[currentState];
+            // Unbind current event handlers
+            for (var method in current) {
+                if (method == 'from' || method == 'to') {
+                    continue;
+                }
+                if (method == 'pointerlockchange') {
+                    document.removeEventListener(method, current[method], false);
+                } else {
+                    this.bindToElement.removeEventListener(method, current[method], false);
+                }
+            }
+            if ('from' in current) {
+                current['from']();
+            }
+            this.emitter.emit('from.' + currentState);
+        }
+        if (newState in states) {
+            currentState = newState;
+            current = this.boundStates[currentState];
+            // Bind new event handlers
+            for (var method in current) {
+                if (method == 'from' || method == 'to') {
+                    continue;
+                }
+                if (method == 'pointerlockchange') {
+                    document.addEventListener(method, current[method], false);
+                } else {
+                    this.bindToElement.addEventListener(method, current[method], false);
+                }
+            }
+            if ('to' in current) {
+                current['to']();
+            }
+            this.emitter.emit('to.' + newState);
         }
     }
 
-    document.addEventListener(
-        'pointerlockerror',
-        function(error) {
-            console.log('Pointer Lock Error', error);
-        },
-        false
-    );
-};
-
-InputHandler.prototype.mouseDeltaCallback = function(callback) {
-    mouseCallback = callback;
-};
-
-InputHandler.prototype.transition = function(newState) {
-    var current;
-    if (currentState) {
-        // we might be starting at the null state
-        current = this.boundStates[currentState];
-        // Unbind current event handlers
-        for (var method in current) {
-            if (method == 'from' || method == 'to') {
-                continue;
-            }
-            if (method == 'pointerlockchange') {
-                document.removeEventListener(method, current[method], false);
-            } else {
-                this.bindToElement.removeEventListener(method, current[method], false);
-            }
+    tick() {
+        var gamepad = navigator.getGamepads()[0];
+        if (!gamepad) {
+            return;
         }
-        if ('from' in current) {
-            current['from']();
+    
+        // HANDLE MOVEMENT
+        var threshold = 0.15;
+        if (gamepad.axes[0] > threshold) {
+            controlStates.left = 0;
+            controlStates.right = Math.abs(gamepad.axes[0]);
+        } else if (gamepad.axes[0] < -threshold) {
+            controlStates.left = Math.abs(gamepad.axes[0]);
+            controlStates.right = 0;
+        } else {
+            controlStates.left = controlStates.right = 0;
         }
-        this.emitter.emit('from.' + currentState);
+    
+        if (gamepad.axes[1] > threshold) {
+            controlStates.backward = Math.abs(gamepad.axes[1]);
+            controlStates.forward = 0;
+        } else if (gamepad.axes[1] < -threshold) {
+            controlStates.backward = 0;
+            controlStates.forward = Math.abs(gamepad.axes[1]);
+        } else {
+            controlStates.backward = controlStates.forward = 0;
+        }
+    
+        // HANDLE LOOKING
+        threshold = 0.15;
+        var speed = 4;
+        var lookHorizontal = gamepad.axes[2];
+        var lookVertical = gamepad.axes[3];
+        var deltaX = 0;
+        var deltaY = 0;
+    
+        if (lookHorizontal > threshold) {
+            deltaX = Math.floor(speed * lookHorizontal);
+        } else if (lookHorizontal < -threshold) {
+            deltaX = Math.floor(speed * lookHorizontal);
+        }
+    
+        if (lookVertical > threshold) {
+            deltaY = Math.floor(speed * lookVertical);
+        } else if (gamepad.axes[3] < -threshold) {
+            deltaY = Math.floor(speed * lookVertical);
+        }
+        if (deltaX || deltaY) {
+            mouseCallback(deltaX, deltaY);
+        }
+    
+        if (buttonPressed(gamepad.buttons[0]) || buttonPressed(gamepad.buttons[7])) {
+            controlStates.jump = true;
+        } else {
+            controlStates.jump = false;
+        }
+        if (buttonPressed(gamepad.buttons[1]) || buttonPressed(gamepad.buttons[6])) {
+            controlStates.fly = true;
+        } else {
+            controlStates.fly = false;
+        }
+    
+        // 4 - left shoulder
+        // 6 left trigger
+        // fire triggers too quickly ... track state changes
+        // TODO: update this to emit fire.down and fire.up, same for firealt
+        if (buttonPressed(gamepad.buttons[5])) {
+            // right shoulder
+            if (!fired) {
+                this.emitter.emit('fire');
+                fired = true;
+            }
+        } else if (buttonPressed(gamepad.buttons[4])) {
+            // right trigger
+            if (!fired) {
+                this.emitter.emit('firealt');
+                fired = true;
+            }
+        } else {
+            fired = false;
+        }
     }
-    if (newState in states) {
-        currentState = newState;
-        current = this.boundStates[currentState];
-        // Bind new event handlers
-        for (var method in current) {
-            if (method == 'from' || method == 'to') {
-                continue;
-            }
-            if (method == 'pointerlockchange') {
-                document.addEventListener(method, current[method], false);
-            } else {
-                this.bindToElement.addEventListener(method, current[method], false);
-            }
-        }
-        if ('to' in current) {
-            current['to']();
-        }
-        this.emitter.emit('to.' + newState);
+    
+    on(name, callback) {
+        this.emitter.on(name, callback);
     }
-};
+}
 
 function buttonPressed(b) {
     if (typeof b == "object") {
@@ -391,95 +500,4 @@ function buttonPressed(b) {
 
 var fired = false;
 
-InputHandler.prototype.tick = function() {
-    var gamepad = navigator.getGamepads()[0];
-    if (!gamepad) {
-        return;
-    }
-
-    // HANDLE MOVEMENT
-    var threshold = 0.15;
-    if (gamepad.axes[0] > threshold) {
-        controlStates.left = 0;
-        controlStates.right = Math.abs(gamepad.axes[0]);
-    } else if (gamepad.axes[0] < -threshold) {
-        controlStates.left = Math.abs(gamepad.axes[0]);
-        controlStates.right = 0;
-    } else {
-        controlStates.left = controlStates.right = 0;
-    }
-
-    if (gamepad.axes[1] > threshold) {
-        controlStates.backward = Math.abs(gamepad.axes[1]);
-        controlStates.forward = 0;
-    } else if (gamepad.axes[1] < -threshold) {
-        controlStates.backward = 0;
-        controlStates.forward = Math.abs(gamepad.axes[1]);
-    } else {
-        controlStates.backward = controlStates.forward = 0;
-    }
-
-    // HANDLE LOOKING
-    threshold = 0.15;
-    var speed = 4;
-    var lookHorizontal = gamepad.axes[2];
-    var lookVertical = gamepad.axes[3];
-    var deltaX = 0;
-    var deltaY = 0;
-
-    if (lookHorizontal > threshold) {
-        deltaX = Math.floor(speed * lookHorizontal);
-    } else if (lookHorizontal < -threshold) {
-        deltaX = Math.floor(speed * lookHorizontal);
-    }
-
-    if (lookVertical > threshold) {
-        deltaY = Math.floor(speed * lookVertical);
-    } else if (gamepad.axes[3] < -threshold) {
-        deltaY = Math.floor(speed * lookVertical);
-    }
-    if (deltaX || deltaY) {
-        mouseCallback(deltaX, deltaY);
-    }
-
-    if (buttonPressed(gamepad.buttons[0]) || buttonPressed(gamepad.buttons[7])) {
-        controlStates.jump = true;
-    } else {
-        controlStates.jump = false;
-    }
-    if (buttonPressed(gamepad.buttons[1]) || buttonPressed(gamepad.buttons[6])) {
-        controlStates.fly = true;
-    } else {
-        controlStates.fly = false;
-    }
-
-    // 4 - left shoulder
-    // 6 left trigger
-    // fire triggers too quickly ... track state changes
-    // TODO: update this to emit fire.down and fire.up, same for firealt
-    if (buttonPressed(gamepad.buttons[5])) {
-        // right shoulder
-        if (!fired) {
-            this.emitter.emit('fire');
-            fired = true;
-        }
-    } else if (buttonPressed(gamepad.buttons[4])) {
-        // right trigger
-        if (!fired) {
-            this.emitter.emit('firealt');
-            fired = true;
-        }
-    } else {
-        fired = false;
-    }
-};
-
-InputHandler.prototype.on = function(name, callback) {
-    this.emitter.on(name, callback);
-};
-
-if (!module) {
-    module = {};
-}
-
-export { InputHandler };
+export { UserInterface };

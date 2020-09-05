@@ -1,11 +1,10 @@
-var config = require('../config');
-var textureOffsets = require('../texture-offsets');
+import { Coordinates } from './lib/coordinates';
+import mesher from './lib/meshers/horizontal-merge2';
+import MC from './lib/max-concurrent';
+import TextureOffsets from '../texture-offsets';
+import pool from './lib/object-pool.mjs';
 
-var pool = require('./lib/object-pool');
-var Coordinates = require('./lib/coordinates');
-var mesher = require('./lib/meshers/horizontal-merge2');
-var ClientGenerator = require('./lib/generators/client.js');
-var MaxConcurrent = require('./lib/max-concurrent')(10);
+let MaxConcurrent = MC(10);
 var timer = require('./lib/timer');
 var chunkArrayLength = config.chunkSize * config.chunkSize * config.chunkSize;
 var chunkCache = {};
@@ -82,7 +81,6 @@ var worker = {
         var self = this;
         var coordinates = this.coordinates = new Coordinates(config.chunkSize);
         var websocket = this.connection = new WebSocket(config.server);
-        var generator = new ClientGenerator(chunkCache, config.chunkSize);
 
         mesher.config(config.chunkSize, config.voxels, textureOffsets, coordinates, chunkCache);
 
@@ -226,6 +224,7 @@ var worker = {
                 if (!(chunkId in chunkCache)) {
                     if (!(chunkId in self.requestedChunks)) {
                         MaxConcurrent( requestClosure(chunkId, chunkPosition) );
+                        // TODO: shoudl probably keep a handle to the request so we can cancel it if we no longer care
                         self.requestedChunks[chunkId] = true;
                     }
                 }

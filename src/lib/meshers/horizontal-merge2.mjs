@@ -576,7 +576,7 @@ if (!module) {
     var module = {};
 }
 
-var Meshing = module.exports = {
+export default {
     config: function(cs, voxToTex, texOffsets, coordinatorHandle, cache) {
         chunkSize = cs;
         voxelArraySize = chunkSize * chunkSize * chunkSize;

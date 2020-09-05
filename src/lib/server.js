@@ -1,6 +1,7 @@
-var zlib = require('zlib');
-var EventEmitter = require('events').EventEmitter;
-var uuid = require('hat');
+import zlib from 'zlib';
+import EventEmitter from 'EventEmitter';
+// TODO fix hat/uuid
+import uuid from 'hat';
 
 // voxel dependencies
 var Coordinates = require('./coordinates');

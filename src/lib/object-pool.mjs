@@ -76,4 +76,12 @@ function clear() {
     pool = {};
 }
 
-export { malloc, free, bytesAvailable, stats, clear };
+let obj = {
+    malloc: malloc,
+    free: free,
+    bytesAvailable: bytesAvailable,
+    stats: stats,
+    clear: clear
+};
+
+export default obj

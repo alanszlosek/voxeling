@@ -1,5 +1,4 @@
-// TODO: fix me
-var EventEmitter = require('events').EventEmitter;
+import EventEmitter from 'EventEmitter';
 import { Log } from '../log';
 var log = Log('lib/client', false);
 

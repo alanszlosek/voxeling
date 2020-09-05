@@ -1,5 +1,4 @@
-import { stats } from '../voxel-stats';
-import { ChunkStore } from '../chunk-store';
+import ChunkStore from '../chunk-store';
 
 // Stores chunks in an object, keyed by chunkID
 var MemoryChunkStore = function(generator) {
@@ -57,4 +56,4 @@ MemoryChunkStore.prototype.gotChunkChanges = function(chunks) {
     }
 };
 
-export {MemoryChunkStore };
+export { MemoryChunkStore };
