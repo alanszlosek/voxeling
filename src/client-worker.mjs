@@ -1,15 +1,18 @@
+import config from '../config';
 import { Coordinates } from './lib/coordinates';
 import mesher from './lib/meshers/horizontal-merge2';
+import Log from './lib/log';
 import MC from './lib/max-concurrent';
+import textureOffsets from '../texture-offsets';
 import TextureOffsets from '../texture-offsets';
 import pool from './lib/object-pool.mjs';
+import timer from './lib/timer';
 
 let MaxConcurrent = MC(10);
-var timer = require('./lib/timer');
 var chunkArrayLength = config.chunkSize * config.chunkSize * config.chunkSize;
 var chunkCache = {};
 
-var log = require('./lib/log')('client-worker');
+var log = Log('client-worker');
 var debug = false;
 
 /*

@@ -2,7 +2,7 @@
 
 // TODO: use object pool for vector arrays
 import { Growable } from '../growable';
-import { timer } from '../timer';
+import timer from '../timer';
 
 var Coordinator;
 var chunkCache;

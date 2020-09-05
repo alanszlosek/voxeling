@@ -1,6 +1,6 @@
 var items = {};
 
-module.exports = {
+export default {
     log: function(name, time) {
         var item;
         if (name in items) {
