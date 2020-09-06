@@ -9,11 +9,14 @@
     "gl-matrix": "^3.3.0",
     "hashlru": "^2.3.0",
     "hat": "0.0.3",
+    "mysql": "^2.18.1",
     "perlin": "~1.0.0",
     "rollup": "^2.26.9",
     "sillyname": "0.1.0",
+    "uuid": "^8.3.0",
     "voxel-raycast": "^0.2.1",
     "voxel-trees": "^0.1.0",
+    "websocket": "^1.0.32",
     "ws": "^7.2.1"
   },
   "engines": {

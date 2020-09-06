@@ -1,4 +1,4 @@
-import distances from './distances';
+import distances from './distances.mjs';
 
 // TODO convert this to class
 

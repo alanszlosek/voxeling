@@ -1,4 +1,4 @@
-import { Generator } from '../generator';
+import { Generator } from '../generator.mjs';
 
 let debug = false;
 
@@ -7,7 +7,7 @@ function getRandomInt(min, max) {
 }
 
 
-class ServerGenerator extends Generator {
+class ServerGeneratorTerraced extends Generator {
     fillChunkVoxels(chunk, chunkSize) {
         let lo = chunk.position;
         let ii = lo[0] + chunkSize;
@@ -62,5 +62,5 @@ class ServerGenerator extends Generator {
     }
 }
 
-export { ServerGenerator };
+export default ServerGeneratorTerraced;
 
