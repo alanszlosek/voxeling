@@ -1,5 +1,10 @@
+import Log from './log';
+
+let log = Log('client-worker-handle');
+
 class ClientWorkerHandle {
     constructor(game) {
+        this.game = game;
     }
     init() {
         var self = this;
@@ -11,18 +16,16 @@ class ClientWorkerHandle {
             // TODO: redesign this ... these messages should be handled by something else
 
             self.worker.onmessage = function(e) {
-                var message = e.data;
-        
+                var message = e.data;        
                 switch (message[0]) {
                     case 'open':
                         self.connected = true;
                         log('Client.bindEvents: connection opened');
-                        self.emitter.emit('open');
                         break;
                     case 'close':
                         self.connected = false;
                         log('Client.bindEvents: connection closed');
-                        self.emitter.emit('close');
+                        self.game.userInterface.transition('disconnected');
                         break;
                     case 'error':
                         log('Client.bindEvents.error: ' + message[1]);
@@ -35,33 +38,33 @@ class ClientWorkerHandle {
                         //self.settings = extend(self.settings, settings) // server settings squash client settings
                         log('Client.bindEvents: Got settings', settings);
                         if ('initialPosition' in settings) {
-                            self.settings.initialPosition = settings.initialPosition;
+                            self.game.settings.initialPosition = settings.initialPosition;
                         }
                         self.id = id;
                         //self.player.avatarImage = avatarImage
                         log('Client.bindEvents: got id ' + id);
                         // setup complete, do we need to do additional engine setup?
-                        self.emitter.emit('ready');
+                        resolve();
                         break;
                     case 'chunkVoxels':
                         var chunk = message[1];
-                        self.game.storeVoxels(chunk);
+                        self.game.voxelCache.addChunk(chunk);
                         break;
                     // Game no longer needs to hold this voxel data
                     case 'nearbyChunks':
                         var chunks = message[1];
-                        self.game.nearbyChunks(chunks);
+                        self.game.voxelCache.nearbyChunks(chunks);
                         break;
         
                     // Chunk was re-meshed
                     case 'chunkMesh':
                         var chunkID = message[1];
                         var mesh = message[2];
-                        self.voxels.showMesh(chunkID, mesh);
+                        self.game.voxels.showMesh(chunkID, mesh);
                         break;
                     case 'meshesToShow':
                         var meshDistances = message[1];
-                        self.voxels.meshesToShow(meshDistances);
+                        self.game.voxels.meshesToShow(meshDistances);
                         break;
         
                     // Worker relays voxel changes from the server to us
@@ -86,7 +89,54 @@ class ClientWorkerHandle {
                     case 'players':
                         var players = message[1];
                         delete players[self.id];
-                        self.emitter.emit('players', players);
+
+                        // use lerping instead
+                        var ticksPerHalfSecond = 30;
+                        var calculateAdjustments = function(output, current, wanted) {
+                            for (var i = 0; i < output.length; i++) {
+                                output[i] = (wanted[i] - current[i]) / ticksPerHalfSecond;
+                            }
+                        };
+
+                        for (var id in players) {
+                            var updatedPlayerInfo = players[id];
+                            let positions = updatedPlayerInfo.positions;
+                            var player;
+                            if (!('positions' in updatedPlayerInfo)) {
+                                continue;
+                            }
+                            if (id in self.game.players) {
+                                player = players[id];
+                            } else {
+                                player = players[id] = {
+                                    latest: updatedPlayerInfo.positions,
+                                    current: updatedPlayerInfo.positions,
+                                    adjustments: [0, 0, 0, 0, 0, 0],
+
+                                    model: new Player(self.game)
+                                };
+                            }
+
+                            player.model.setTranslation(
+                                updatedPlayerInfo.positions[0],
+                                updatedPlayerInfo.positions[1],
+                                updatedPlayerInfo.positions[2]
+                            );
+                            player.model.setRotation(
+                                updatedPlayerInfo.positions[3],
+                                updatedPlayerInfo.positions[4],
+                                updatedPlayerInfo.positions[5]
+                            );
+
+                            player.model.setTexture(self.game.textureAtlas.byName[updatedPlayerInfo.avatar] );
+                        }
+                        // Compare players to others, remove old players
+                        for (let id in self.game.player) {
+                            if (!(id in players)) {
+                                delete self.game.players[id];
+                            }
+                        }
+
                         break;
                     default:
                         console.log('Client received unexpected message type from WebWorker: ' + message[0]);
@@ -94,6 +144,12 @@ class ClientWorkerHandle {
             };
             self.worker.postMessage(['connect']);
         });
+    }
+
+    regionChange() {
+        let game = this.game;
+        console.log(game.config);
+        this.worker.postMessage(['regionChange', game.player.getPosition(), game.camera.follow.getRotationQuat(), game.config.drawDistance, game.config.removeDistance]);
     }
 }
 export { ClientWorkerHandle };

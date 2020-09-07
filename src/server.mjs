@@ -1,11 +1,12 @@
 import chunkGenerator from './lib/generators/server-terraced.mjs';
-import { MysqlChunkStore as ChunkStore } from './lib/chunk-stores/mysql.mjs';
+import { MysqlChunkStore } from './lib/chunk-stores/mysql.mjs';
 import config from '../config.mjs';
 import { Coordinates } from './lib/coordinates.mjs';
 import HLRU from 'hashlru';
 import EventEmitter from 'eventemitter3';
 import http from 'http';
 import mysql from 'mysql';
+import url from 'url';
 import uuid from 'hat';
 import WebSocket from 'websocket';
 import zlib from 'zlib';
@@ -41,9 +42,9 @@ if (useMysql) {
         throw new Error('Attempted to use mysql for chunk storage, but no mysql params found in config');
     }
     mysqlPool = mysql.createPool(config.mysql);
-    var chunkStore = new ChunkStore(
-        new chunkGenerator(config.chunkSize),
-        config.mysql
+    var chunkStore = new MysqlChunkStore(
+        config.mysql,
+        new chunkGenerator(config.chunkSize)
     );
     /*
 } else {
@@ -116,8 +117,8 @@ class Server {
         // Handle requests for chunk voxels
         httpServer.on('request', function(request, response) {
             self.log('HTTPRequest');
-            var url = require('url').parse(request.url);
-            var path = decodeURIComponent(url.path);
+            var parsedUrl = url.parse(request.url);
+            var path = decodeURIComponent(parsedUrl.path);
             if (path.substr(0, 7) == '/chunk/') {
                 var chunkId = path.substr(7);
                 if (!chunkId) {
@@ -126,10 +127,16 @@ class Server {
                 }
                 // Bail if someone requested a chunk outside our world radius
                 if (!self.isChunkInBounds(chunkId)) {
+                    console.log('Chunk out of bounds: ' + chunkId);
                     response.end();
                     return;
                 }
+                console.log('Fetching chunk: ' + chunkId);
                 chunkStore.get(chunkId, function(error, chunk) {
+                    if (error) {
+                        console.log(error);
+                        return;
+                    }
                     var acceptEncoding = request.headers['accept-encoding'] || '';
 
                     // Note: This is not a conformant accept-encoding parser.
@@ -306,7 +313,7 @@ class Server {
                 self.clients[id].connected = false;
                 delete self.clients[id];
                 self.connections--;
-                self.log('Connections: ' + connections);
+                self.log('Connections: ' + self.connections);
             });
 
             self.sendMessage(connection, 'settings', {id: id, settings: self.clientSettings});

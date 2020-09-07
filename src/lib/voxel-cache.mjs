@@ -1,3 +1,7 @@
+import Log from './log';
+
+let log = Log('voxel-cache');
+
 class VoxelCache {
     constructor(game) {
         this.coordinates = game.coordinates;

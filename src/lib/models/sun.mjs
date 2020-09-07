@@ -1,16 +1,14 @@
-// TODO: fix me
-var glm = require('../gl-matrix'),
-    vec3 = glm.vec3,
-    vec4 = glm.vec4,
-    mat4 = glm.mat4,
-    quat = glm.quat;
-import { scratch } from '../scratch';
-import { Shapes } from '../shapes2';
+import { mat4, vec3 } from 'gl-matrix';
+import scratch from '../scratch';
+import Shapes from '../shapes2';
 import { Model } from '../model2';
-import { Scene } from '../scene-graph';
+import { Node } from '../scene-graph';
 
 function Sun(gl, shader, textures, player) {
     var self = this;
+    this.gl = gl;
+    this.shader = shader;
+    this.textures = textures;
     this.sunRotation = 0;
 
     var meshes = [];
@@ -41,7 +39,7 @@ function Sun(gl, shader, textures, player) {
         }
     );
 
-    this.hierarchy = new Scene.Node(gl, this.model);
+    this.hierarchy = new Node(gl, this.model);
 
 
     // Cube orbiting around the sun
@@ -76,7 +74,7 @@ function Sun(gl, shader, textures, player) {
         orbital.num = i;
 
         this.hierarchy.addChild(
-            new Scene.Node(gl, orbital)
+            new Node(gl, orbital)
         );
     }
     for (var i = 0; i < num; i++) {
@@ -95,7 +93,7 @@ function Sun(gl, shader, textures, player) {
         orbital.num = i;
 
         this.hierarchy.addChild(
-            new Scene.Node(gl, orbital)
+            new Node(gl, orbital)
         );
     }
 
@@ -112,6 +110,13 @@ Sun.prototype.tick = function(weatherTime, sunRotation) {
 };
 
 Sun.prototype.render = function(parentView, ts) {
+    let gl = this.gl;
+    return;
+    gl.useProgram(this.shader.program);
+    gl.activeTexture(gl.TEXTURE0);
+    // set which of the 32 handles we want this bound to
+    gl.bindTexture(gl.TEXTURE_2D, this.textures.byValue[0]);
+
     this.hierarchy.render(scratch.identityMat4, ts);
 };
 

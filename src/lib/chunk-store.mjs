@@ -6,7 +6,8 @@ class ChunkStore {
     }
 
     // Asyncronous
-    get = function(chunkID, callback) {
+    get(chunkID, callback) {
+        console.log('ChunkStore->get()');
     }
 
     tick() {

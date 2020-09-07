@@ -2,7 +2,7 @@ import { ChunkStore } from '../chunk-store.mjs';
 import HLRU from 'hashlru';
 import Log from '../log.mjs';
 import mysql from 'mysql';
-import { Gzip as zlib } from 'zlib';
+import zlib from 'zlib';
 
 var log = Log('MysqlChunkStore', false);
 
@@ -38,6 +38,7 @@ class MysqlChunkStore extends ChunkStore {
         var self = this;
         let cache = self.cache;
         var chunk = cache.get(chunkID);
+        
         if (chunk) {
             callback(null, chunk);
             return;

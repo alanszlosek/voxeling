@@ -1,10 +1,5 @@
-var glm = require('gl-matrix'),
-    mat4 = glm.mat4,
-    vec3 = glm.vec3;
-// NOTE: clean up indentation. uglify-js does lots of compressing.
-
 // Return points for WebGL use
-var shapes = module.exports = {
+export default {
     wire: {
         triangle: function() {},
         cube: function(fromPoint, toPoint) {

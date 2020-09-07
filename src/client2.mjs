@@ -1,6 +1,6 @@
 // imports
 
-import { default as config } from '../config.js';
+import { default as config } from '../config.mjs';
 //import { textureOffsets } from './texture-offsets.js'
 
 import { Camera } from './lib/camera'
@@ -11,9 +11,12 @@ import { Coordinates } from './lib/coordinates';
 import { ClientWorkerHandle } from './lib/client-worker-handle';
 import { Cursor } from './lib/cursor';
 import { Player } from './lib/player'
+import { Sky } from './lib/sky';
 import { TextureAtlas } from './lib/texture-atlas';
 import { UserInterface } from './lib/user-interface';
 import { VoxelCache } from './lib/voxel-cache';
+import { Voxels } from './lib/voxels';
+import { Physics } from './lib/physics.mjs';
 
 
 //import randomName from 'sillyname';
@@ -27,16 +30,21 @@ import { VoxelCache } from './lib/voxel-cache';
 
 let game = {
     config: config,
-    coordinates: new Coordinates(config)
+    coordinates: new Coordinates(config),
+    players: {},
+    settings: {}
 };
 // Passing game into constructor to give components access to each other
 game.camera = new Camera(game);
 game.clientWorkerHandle = new ClientWorkerHandle(game);
 game.cursor = new Cursor(game);
+game.physics = new Physics(game);
 game.player = new Player(game);
+game.sky = new Sky(game);
 game.textureAtlas = new TextureAtlas(game);
 game.userInterface = new UserInterface(game);
 game.voxelCache = new VoxelCache(game);
+game.voxels = new Voxels(game);
 
 
 // Game startup
@@ -53,22 +61,22 @@ game.userInterface.init()
 
 }).then(function() {
     // Send UI settings change events to the clientWorker
-    userInterface.on('drawDistance', function(newDistance) {
+    game.userInterface.on('drawDistance', function(newDistance) {
         // TODO: where do we save this?
         // currently config.drawDistance and a few others
         // then trigger regionChange ... hmm
     });
-    userInterface.on('avatar', function(newAvatar) {
+    game.userInterface.on('avatar', function(newAvatar) {
         // TODO: where do we save this?
         // currently client.avatar
         // Then we change player texture
     });
-    userInterface.on('currentMaterial', function(newMaterial) {
+    game.userInterface.on('currentMaterial', function(newMaterial) {
         // currently we use a currentMaterial global ... need to change that
         // should likely live with Cursor
         cursor.material = newMaterial;
     });
-    userInterface.on('chat', function(message) {
+    game.userInterface.on('chat', function(message) {
         var out = {
             user: localStorage.getItem('name'),
             text: message
@@ -76,11 +84,56 @@ game.userInterface.init()
         // TODO: maybe the client worker should be in charge of assembling the message with our username
         clientWorker.postMessage(['chat', out]);
     });
+
+}).then(function() {
+    return game.player.init();
+    // TODO: finish multipler player setup too
+
+}).then(function() {
+    // Sky
+    return Promise.resolve();
+
+}).then(function() {
+    return game.sky.init();
+
+}).then(function() {
+    // Voxels
+    return game.voxels.init();
+
+}).then(function() {
+    return game.camera.init();
+
+}).then(function() {
+    // trigger region change to test voxels
+    game.clientWorkerHandle.regionChange();
+
+
+}).then(function() {
+    game.userInterface.webgl.init();
+
+}).then(function() {
+    // Physics
+    game.physics.init();
+
+/*
+}).then(function() {
+    var st = new Stats();
+    st.domElement.style.position = 'absolute';
+    st.domElement.style.bottom = '0px';
+    document.body.appendChild(st.domElement);
+    return Promise.resolve();
+*/
+
+}).then(function() {
+    // render handlers
+
+}).then(function() {
     // Also: currentMaterial, chat
+    console.log(game);
     console.log('done');
 
 }).catch(function(error) {
-    console.log('Received error: ' + error);
+    console.log('Received error', error);
 });
 
 /*

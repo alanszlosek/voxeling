@@ -1,8 +1,10 @@
-//import EventEmitter from 'EventEmitter';
-
+// TODO: refactor this so we don't have to include config again
+import { default as config } from '../../config.mjs';
+import { EventEmitter } from 'eventemitter3';
+import randomName from 'sillyname';
 import { Tickable } from './ecs/tickable.mjs';
 import { WebGL } from './webgl.mjs';
-import { EventEmitter } from 'eventemitter3';
+
 
 var debug = false;
 
@@ -27,13 +29,37 @@ var codeMap = {
     70: 'fly'
 };
 
-
+let gameGlobal;
 var states = {
     start: {
         to: function() {
             if (debug) {
                 console.log('entering start state');
             }
+            
+            var element;
+            var value;
+            document.getElementById('overlay').className = 'introduction';
+
+            // nickname
+            element = document.getElementById('username');
+            value = localStorage.getItem('name');
+            if (!value || value.length == 0 || value.trim().length == 0) {
+                value = randomName();
+                localStorage.setItem('name', value);
+            }
+            element.value = value;
+
+            // draw distance
+            element = document.getElementById('drawDistance');
+            value = parseInt(localStorage.getItem('drawDistance'));
+            if (!value) {
+                value = 2;
+                localStorage.setItem('drawDistance', value);
+            }
+            element.value = value;
+            config.drawDistance = value;
+            config.removeDistance = value + 1;
         },
         from: function() {
             if (debug) {
@@ -50,10 +76,21 @@ var states = {
         change: function(event) {
             switch (event.target.id) {
                 case 'drawDistance':
-                    this.emitter.emit('drawDistance', event.target.value);
+                    var value = parseInt(event.target.value);
+                    if (value < 0) {
+                        value = 1;
+                    }
+                    localStorage.setItem('drawDistance', value);
+
+                    config.drawDistance = value;
+                    config.removeDistance = value + 1;
+
+                    gameGlobal.voxels.hazeDistance = (value * 32.0) - 4.0;
+
+                    gameGlobal.clientWorkerHandle.regionChange();
                     break;
                 case 'avatar':
-                    this.emitter.emit('avatar', event.target.value);
+                    gameGlobal.player.setTexture( textures.byName[avatar] );
                     break;
             }
         }
@@ -65,6 +102,11 @@ var states = {
                 console.log('entering playing state');
             }
             this.canvas.requestPointerLock();
+            
+            document.getElementById('overlay').className = '';
+
+            // Enable motion / physics
+            gameGlobal.physics.running = true;
         },
         from: function() {
             if (debug) {
@@ -103,10 +145,10 @@ var states = {
             }
         },
         mousemove: function(ev) {
-            mouseCallback(
-                ev.movementX,
-                ev.movementY
-            );
+            console.log(ev);
+            gameGlobal.player.rotateY(-(ev.movementX / 200.0));
+            // Don't pitch player, just the camera
+            gameGlobal.player.rotateX(-(ev.movementY / 200.0));
         },
         keydown: function(event) {
             if (debug) console.log(event);
@@ -152,7 +194,7 @@ var states = {
             }
             // R
             if (code == 82) {
-                this.emitter.emit('view');
+                gameGlobal.camera.nextView();
                 return;
             }
             // Shift
@@ -176,11 +218,13 @@ var states = {
             if (debug) {
                 console.log('entering materials state');
             }
+            document.getElementById('overlay').className = 'textures';
         },
         from: function() {
             if (debug) {
                 console.log('leaving materials state');
             }
+            document.getElementById('overlay').className = '';
         },
         keydown: function(event) {
             if (debug) {
@@ -239,7 +283,7 @@ var states = {
                     matches[i].className = '';
                 }
                 matches[from + adjustment].className = 'selected';
-                this.emitter.emit('currentMaterial', Number(matches[from + adjustment].getAttribute('data-texturevalue')));
+                gameGlobal.cursor.currentMaterial = Number(matches[from + adjustment].getAttribute('data-texturevalue'));
             }
         },
         mousedown: function(event) {
@@ -319,7 +363,7 @@ class UserInterface extends Tickable {
     constructor(game) {
         super();
 
-        this.game = game;
+        gameGlobal = this.game = game;
         this.state = controlStates;
     }
 
@@ -351,6 +395,8 @@ class UserInterface extends Tickable {
             },
             false
         );
+
+        this.transition('start');
 
         // TODO: handle control change .... inventory gamepads whennew one is connected
         return Promise.resolve();
@@ -403,7 +449,7 @@ class UserInterface extends Tickable {
         }
     }
 
-    tick() {
+    tick(ts) {
         var gamepad = navigator.getGamepads()[0];
         if (!gamepad) {
             return;

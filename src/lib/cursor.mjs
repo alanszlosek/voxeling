@@ -4,7 +4,8 @@ import Shapes from './shapes.mjs';
 import { Tickable } from './ecs/tickable';
 
 import { vec3 } from 'gl-matrix';
-import { raycast } from 'voxel-raycast';
+import raycast from 'voxel-raycast';
+import { Lines } from './lines.mjs';
 
 
 // This needs cleanup, and encapsulation, but it works
@@ -16,12 +17,9 @@ var direction = vec3.create();
 class Cursor extends Tickable {
     constructor(game) {
         super();
+        this.game = game;
         // shortcuts
-        this.camera = game.camera;
-        // TODO: fix this ... might end up being controls, or userInterface.state
-        this.inputHandler = game.inputHandler;
-        this.voxelCache = game.voxelCache;
-
+    
         this.material = 1; // ?
         this.currentVoxel = vec3.create();
         this.currentNormalVoxel = vec3.create();
@@ -32,10 +30,19 @@ class Cursor extends Tickable {
     }
 
     init() {
+        let game = this.game;
+        this.camera = game.camera;
+        // TODO: fix this ... might end up being controls, or userInterface.state
+        this.inputHandler = game.inputHandler;
+        this.voxelCache = game.voxelCache;
+
+        this.lines = new Lines(this.game.userInterface.webgl.gl);
         return Promise.resolve();
     }
 
-    tick(lines, selecting) {
+    tick(ts) {
+        return;
+        let lines = this.lines;
         let distance = 10.0;
         let voxelHit = this.voxelHit;
         let voxelNormal = this.voxelNormal;
@@ -96,7 +103,8 @@ class Cursor extends Tickable {
             lines.skip(false);
         } else {
             // clear
-            lines.skip(true);
+            //lines.skip(true);
+            
             // Only need to clear the first element
             currentVoxel[0] = null;
         }

@@ -4,7 +4,6 @@ import mesher from './lib/meshers/horizontal-merge2';
 import Log from './lib/log';
 import MC from './lib/max-concurrent';
 import textureOffsets from '../texture-offsets';
-import TextureOffsets from '../texture-offsets';
 import pool from './lib/object-pool.mjs';
 import timer from './lib/timer';
 
@@ -83,7 +82,7 @@ var worker = {
     connect: function() {
         var self = this;
         var coordinates = this.coordinates = new Coordinates(config.chunkSize);
-        var websocket = this.connection = new WebSocket(config.server);
+        var websocket = this.connection = new WebSocket(config.websocketServer);
 
         mesher.config(config.chunkSize, config.voxels, textureOffsets, coordinates, chunkCache);
 
@@ -110,7 +109,6 @@ var worker = {
         websocket.onmessage = function(event) {
             // Decode message
             // Handle errors and exceptions
-            console.log('' + event.data);
             var decoded = JSON.parse(event.data);
             var type = decoded[0];
             var payload = decoded[1];

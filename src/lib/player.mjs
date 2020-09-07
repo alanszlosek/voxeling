@@ -15,7 +15,6 @@ class Player extends Movable {
         let shader = this.game.userInterface.webgl.shaders.projectionViewPosition2;
         let texture = this.game.textureAtlas.byName['player'];
 
-
         var self = this;
         this.eyeOffset = vec3.fromValues(0, 1.25, -0.175);
         this.eyePosition = vec3.create();
@@ -149,6 +148,10 @@ class Player extends Movable {
         meshes.push(shape);
 
         this.model = new Model(gl, shader, meshes, texture, this);
+
+        this.translate(this.game.config.initialPosition);
+
+        return Promise.resolve();
     }
 
     translate(vector) {

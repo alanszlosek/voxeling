@@ -4,10 +4,11 @@ import { Movable } from './movable';
 import scratch from './scratch';
 
 class Camera extends Movable {
-    constructor(canvas, follow) {
+    constructor(game) {
         super();
 
-        this.canvas = canvas;
+        this.game = game;
+        
         this.matrix = mat4.create();
         this.inverse = mat4.create();
 
@@ -16,13 +17,21 @@ class Camera extends Movable {
         // 32 * 20 = 640 ... 20 chunks away
         this.farDistance = 640;
         this.projection = mat4.create();
+        this.direction = vec3.create();
+        this.direction[0] = 1.0;
         
-        this.follow = follow;
         this.view = 0;
         this.shoulderOffset = [ 0.4, 2, 2 ];
         this.thirdPersonOffset = [ 0, 2, 4 ];
+    }
+
+    init() {
+        let game = this.game;
+        this.canvas = game.userInterface.webgl.canvas;
+        this.follow = game.player;
 
         this.canvasResized();
+        this.updateProjection();
     }
 
 
@@ -78,6 +87,10 @@ class Camera extends Movable {
         if (this.view > 2) {
             this.view = 0;
         }
+    }
+
+    tick() {
+        this.updateProjection();
     }
 }
 

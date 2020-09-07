@@ -1,3 +1,6 @@
+import { renderables } from './ecs/renderable.mjs';
+import { tickables } from './ecs/tickable.mjs';
+
 // Helper
 function createShader(gl, vertexShaderCode, fragmentShaderCode, attributes, uniforms) {
     var out = {
@@ -212,10 +215,9 @@ class WebGL {
             // uniforms
             ['projection', 'texture', 'textureOffset', 'ambientLightColor', 'directionalLightColor', 'directionalLightPosition', 'hazeDistance']
         );
-
     }
 
-    start() {
+    init() {
         this.render(0);
     }
 
@@ -223,20 +225,23 @@ class WebGL {
         var self = this;
         var gl = this.gl;
 
-        //this.gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        let r = function(ts) {
+            //this.gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-        this.renderCallback(ts);
+            //this.renderCallback(ts);
+
+            for (let i = 0; i < tickables.length; i++) {
+                tickables[i].tick(ts);
+            }
+            for (let i = 0; i < renderables.length; i++) {
+                renderables[i].render(ts);
+            }
+            requestAnimationFrame(r);
+        };
+        r();
 
         // TODO: fix this
-        requestAnimationFrame(this.render.bind(this));
-    }
-
-    onRender(callback) {
-        this.renderCallback = callback;
-    }
-
-    addRenderable(obj) {
-        this.renderables.push(obj);
+        //this.render.bind(this));
     }
 }
 

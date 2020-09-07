@@ -582,7 +582,6 @@ export default {
         voxelArraySize = chunkSize * chunkSize * chunkSize;
         voxelsToTextures = voxToTex;
         textureOffsets = texOffsets;
-        console.log(textureOffsets);
         Coordinator = coordinatorHandle;
         chunkCache = cache;
     },

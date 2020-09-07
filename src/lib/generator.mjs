@@ -1,6 +1,6 @@
 'use strict';
 
-import { Gzip as zlib } from 'zlib';
+import zlib from 'zlib';
 
 var debug = false;
 

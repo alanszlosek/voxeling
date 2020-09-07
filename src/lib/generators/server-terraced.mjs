@@ -55,7 +55,7 @@ class ServerGeneratorTerraced extends Generator {
         for(let k = lo[2]; k < kk; k++) {
             for (let j = lo[1]; j < jj; j++) {
                 for (let i = lo[0]; i < ii; i++, index++) {
-                    chunk.voxels[index] = fillVoxel(i, j, k, chunkSize);
+                    chunk.voxels[index] = generateVoxel(i, j, k, chunkSize);
                 }
             }
         }

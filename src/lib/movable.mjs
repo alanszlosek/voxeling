@@ -1,8 +1,10 @@
 
 import { quat, vec3 } from 'gl-matrix';
+import { Tickable } from './ecs/tickable';
 
-class Movable {
+class Movable extends Tickable {
     constructor() {
+        super();
         this.isMoving = false;
         this.yaw = 0.00;
         this.pitch = 0.00;
