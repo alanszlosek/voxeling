@@ -7,12 +7,14 @@ import textureOffsets from '../texture-offsets';
 import pool from './lib/object-pool.mjs';
 import timer from './lib/timer';
 
+// Note: Increasing concurrent fetching here won't change initial world load speed
+// since the meshing is most-likely the bottleneck
 let MaxConcurrent = MC(10);
 var chunkArrayLength = config.chunkSize * config.chunkSize * config.chunkSize;
 var chunkCache = {};
 
 var log = Log('client-worker');
-var debug = false;
+var debug = true;
 
 /*
 INCOMING WEBWORKER MESSAGES
@@ -163,7 +165,7 @@ var worker = {
 
     },
 
-    regionChange: function(playerPosition, rotationQuat, drawDistance) {
+    regionChange: function(playerPosition, drawDistance) {
         var self = this;
 
         log('regionChange: playerPosition is', playerPosition);
@@ -439,6 +441,7 @@ var worker = {
 
 onmessage = function(e) {
     var message = e.data;
+    console.log(message);
     var type = message.shift();
 
     if (type in worker) {

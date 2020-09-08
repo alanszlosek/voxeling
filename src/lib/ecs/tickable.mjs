@@ -6,7 +6,7 @@ class Tickable {
     }
 
     tick(ts) {
-        console.log('Base class tick', this);
+        //console.log('Base class tick', this);
     }
 }
 

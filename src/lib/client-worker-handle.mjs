@@ -149,7 +149,7 @@ class ClientWorkerHandle {
     regionChange() {
         let game = this.game;
         console.log(game.config);
-        this.worker.postMessage(['regionChange', game.player.getPosition(), game.camera.follow.getRotationQuat(), game.config.drawDistance, game.config.removeDistance]);
+        this.worker.postMessage(['regionChange', game.player.getPosition(), game.config.drawDistance]);
     }
 }
 export { ClientWorkerHandle };

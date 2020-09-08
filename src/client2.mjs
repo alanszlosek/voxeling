@@ -17,6 +17,7 @@ import { UserInterface } from './lib/user-interface';
 import { VoxelCache } from './lib/voxel-cache';
 import { Voxels } from './lib/voxels';
 import { Physics } from './lib/physics.mjs';
+import { World } from './lib/world.mjs';
 
 
 //import randomName from 'sillyname';
@@ -45,6 +46,7 @@ game.textureAtlas = new TextureAtlas(game);
 game.userInterface = new UserInterface(game);
 game.voxelCache = new VoxelCache(game);
 game.voxels = new Voxels(game);
+game.world = new World(game);
 
 
 // Game startup
@@ -102,10 +104,6 @@ game.userInterface.init()
 
 }).then(function() {
     return game.camera.init();
-
-}).then(function() {
-    // trigger region change to test voxels
-    game.clientWorkerHandle.regionChange();
 
 
 }).then(function() {
