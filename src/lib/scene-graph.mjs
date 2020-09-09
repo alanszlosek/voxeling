@@ -1,6 +1,6 @@
 import { mat4 } from 'gl-matrix';
-import { Renderable } from './ecs/renderable.mjs';
-import { Tickable } from './ecs/tickable.mjs';
+import { Renderable } from './entities/renderable.mjs';
+import { Tickable } from './entities/tickable.mjs';
 
 // http://webglfundamentals.org/webgl/lessons/webgl-scene-graph.html
 

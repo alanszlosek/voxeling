@@ -1,5 +1,5 @@
 import { quat, vec3 } from 'gl-matrix';
-import { Tickable } from './ecs/tickable';
+import { Tickable } from './entities/tickable';
 import raycast from 'voxel-raycast';
 
 var debug = false;

@@ -1,4 +1,4 @@
-import { Renderable } from './ecs/renderable.mjs';
+import { Renderable } from './entities/renderable.mjs';
 
 let debug = false;
 /*

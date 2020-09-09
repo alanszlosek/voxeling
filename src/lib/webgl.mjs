@@ -1,5 +1,5 @@
-import { renderables } from './ecs/renderable.mjs';
-import { tickables } from './ecs/tickable.mjs';
+import { renderables } from './entities/renderable.mjs';
+import { tickables } from './entities/tickable.mjs';
 
 // Helper
 function createShader(gl, vertexShaderCode, fragmentShaderCode, attributes, uniforms) {

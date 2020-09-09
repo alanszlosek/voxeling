@@ -1,7 +1,7 @@
 
 import pool from './object-pool.mjs';
 import Shapes from './shapes.mjs';
-import { Tickable } from './ecs/tickable';
+import { Tickable } from './entities/tickable';
 
 import { vec3 } from 'gl-matrix';
 import raycast from 'voxel-raycast';
@@ -32,16 +32,16 @@ class Cursor extends Tickable {
     init() {
         let game = this.game;
         this.camera = game.camera;
+        this.player = game.player;
         // TODO: fix this ... might end up being controls, or userInterface.state
-        this.inputHandler = game.inputHandler;
+        this.userInterface = game.userInterface;
         this.voxelCache = game.voxelCache;
 
-        this.lines = new Lines(this.game.userInterface.webgl.gl);
+        this.lines = new Lines(this.game);
         return Promise.resolve();
     }
 
     tick(ts) {
-        return;
         let lines = this.lines;
         let distance = 10.0;
         let voxelHit = this.voxelHit;
@@ -50,13 +50,10 @@ class Cursor extends Tickable {
         let currentNormalVoxel = this.currentNormalVoxel;
         let low = this.low;
         let high = this.high;
-        let inputHandler = this.inputHandler;
-
-        // TODO: Camera and player should probably update this value automatically whenever they move, so we don't have to
-        //vec3.transformQuat(direction, direction, player.getRotationQuat());
+        let userInterface = this.userInterface;
 
         // First param is expected to have getBlock()
-        let hit = raycast(this.voxelCache, this.camera.position, this.camera.direction, distance, voxelHit, voxelNormal);
+        let hit = raycast(this.voxelCache, this.player.eyePosition, this.camera.direction, distance, voxelHit, voxelNormal);
         if (hit > 0) {
             voxelHit[0] = Math.floor(voxelHit[0]);
             voxelHit[1] = Math.floor(voxelHit[1]);
@@ -70,8 +67,10 @@ class Cursor extends Tickable {
             currentNormalVoxel[1] = voxelHit[1] + voxelNormal[1];
             currentNormalVoxel[2] = voxelHit[2] + voxelNormal[2];
 
-            if (selecting) {
-                if (inputHandler.state.alt || inputHandler.state.firealt) {
+            console.log(userInterface.state);
+
+            if (userInterface.state.select) {
+                if (userInterface.state.alt || userInterface.state.firealt) {
                     low[0] = Math.min(selectStart[0], currentNormalVoxel[0]);
                     low[1] = Math.min(selectStart[1], currentNormalVoxel[1]);
                     low[2] = Math.min(selectStart[2], currentNormalVoxel[2]);
@@ -88,7 +87,7 @@ class Cursor extends Tickable {
                 }
                 lines.fill(Shapes.wire.cube(low, high));
             } else {
-                if (inputHandler.state.alt || inputHandler.state.firealt) {
+                if (userInterface.state.alt || userInterface.state.firealt) {
                     high[0] = currentNormalVoxel[0] + 1;
                     high[1] = currentNormalVoxel[1] + 1;
                     high[2] = currentNormalVoxel[2] + 1;

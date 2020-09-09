@@ -2,7 +2,7 @@
 import { default as config } from '../../config.mjs';
 import { EventEmitter } from 'eventemitter3';
 import randomName from 'sillyname';
-import { Tickable } from './ecs/tickable.mjs';
+import { Tickable } from './entities/tickable.mjs';
 import { WebGL } from './webgl.mjs';
 
 
@@ -145,7 +145,6 @@ var states = {
             }
         },
         mousemove: function(ev) {
-            console.log(ev);
             gameGlobal.player.rotateY(-(ev.movementX / 200.0));
             // Don't pitch player, just the camera
             gameGlobal.player.rotateX(-(ev.movementY / 200.0));

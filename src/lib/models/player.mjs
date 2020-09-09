@@ -1,8 +1,8 @@
 import { mat4, vec3 } from 'gl-matrix';
 
-import Shapes from './shapes';
-import { Movable } from './movable';
-import { Model } from './model';
+import Shapes from '../shapes';
+import { Movable } from '../entities/movable';
+import { Model } from '../entities/model';
 
 class Player extends Movable {
     constructor(game) {
@@ -147,7 +147,7 @@ class Player extends Movable {
         mat4.translate(shape.view, shape.view, [0.09, 0.2, 0]);
         meshes.push(shape);
 
-        this.model = new Model(gl, shader, meshes, texture, this);
+        this.model = new Model(gl, shader, meshes, texture, this, this.game.camera.inverse, this);
 
         this.translate(this.game.config.initialPosition);
 
@@ -174,10 +174,6 @@ class Player extends Movable {
 
     setTexture(texture) {
         this.model.setTexture(texture);
-    }
-
-    render(projection, ts) {
-        this.model.render(projection, ts);
     }
 }
 

@@ -10,8 +10,8 @@ import { Camera } from './lib/camera'
 import { Coordinates } from './lib/coordinates';
 import { ClientWorkerHandle } from './lib/client-worker-handle';
 import { Cursor } from './lib/cursor';
-import { Player } from './lib/player'
-import { Sky } from './lib/sky';
+import { Player } from './lib/models/player'
+import { Sky } from './lib/models/sky';
 import { TextureAtlas } from './lib/texture-atlas';
 import { UserInterface } from './lib/user-interface';
 import { VoxelCache } from './lib/voxel-cache';

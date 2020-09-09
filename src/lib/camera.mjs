@@ -1,6 +1,6 @@
 import { mat4, quat, vec3 } from 'gl-matrix';
 
-import { Movable } from './movable';
+import { Movable } from './entities/movable';
 import scratch from './scratch';
 
 class Camera extends Movable {
@@ -17,8 +17,6 @@ class Camera extends Movable {
         // 32 * 20 = 640 ... 20 chunks away
         this.farDistance = 640;
         this.projection = mat4.create();
-        this.direction = vec3.create();
-        this.direction[0] = 1.0;
         
         this.view = 0;
         this.shoulderOffset = [ 0.4, 2, 2 ];
@@ -76,6 +74,9 @@ class Camera extends Movable {
         mat4.fromRotationTranslation(this.matrix, this.follow.getRotationQuat(), this.position);
         mat4.invert(this.inverse, this.matrix);
         mat4.multiply(this.inverse, this.projection, this.inverse);
+
+        // TODO: fix this
+        vec3.transformQuat(this.direction, this.baseDirection, this.follow.rotationQuat);
 
         // TODO: also update pointing ... meaning the center of the screen, where the cursor should be
 

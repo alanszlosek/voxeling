@@ -1,4 +1,4 @@
-import { Tickable } from './ecs/tickable';
+import { Tickable } from './entities/tickable';
 
 class World extends Tickable {
     constructor(game) {

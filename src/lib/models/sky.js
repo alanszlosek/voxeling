@@ -1,7 +1,7 @@
 import { quat, vec3 } from 'gl-matrix';
-import scratch from './scratch';
-import { Sun } from './models/sun';
-import { Tickable } from './ecs/tickable';
+import scratch from '../scratch';
+import { Sun } from './sun';
+import { Tickable } from '../entities/tickable';
 
 class Sky extends Tickable {
     constructor(game) {
@@ -56,7 +56,7 @@ class Sky extends Tickable {
 
         // TODO: this is kinda ugly, nonstandard
         this.sun = new Sun(this.gl, this.shader, this.textures, game.player);
-        this.setLight(0);
+        this.setLight(6 * 3600);
     }
     
     setLight(seconds) {
@@ -138,6 +138,7 @@ class Sky extends Tickable {
     // Currently runs every second
     tick(seconds) {
         return;
+
         // Need to accompany this with a large cube sun travelling overhead
         this.time += seconds;
         if (this.time >= 86400) {

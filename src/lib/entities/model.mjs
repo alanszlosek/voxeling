@@ -1,5 +1,6 @@
 import { mat4, quat, vec3 } from 'gl-matrix';
-import scratch from './scratch';
+import { Renderable } from './renderable';
+import scratch from '../scratch';
 
 // TODO: fix these
 var tempQuat = scratch.quat;
@@ -10,12 +11,14 @@ var tempVector = scratch.vec3;
 var rotation1 = scratch.mat4_0;
 var rotation2 = scratch.mat4_1;
 
-class Model {
-    constructor(gl, shader, meshes, texture, movable) {
+class Model extends Renderable {
+    constructor(gl, shader, meshes, texture, movable, projection) {
+        super()
         this.gl = gl;
         this.shader = shader;
         this.meshes = meshes;
         this.texture = texture;
+        this.projection = projection;
         this.shaders = {};
         this.shaderAttributes = {};
         this.shaderUniforms = {};
@@ -67,15 +70,19 @@ class Model {
     }
     */
 
-    render(matrix, ts) {
+    render(ts) {
         var gl = this.gl;
         return;
+
+        // TODO: model seems to enable the wrong shader ... the world is dark
+        // and for some reason voxels doesn't override it
         
         //gl.clear(gl.COLOR_BUFFER_BIT);
         gl.useProgram(this.shader.program);
         //gl.lineWidth(3);
 
         var meshes = this.meshes;
+        console.log(this.movable);
 
         //mat4.translate(model, model, [16, 1, 3]);
         mat4.translate(model, scratch.identityMat4, this.movable.getPosition());
@@ -86,7 +93,7 @@ class Model {
         //vec3.transformQuat(tempVector, directionalLightVector, tempQuat);
         //gl.uniform3fv(this.shader.uniforms.directionalLightVector, tempVector);
 
-        gl.uniformMatrix4fv(this.shader.uniforms.projection, false, matrix);
+        gl.uniformMatrix4fv(this.shader.uniforms.projection, false, this.projection);
         //gl.uniformMatrix4fv(this.shaderUniforms.player, false, model);
         //gl.uniform4fv(this.shaderUniforms.color, [ 0, 255, 255, 1 ]);
 

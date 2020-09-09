@@ -1,6 +1,6 @@
 
 import { quat, vec3 } from 'gl-matrix';
-import { Tickable } from './ecs/tickable';
+import { Tickable } from './tickable';
 
 class Movable extends Tickable {
     constructor() {
@@ -12,6 +12,10 @@ class Movable extends Tickable {
 
         this.rotationQuat = quat.create();
         this.rotationQuatNeedsUpdate = false;
+
+        this.baseDirection = vec3.create();
+        this.baseDirection[2] = -1.0;
+        this.direction = vec3.create();
 
         this.position = vec3.create();
         this.bounds = {
@@ -120,6 +124,8 @@ class Movable extends Tickable {
             quat.rotateY(this.rotationQuat, this.rotationQuat, this.yaw);
             quat.rotateX(this.rotationQuat, this.rotationQuat, this.pitch);
             this.rotationQuatNeedsUpdate = false;
+
+            vec3.transformQuat(this.direction, this.baseDirection, this.rotationQuat);
         }
         return this.rotationQuat;
     }
