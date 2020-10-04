@@ -1,5 +1,5 @@
-import { mat4, vec3 } from 'gl-matrix';
-
+import { mat4, quat, vec3 } from 'gl-matrix';
+import scratch from '../scratch.mjs';
 import Shapes from '../shapes';
 import { Movable } from '../entities/movable';
 import { Model } from '../entities/model';
@@ -156,12 +156,13 @@ class Player extends Movable {
 
     translate(vector) {
         vec3.add(this.position, this.position, vector);
-        vec3.add(this.eyePosition, this.position, this.eyeOffset);
+        // TODO: perhaps move this calculation to tick
+        //vec3.add(this.eyePosition, this.position, this.eyeOffset);
     }
 
     setTranslation(x, y, z) {
         vec3.copy(this.position, arguments);
-        vec3.add(this.eyePosition, this.position, this.eyeOffset);
+        //vec3.add(this.eyePosition, this.position, this.eyeOffset);
     }
 
     getEyeOffset() {
@@ -174,6 +175,12 @@ class Player extends Movable {
 
     setTexture(texture) {
         this.model.setTexture(texture);
+    }
+
+    tick() {
+        quat.rotateY(scratch.quat, scratch.identityQuat, this.getYaw());
+        vec3.transformQuat(scratch.vec3, this.eyeOffset, scratch.quat);
+        vec3.add(this.eyePosition, scratch.vec3, this.position);
     }
 }
 

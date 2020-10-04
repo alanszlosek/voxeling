@@ -1,11 +1,11 @@
-
+import { quat, vec3 } from 'gl-matrix';
+import { Lines } from './lines.mjs';
 import pool from './object-pool.mjs';
+import raycast from 'voxel-raycast';
+import scratch from './scratch.mjs';
 import Shapes from './shapes.mjs';
 import { Tickable } from './entities/tickable';
 
-import { vec3 } from 'gl-matrix';
-import raycast from 'voxel-raycast';
-import { Lines } from './lines.mjs';
 
 
 // This needs cleanup, and encapsulation, but it works
@@ -38,6 +38,7 @@ class Cursor extends Tickable {
         this.voxelCache = game.voxelCache;
 
         this.lines = new Lines(this.game);
+        this.pointer = new Lines(this.game, [0, 255, 0]);
         return Promise.resolve();
     }
 
@@ -51,10 +52,33 @@ class Cursor extends Tickable {
         let low = this.low;
         let high = this.high;
         let userInterface = this.userInterface;
+        let baseDirection = vec3.create();
+        let direction = scratch.vec3;
+        baseDirection[2] = -1.0;
+
+        // start with player eye position
+        // add distance to default rotation vec
+        // rotate direction by player rotation quat
+        // add rotated direction to player eye position
+        // draw cursor at that position
+
+        // TODO: now that we have the cursor actually living in the 3d world, we can show and hide it whenever we want
+        //vec3.transformQuat(scratch.vec3, this.player.eyeOffset, this.player.rotationQuat);
+        //quat.rotateY(scratch.quat, scratch.identityQuat, this.player.getYaw());
+        //
+        vec3.transformQuat(scratch.vec3, baseDirection, this.player.rotationQuat);
+        vec3.add(low, scratch.vec3, this.player.eyePosition);
+        vec3.add(low, low, scratch.vec3);
+        vec3.sub(low, low, [0.005, 0.005, 0.005]);
+
+        //vec3.add(low, this.player.eyePosition, direction);
+        vec3.add(high, low, [0.005, 0.005, 0.005]);
+        this.pointer.fill(Shapes.wire.cube(low, high));
 
         // First param is expected to have getBlock()
-        let hit = raycast(this.voxelCache, this.player.eyePosition, this.camera.direction, distance, voxelHit, voxelNormal);
+        let hit = raycast(this.voxelCache, this.player.eyePosition, this.player.direction, distance, voxelHit, voxelNormal);
         if (hit > 0) {
+            console.log(voxelHit);
             voxelHit[0] = Math.floor(voxelHit[0]);
             voxelHit[1] = Math.floor(voxelHit[1]);
             voxelHit[2] = Math.floor(voxelHit[2]);

@@ -69,6 +69,8 @@ class Camera extends Movable {
         // Rotate eye offset into tempVector, which we'll then add to player position
         quat.rotateY(scratch.quat, scratch.identityQuat, this.follow.getYaw());
         vec3.transformQuat(scratch.vec3, offset, scratch.quat);
+
+        //vec3.transformQuat(scratch.vec3, offset, this.follow.rotationQuat);
         vec3.add(this.position, this.follow.getPosition(), scratch.vec3);
 
         mat4.fromRotationTranslation(this.matrix, this.follow.getRotationQuat(), this.position);
