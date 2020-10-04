@@ -331,12 +331,17 @@ class Voxels extends Renderable {
         gl.uniform3fv(this.shader.uniforms.directionalLightPosition, directionalLight.position);
         gl.uniform1f(this.shader.uniforms.hazeDistance, this.hazeDistance);
 
-        // do the texture stuff ourselves ... too convoluted otherwise
-        gl.activeTexture(gl.TEXTURE0);
+        // TODO: i don't think we need to activate each render
+        //gl.activeTexture(gl.TEXTURE0);
+        // think we can just set the uniform.texture to the right integer
+        // to correspond to TEXTURE#
+        // Voxel textures are loaded and bound to gl.TEXTURE0
+        gl.uniform1i(this.shader.uniforms.texture, 0);
+
         // set which of the 32 handles we want this bound to
         //gl.bindTexture(gl.TEXTURE_2D, this.textures.byValue[0]);
         // bind the texture to this handle
-        gl.uniform1i(this.shader.uniforms.texture, 0);
+        //gl.uniform1i(this.shader.uniforms.texture, 0);
 
         for (var textureValue in this.nearBuffersByTexture) {
             var bufferBundle = this.nearBuffersByTexture[ textureValue ];

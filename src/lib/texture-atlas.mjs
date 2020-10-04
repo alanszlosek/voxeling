@@ -1,3 +1,13 @@
+/*
+TODO
+
+- load and bind to subsequent GL texture units
+- main textures.png would be bound to 0
+- player skins would be 1, 2, 3
+- render code would simply set the uniform texture value to 0 - 3 as appropriate
+- can look up this value in the textureAtlas
+*/
+
 class TextureAtlas {
     // load voxel textures and player/model textures
     constructor(game, textureMeta, players) {
@@ -33,8 +43,10 @@ class TextureAtlas {
                     resolve();
                 }
             };
-            var textureClosure = function(glTexture,  image) {
+            var textureClosure = function(textureUnits, glTexture,  image) {
+                let textureUnit = textureUnits.shift();
                 return function() {
+                    gl.activeTexture(textureUnit);
                     gl.bindTexture(gl.TEXTURE_2D, glTexture);
                     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
                     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
@@ -48,6 +60,8 @@ class TextureAtlas {
                     done();
                 };
             };
+            // Bind textures to subsequent texture units
+            let textureUnits = [gl.TEXTURE0, gl.TEXTURE1, gl.TEXTURE2, gl.TEXTURE3, gl.TEXTURE4];
 
             // Pre-multiply so opacity works correctly
             // http://www.realtimerendering.com/blog/gpus-prefer-premultiplication/
@@ -60,12 +74,14 @@ class TextureAtlas {
             var glTexture = gl.createTexture();
             var image = new Image();
             // Need closure here, to wrap texture
-            image.onload = textureClosure(glTexture, image);
+            image.onload = textureClosure(textureUnits, glTexture, image);
             image.onerror = function(err) {
                 reject('Failed to load texture image: ' + image.src);
             };
             image.crossOrigin = 'Anonymous';
             image.src = '/textures.png';
+            // TODO: just store int value of texture unit
+            self.byValue[0] = 0;
             self.byValue[0] = glTexture;
 
             // Load player textures
@@ -74,12 +90,13 @@ class TextureAtlas {
                 var glTexture = gl.createTexture();
                 var image = new Image();
                 // Need closure here, to wrap texture
-                image.onload = textureClosure(glTexture, image);
+                image.onload = textureClosure(textureUnits, glTexture, image);
                 image.onerror = function(err) {
                     console.log('Failed to load texture image: ' + err);
                 };
                 image.crossOrigin = 'Anonymous';
                 image.src = texture.src;
+                // just store gl texture unit here i think
                 self.byValue[value] = glTexture;
                 self.byName[ texture.name ] = glTexture;
                 toLoad++;
