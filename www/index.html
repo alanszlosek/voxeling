@@ -42,9 +42,21 @@ canvas {
 }
 
 #stats {
+	background-color: white;
   bottom: 0px !important;
-  right: 0px !important;
+  display: block;
+  height: 60px;
   opacity: 0.6 !important;
+  padding: 5px;
+  position: fixed;
+  right: 0px !important;
+  width: 100px;
+}
+#stats > div {
+	background-color: red;
+	display: inline-block;
+	width: 1px;
+
 }
 
 /* VOXELING SPECIFIC STUFF */
@@ -178,6 +190,11 @@ label {
 	<div id="crosshair"></div>
     -->
 	<div id="coordinates"></div>
+	<div id="stats">
+		<div style="height: 40px"></div>
+		<div style="height: 50px"></div>
+
+	</div>
 
 	<!-- in game inventory overlay -->
 	<div id="overlay" class="">

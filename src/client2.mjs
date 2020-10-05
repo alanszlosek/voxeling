@@ -12,6 +12,7 @@ import { ClientWorkerHandle } from './lib/client-worker-handle';
 import { Cursor } from './lib/cursor';
 import { Player } from './lib/models/player'
 import { Sky } from './lib/models/sky';
+import Stats from './lib/stats2.mjs';
 import { TextureAtlas } from './lib/texture-atlas';
 import { UserInterface } from './lib/user-interface';
 import { VoxelCache } from './lib/voxel-cache';
@@ -42,6 +43,7 @@ game.cursor = new Cursor(game);
 game.physics = new Physics(game);
 game.player = new Player(game);
 game.sky = new Sky(game);
+game.stats = new Stats(game);
 game.textureAtlas = new TextureAtlas(game);
 game.userInterface = new UserInterface(game);
 game.voxelCache = new VoxelCache(game);
