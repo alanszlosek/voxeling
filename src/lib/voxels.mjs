@@ -36,9 +36,9 @@ class Voxels extends Renderable {
         this.ambientLight = game.sky.ambientLightColor;
         this.directionalLight = game.sky.directionalLight;
 
-        this.gl.activeTexture(this.gl.TEXTURE0);
+        //this.gl.activeTexture(this.gl.TEXTURE0);
         // set which of the 32 handles we want this bound to
-        this.gl.bindTexture(this.gl.TEXTURE_2D, this.textures.byValue[0]);
+        //this.gl.bindTexture(this.gl.TEXTURE_2D, this.textures.byValue[0]);
 
         // Schedule prepareMeshBuffers()
         setInterval(

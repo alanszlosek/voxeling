@@ -72,7 +72,6 @@ class Model extends Renderable {
 
     render(ts) {
         var gl = this.gl;
-        return;
 
         // TODO: model seems to enable the wrong shader ... the world is dark
         // and for some reason voxels doesn't override it
@@ -82,7 +81,6 @@ class Model extends Renderable {
         //gl.lineWidth(3);
 
         var meshes = this.meshes;
-        console.log(this.movable);
 
         //mat4.translate(model, model, [16, 1, 3]);
         mat4.translate(model, scratch.identityMat4, this.movable.getPosition());
@@ -97,10 +95,10 @@ class Model extends Renderable {
         //gl.uniformMatrix4fv(this.shaderUniforms.player, false, model);
         //gl.uniform4fv(this.shaderUniforms.color, [ 0, 255, 255, 1 ]);
 
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, this.texture);
+        //gl.activeTexture(gl.TEXTURE1);
+        //gl.bindTexture(gl.TEXTURE_2D, this.texture);
         // bind the texture to this handle
-        gl.uniform1i(this.shader.uniforms.texture, 0);
+        gl.uniform1i(this.shader.uniforms.texture, 1);
 
         for (var i = 0; i < meshes.length; i++) {
             var mesh = meshes[i];

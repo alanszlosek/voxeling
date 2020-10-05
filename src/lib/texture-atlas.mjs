@@ -13,7 +13,18 @@ class TextureAtlas {
     constructor(game, textureMeta, players) {
         this.game = game;
         this.textureOffsets = textureMeta;
-        this.players = game.players;
+        this.players = {
+            'player': {
+                src: '/textures/player.png'
+            },
+            'substack': {
+                src: '/textures/substack.png'
+            },
+            'viking': {
+                src: '/textures/viking.png'
+            }
+        };
+        //game.players;
 
         this.byName = {};
         this.byValue = {};
@@ -86,6 +97,7 @@ class TextureAtlas {
 
             // Load player textures
             for (var value in self.players) {
+                toLoad++;
                 var texture = self.players[value];
                 var glTexture = gl.createTexture();
                 var image = new Image();
@@ -99,7 +111,6 @@ class TextureAtlas {
                 // just store gl texture unit here i think
                 self.byValue[value] = glTexture;
                 self.byName[ texture.name ] = glTexture;
-                toLoad++;
             }
         });
     }
