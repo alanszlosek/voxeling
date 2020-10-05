@@ -12,11 +12,11 @@ class Player extends Movable {
 
     init() {
         let gl = this.game.userInterface.webgl.gl;
-        let shader = this.game.userInterface.webgl.shaders.projectionViewPosition2;
+        let shader = this.game.userInterface.webgl.shaders.projectionViewPosition; //2;
         let texture = this.game.textureAtlas.byName['player'];
 
         var self = this;
-        this.eyeOffset = vec3.fromValues(0, 1.25, -0.175);
+        this.eyeOffset = vec3.fromValues(0, 1.25, -0.3);
         this.eyePosition = vec3.create();
 
         var uvCoordinates = {

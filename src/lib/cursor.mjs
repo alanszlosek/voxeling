@@ -38,7 +38,7 @@ class Cursor extends Tickable {
         this.voxelCache = game.voxelCache;
 
         this.lines = new Lines(this.game);
-        this.pointer = new Lines(this.game, [0, 255, 0]);
+        this.pointer = new Lines(this.game, [0, 255, 0, 1]);
         return Promise.resolve();
     }
 
@@ -78,7 +78,7 @@ class Cursor extends Tickable {
         // First param is expected to have getBlock()
         let hit = raycast(this.voxelCache, this.player.eyePosition, this.player.direction, distance, voxelHit, voxelNormal);
         if (hit > 0) {
-            console.log(voxelHit);
+            //console.log(voxelHit);
             voxelHit[0] = Math.floor(voxelHit[0]);
             voxelHit[1] = Math.floor(voxelHit[1]);
             voxelHit[2] = Math.floor(voxelHit[2]);
@@ -91,7 +91,7 @@ class Cursor extends Tickable {
             currentNormalVoxel[1] = voxelHit[1] + voxelNormal[1];
             currentNormalVoxel[2] = voxelHit[2] + voxelNormal[2];
 
-            console.log(userInterface.state);
+            //console.log(userInterface.state);
 
             if (userInterface.state.select) {
                 if (userInterface.state.alt || userInterface.state.firealt) {

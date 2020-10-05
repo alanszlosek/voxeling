@@ -41,8 +41,10 @@ function createShader(gl, vertexShaderCode, fragmentShaderCode, attributes, unif
 
     for (var i = 0; i < attributes.length; i++) {
         var name = attributes[i];
-        // this hungarian notation seems unnecessary since our shaders are so simple
         out.attributes[name] = gl.getAttribLocation(shaderProgram, "a_" + name);
+        if (out.attributes[name] == -1) {
+            console.log('Attribute not found in GL shader: ' + name);
+        }
     }
 
     for (var i = 0; i < uniforms.length; i++) {

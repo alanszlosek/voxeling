@@ -49,7 +49,7 @@ class Model extends Renderable {
             //gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, mesh.indices, gl.STATIC_DRAW);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, mesh.buffers.normal);
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(mesh.normals), gl.STATIC_DRAW);
+            gl.bufferData(gl.ARRAY_BUFFER, mesh.normals, gl.STATIC_DRAW);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, mesh.buffers.texcoord);
             gl.bufferData(gl.ARRAY_BUFFER, mesh.texcoords, gl.STATIC_DRAW);

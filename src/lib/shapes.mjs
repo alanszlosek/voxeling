@@ -325,7 +325,7 @@ let shapes = {
                 //indices: indices,
                 //faces: faces,
                 texcoords: texcoord,
-                normals: normals,
+                normals: new Float32Array(normals),
                 view: mat4.create(),
                 rotation: vec3.fromValues(0, 0, 0),
                 rotateAround: vec3.fromValues(0, 0, 0),

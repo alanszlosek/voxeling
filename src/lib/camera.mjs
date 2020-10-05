@@ -19,8 +19,8 @@ class Camera extends Movable {
         this.projection = mat4.create();
         
         this.view = 0;
-        this.shoulderOffset = [ 0.4, 2, 2 ];
-        this.thirdPersonOffset = [ 0, 2, 4 ];
+        this.shoulderOffset = [ 0.4, 0, 3 ];
+        this.thirdPersonOffset = [ 0, 0, 8 ];
     }
 
     init() {
@@ -43,35 +43,37 @@ class Camera extends Movable {
 
     updateProjection() {
         var offset;
+
+
         switch (this.view) {
             // Over shoulder
             case 1:
-                offset = this.shoulderOffset;
-                //vec3.transformQuat(this.tempVector, offset, this.follow.getRotationQuat());
-                // transform this offset, according to yaw
-                //vec3.add(this.position, this.follow.getPosition(), this.tempVector);
+                vec3.transformQuat(scratch.vec3, this.shoulderOffset, this.follow.getRotationQuat());
+                // now raise up camera position to be shoulder height
+                scratch.vec3[1] += 1.0;
+
+                vec3.add(this.position, this.follow.getPosition(), scratch.vec3);
                 break;
 
             // Birds-eye
             case 2:
-                offset = this.thirdPersonOffset;
-                //vec3.transformQuat(this.tempVector, offset, this.follow.getRotationQuat());
-                // transform this offset, according to yaw
-                //vec3.add(this.position, this.follow.getPosition(), this.tempVector);
+                vec3.transformQuat(scratch.vec3, this.thirdPersonOffset, this.follow.getRotationQuat());
+                scratch.vec3[1] += 2.0;
+
+                vec3.add(this.position, this.follow.getPosition(), scratch.vec3);
                 break;
 
             // First-person
             default:
-                offset = this.follow.getEyeOffset();
+                // Rotate eye offset into tempVector, which we'll then add to player position
+                quat.rotateY(scratch.quat, scratch.identityQuat, this.follow.getYaw());
+
+                vec3.transformQuat(scratch.vec3, this.follow.getEyeOffset(), scratch.quat);
+                vec3.add(this.position, this.follow.getPosition(), scratch.vec3);
                 break;
         }
 
-        // Rotate eye offset into tempVector, which we'll then add to player position
-        quat.rotateY(scratch.quat, scratch.identityQuat, this.follow.getYaw());
-        vec3.transformQuat(scratch.vec3, offset, scratch.quat);
 
-        //vec3.transformQuat(scratch.vec3, offset, this.follow.rotationQuat);
-        vec3.add(this.position, this.follow.getPosition(), scratch.vec3);
 
         mat4.fromRotationTranslation(this.matrix, this.follow.getRotationQuat(), this.position);
         mat4.invert(this.inverse, this.matrix);
@@ -81,7 +83,6 @@ class Camera extends Movable {
         vec3.transformQuat(this.direction, this.baseDirection, this.follow.rotationQuat);
 
         // TODO: also update pointing ... meaning the center of the screen, where the cursor should be
-
         return this.inverse;
     }
 
