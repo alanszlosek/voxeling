@@ -12,7 +12,7 @@ import { ClientWorkerHandle } from './lib/client-worker-handle';
 import { Cursor } from './lib/cursor';
 import { Player } from './lib/models/player'
 import { Sky } from './lib/models/sky';
-import Stats from './lib/stats2.mjs';
+import Stats from './lib/stats.mjs';
 import { TextureAtlas } from './lib/texture-atlas';
 import { UserInterface } from './lib/user-interface';
 import { VoxelCache } from './lib/voxel-cache';

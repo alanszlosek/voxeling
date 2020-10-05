@@ -45,18 +45,23 @@ canvas {
 	background-color: white;
   bottom: 0px !important;
   display: block;
-  height: 60px;
+  height: 40px;
   opacity: 0.6 !important;
   padding: 5px;
   position: fixed;
   right: 0px !important;
   width: 100px;
 }
-#stats > div {
+#statsLines {
+	height: 30px;
+}
+#statsLines > div {
 	background-color: red;
 	display: inline-block;
 	width: 1px;
-
+}
+#statsFps {
+	font-size: 12px;
 }
 
 /* VOXELING SPECIFIC STUFF */
@@ -191,9 +196,8 @@ label {
     -->
 	<div id="coordinates"></div>
 	<div id="stats">
-		<div style="height: 40px"></div>
-		<div style="height: 50px"></div>
-
+		<div id="statsLines"></div>
+		<div id="statsFps"></div>
 	</div>
 
 	<!-- in game inventory overlay -->

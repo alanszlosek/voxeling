@@ -145,6 +145,12 @@ var states = {
             }
         },
         mousemove: function(ev) {
+            // do bitwise op to remove lower 8 bits or so to clamp to consistent intervals
+            let mask = 128 + 64 + 32 + 16 + 8 + 4;
+
+            //gameGlobal.player.rotateY(-( (ev.movementX&mask) / 200.0));
+            //gameGlobal.player.rotateX(-( (ev.movementY&mask) / 200.0));
+
             gameGlobal.player.rotateY(-(ev.movementX / 200.0));
             // Don't pitch player, just the camera
             gameGlobal.player.rotateX(-(ev.movementY / 200.0));
