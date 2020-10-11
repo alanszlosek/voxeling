@@ -51,7 +51,6 @@ class Lines extends Renderable {
         gl.attachShader(shaderProgram, this.shaders.vertex);
         gl.attachShader(shaderProgram, this.shaders.fragment);
         gl.linkProgram(shaderProgram);
-        //gl.useProgram(shaderProgram);
 
         this.shaderAttributes.position = gl.getAttribLocation(shaderProgram, "a_position");
         this.shaderUniforms.projection = gl.getUniformLocation(shaderProgram, "u_projection");
@@ -90,7 +89,7 @@ class Lines extends Renderable {
     render(ts) {
         let gl = this.gl;
         let projection = this.projection;
-        if (this.skipDraw) {
+        if (this.skipDraw || this.tuples == 0) {
             return;
         }
         gl.useProgram(this.shaderProgram);
@@ -103,6 +102,7 @@ class Lines extends Renderable {
         gl.vertexAttribPointer(this.shaderAttributes.position, 3, gl.FLOAT, false, 0, 0);
 
         gl.uniform4fv(this.shaderUniforms.color, this.color);
+        //console.log('lines.mjs drawing tuples: ' + this.tuples);
         gl.drawArrays(gl.LINES, 0, this.tuples);
     }
 
