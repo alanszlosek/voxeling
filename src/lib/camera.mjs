@@ -19,14 +19,17 @@ class Camera extends Movable {
         this.projection = mat4.create();
         
         this.view = 0;
-        this.shoulderOffset = [ 0.4, 0, 3 ];
-        this.thirdPersonOffset = [ 0, 0, 8 ];
+        this.firstPersonOffset = [0.0, 0.0, 0.0]; // this will be properly set in init()
+        this.shoulderOffset = [ 0.7, 0.0, 3.0 ];
+        this.thirdPersonOffset = [ 0.0, 0.0, 8.0 ];
     }
 
     init() {
         let game = this.game;
         this.canvas = game.userInterface.webgl.canvas;
         this.follow = game.player;
+        this.firstPersonOffset[0] = game.player.eyeOffset[0];
+        this.firstPersonOffset[2] = game.player.eyeOffset[2];
 
         this.canvasResized();
         this.updateProjection();
@@ -55,9 +58,10 @@ class Camera extends Movable {
                 vec3.add(this.position, this.follow.getPosition(), scratch.vec3);
                 break;
 
-            // Birds-eye
+            // Farther up and back
             case 2:
                 vec3.transformQuat(scratch.vec3, this.thirdPersonOffset, this.follow.getRotationQuat());
+                // now raise up camera to be above player's head
                 scratch.vec3[1] += 2.0;
 
                 vec3.add(this.position, this.follow.getPosition(), scratch.vec3);
@@ -66,7 +70,9 @@ class Camera extends Movable {
             // First-person
             default:
                 // Rotate eye offset into tempVector, which we'll then add to player position
-                quat.rotateY(scratch.quat, scratch.identityQuat, this.follow.getYaw());
+                vec3.transformQuat(scratch.vec3, this.firstPersonOffset, this.follow.getRotationQuat());
+                // now raise camera to be eye-height
+                scratch.vec3[1] += this.game.player.eyeOffset[1];
 
                 vec3.transformQuat(scratch.vec3, this.follow.getEyeOffset(), scratch.quat);
                 vec3.add(this.position, this.follow.getPosition(), scratch.vec3);
@@ -79,10 +85,8 @@ class Camera extends Movable {
         mat4.invert(this.inverse, this.matrix);
         mat4.multiply(this.inverse, this.projection, this.inverse);
 
-        // TODO: fix this
         vec3.transformQuat(this.direction, this.baseDirection, this.follow.rotationQuat);
 
-        // TODO: also update pointing ... meaning the center of the screen, where the cursor should be
         return this.inverse;
     }
 

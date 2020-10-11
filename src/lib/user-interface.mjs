@@ -502,7 +502,8 @@ class UserInterface extends Tickable {
             deltaY = Math.floor(speed * lookVertical);
         }
         if (deltaX || deltaY) {
-            mouseCallback(deltaX, deltaY);
+            gameGlobal.player.rotateY(-deltaX / 200);
+            gameGlobal.player.rotateX(-deltaY /200);
         }
     
         if (buttonPressed(gamepad.buttons[0]) || buttonPressed(gamepad.buttons[7])) {
