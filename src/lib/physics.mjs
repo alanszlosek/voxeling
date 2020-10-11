@@ -43,7 +43,7 @@ class Physics extends Tickable {
         this.controlState = game.userInterface.state;
         this.movable = game.player;
         
-        
+        return Promise.resolve();
     }
 
     tick(ts) {
