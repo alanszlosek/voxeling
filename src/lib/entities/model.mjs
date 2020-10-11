@@ -130,6 +130,7 @@ class Model extends Renderable {
 
             //gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh.buffers.indices);
             //gl.drawElements(gl.TRIANGLES, mesh.tuples, gl.UNSIGNED_SHORT, 0);
+            //console.log('model.js drawing tuples: ' + mesh.tuples);
             gl.drawArrays(gl.TRIANGLES, 0, mesh.tuples);
 
         }

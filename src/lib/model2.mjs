@@ -119,6 +119,7 @@ class Model {
 
             //gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh.buffers.indices);
             //gl.drawElements(gl.TRIANGLES, mesh.tuples, gl.UNSIGNED_SHORT, 0);
+            //console.log('model2.mjs drawing tuples: ' + mesh.tuples);
             gl.drawArrays(gl.TRIANGLES, 0, mesh.tuples);
 
         }

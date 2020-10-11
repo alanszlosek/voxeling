@@ -384,6 +384,7 @@ class Voxels extends Renderable {
             gl.enableVertexAttribArray(this.shader.attributes.normal);
             gl.vertexAttribPointer(this.shader.attributes.normal, 3, gl.FLOAT, false, 0, 0);
 
+            //console.log('voxels.mjs drawing tuples1: ' + bufferBundle.tuples);
             gl.drawArrays(gl.TRIANGLES, 0, bufferBundle.tuples);
         }
 
@@ -428,6 +429,7 @@ class Voxels extends Renderable {
             gl.enableVertexAttribArray(this.shader.attributes.normal);
             gl.vertexAttribPointer(this.shader.attributes.normal, 3, gl.FLOAT, false, 0, 0);
 
+            //console.log('voxels.mjs drawing tuples2: ' + bufferBundle.tuples);
             gl.drawArrays(gl.TRIANGLES, 0, bufferBundle.tuples);
         }
 
