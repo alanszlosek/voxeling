@@ -28,13 +28,13 @@ class VoxelCache {
         if (chunkID in this.cache) {
             var voxelIndex = this.coordinates.coordinatesToVoxelIndex(x, y, z);
             var voxelValue = this.cache[chunkID].voxels[voxelIndex];
-            // Uncomment the following when I'm ready to make water walkable
-            return (voxelValue > 0); // && voxelValue != 6);
+            // value of 0 tells collision detection no hit, >0 is a hit
+            return voxelValue;
         } else {
             log('Game.getBlock: chunkid not found');
         }
         // if chunk doesn't exist, act like it's full of blocks (keep player out)
-        return 1;
+        return 0;
     }
 
     /*

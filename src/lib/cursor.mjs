@@ -23,8 +23,9 @@ class Cursor extends Tickable {
         this.material = 1; // ?
         this.currentVoxel = vec3.create();
         this.currentNormalVoxel = vec3.create();
-        this.voxelHit = vec3.create();
-        this.voxelNormal = vec3.create();
+        // If these two are Float32Arrays, it leads to casting (I think), loses precision, and results in incorrect hit coords
+        this.voxelHit = new Array(3);
+        this.voxelNormal = new Array(3);
         this.low = vec3.create();
         this.high = vec3.create();
     }
@@ -63,25 +64,22 @@ class Cursor extends Tickable {
         // draw cursor at that position
 
         // TODO: now that we have the cursor actually living in the 3d world, we can show and hide it whenever we want
-        //vec3.transformQuat(scratch.vec3, this.player.eyeOffset, this.player.rotationQuat);
-        //quat.rotateY(scratch.quat, scratch.identityQuat, this.player.getYaw());
-        //
+        // Logic for in-game cursor ... small green wire cube
         vec3.transformQuat(scratch.vec3, baseDirection, this.player.rotationQuat);
         vec3.add(low, scratch.vec3, this.player.eyePosition);
         vec3.add(low, low, scratch.vec3);
         vec3.sub(low, low, [0.005, 0.005, 0.005]);
-
-        //vec3.add(low, this.player.eyePosition, direction);
         vec3.add(high, low, [0.005, 0.005, 0.005]);
         this.pointer.fill(Shapes.wire.cube(low, high));
 
         // First param is expected to have getBlock()
         let hit = raycast(this.voxelCache, this.player.eyePosition, this.player.direction, distance, voxelHit, voxelNormal);
         if (hit > 0) {
-            //console.log(voxelHit);
+            //console.log(hit, voxelHit, voxelNormal);
             voxelHit[0] = Math.floor(voxelHit[0]);
             voxelHit[1] = Math.floor(voxelHit[1]);
             voxelHit[2] = Math.floor(voxelHit[2]);
+            
 
             // Give us access to the current voxel and the voxel at it's normal
             currentVoxel[0] = voxelHit[0];
@@ -126,7 +124,7 @@ class Cursor extends Tickable {
             lines.skip(false);
         } else {
             // clear
-            //lines.skip(true);
+            lines.skip(true);
             
             // Only need to clear the first element
             currentVoxel[0] = null;
