@@ -43,7 +43,7 @@ function createShader(gl, vertexShaderCode, fragmentShaderCode, attributes, unif
         var name = attributes[i];
         out.attributes[name] = gl.getAttribLocation(shaderProgram, "a_" + name);
         if (out.attributes[name] == -1) {
-            console.log('Attribute not found in GL shader: ' + name);
+            console.log('Attribute error in GL shader: ' + name + '. Is the attribute being used in the shader?');
         }
     }
 
@@ -123,6 +123,7 @@ class WebGL {
 
                 "float depth = gl_FragCoord.z / gl_FragCoord.w;" +
                 // Start haze 1 chunk away, complete haze beyond 2.8 chunks away
+                // TODO: adjusting these doesn't seem to do anything
                 "float fogFactor = smoothstep( 32.0, u_hazeDistance, depth );" +
 
                 "gl_FragColor.a = texelColor.a - fogFactor;" +
@@ -161,6 +162,7 @@ class WebGL {
         );
 
 
+        /*
         var fragmentShaderCode2 =
             "precision mediump float;" +
 
@@ -179,18 +181,39 @@ class WebGL {
                 "gl_FragColor.rgb = texelColor.rgb;" +
                 "gl_FragColor.a = texelColor.a;" +
             "}";
+        var vertexShaderCode2 =
+            "uniform mat4 u_projection;" +
+            "uniform mat4 u_view;" +
+
+            "attribute vec4 a_position;" +
+            "attribute vec3 a_normal;" +
+            "attribute vec2 a_texcoord;" +
+
+            "varying vec4 v_position;" +
+            "varying vec3 v_normal;" +
+            "varying vec2 v_texcoord;" +
+
+            "void main() {" +
+                "v_position = u_projection * u_view * a_position;" +
+                "v_normal = a_normal;" +
+                "v_texcoord = a_texcoord;" +
+
+                "gl_Position = u_projection * u_view * a_position;" +
+            "}";
         this.shaders.projectionViewPosition2 = createShader(
             this.gl,
-            vertexShaderCode,
+            vertexShaderCode2,
             fragmentShaderCode2,
             // attributes
             ['position', 'normal', 'texcoord'],
             // uniforms
-            ['projection', 'view', 'texture']
+            ['projection', 'view', 'texture'],
+            'projectionViewPosition2'
         );
+        */
 
 
-        var vertexShaderCode2 =
+        var vertexShaderCode3 =
             "uniform mat4 u_projection;" +
 
             "attribute vec4 a_position;" +
@@ -208,10 +231,48 @@ class WebGL {
 
                 "gl_Position = u_projection * a_position;" +
             "}";
+        var fragmentShaderCode3 =
+            "precision mediump float;" +
+
+            "uniform sampler2D u_texture;" +
+            "uniform float u_textureOffset;" +
+            "uniform vec3 u_ambientLightColor;" +
+            "uniform vec3 u_directionalLightColor;" +
+            "uniform vec3 u_directionalLightPosition;" +
+            "uniform float u_hazeDistance;" +
+
+            "varying vec4 v_position;" +
+            "varying vec3 v_normal;" +
+            "varying vec2 v_texcoord;" +
+
+            "vec3 fogColor;" +
+
+            "void main() {" +
+                "vec4 texelColor = texture2D(u_texture, v_texcoord + vec2(0, u_textureOffset));" +
+                //"vec3 temp;" +
+
+                "if(texelColor.a < 0.5) " +
+                    "discard;" +
+
+                //"float distance = length(v_position.xyz);" +
+                "vec3 lightDirection = normalize(u_directionalLightPosition - v_position.xyz);" +
+                "highp float directionalLightWeight = max(dot(v_normal, lightDirection), 0.0);" +
+                "vec3 lightWeight = u_ambientLightColor + (u_directionalLightColor * directionalLightWeight);" +
+
+                // Apply light before we apply the haze?
+                "gl_FragColor.rgb = texelColor.rgb * lightWeight;" +
+
+                "float depth = gl_FragCoord.z / gl_FragCoord.w;" +
+                // Start haze 1 chunk away, complete haze beyond 2.8 chunks away
+                // TODO: adjusting these doesn't seem to do anything
+                "float fogFactor = smoothstep( 32.0, u_hazeDistance, depth );" +
+
+                "gl_FragColor.a = texelColor.a - fogFactor;" +
+            "}";
         this.shaders.projectionPosition = createShader(
             this.gl,
-            vertexShaderCode2,
-            fragmentShaderCode,
+            vertexShaderCode3,
+            fragmentShaderCode3,
             // attributes
             ['position', 'normal', 'texcoord'],
             // uniforms
@@ -221,6 +282,7 @@ class WebGL {
 
     init() {
         this.render(0);
+        return Promise.resolve();
     }
 
     render(ts) {

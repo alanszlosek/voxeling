@@ -12,6 +12,7 @@ import { ClientWorkerHandle } from './lib/client-worker-handle';
 import { Cursor } from './lib/cursor';
 import { Player } from './lib/models/player'
 import { Sky } from './lib/models/sky';
+import { Snow } from './lib/models/snow.mjs';
 import Stats from './lib/stats.mjs';
 import { TextureAtlas } from './lib/texture-atlas';
 import { UserInterface } from './lib/user-interface';
@@ -43,6 +44,7 @@ game.cursor = new Cursor(game);
 game.physics = new Physics(game);
 game.player = new Player(game);
 game.sky = new Sky(game);
+game.snow = new Snow(game);
 game.stats = new Stats(game);
 game.textureAtlas = new TextureAtlas(game);
 game.userInterface = new UserInterface(game);
@@ -98,22 +100,28 @@ game.userInterface.init()
     return Promise.resolve();
 
 }).then(function() {
-    return game.sky.init();
-
-}).then(function() {
     // Voxels
     return game.voxels.init();
 
 }).then(function() {
     return game.camera.init();
 
+}).then(function() {
+    return game.snow.init();
+
 
 }).then(function() {
-    game.userInterface.webgl.init();
+    return game.userInterface.webgl.init();
 
 }).then(function() {
     // Physics
-    game.physics.init();
+    return game.physics.init();
+
+    /*
+}).then(function() {
+    return game.sky.init();
+    */
+
 
 /*
 }).then(function() {

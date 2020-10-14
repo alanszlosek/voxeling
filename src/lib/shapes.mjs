@@ -137,6 +137,45 @@ let shapes = {
                 position: points,
                 texcoord: null
             };
+        },
+        unitTriangle: function() {
+            var points = [
+                // Back face
+                0, 0, 0,
+                1, 0, 0,
+                1, 1, 0,
+
+                0, 1, 0,
+                0, 0, 0,
+                0, 1, 0
+            ];
+            var texcoord = [
+                // Back face
+                0, 0,
+                1, 0,
+                1, 1, 
+                0, 0,
+                1, 0,
+                1, 1
+            ];
+            var normals = [
+                0, 0, -1,
+                0, 0, -1,
+                0, 0, -1,
+                0, 0, 1,
+                0, 0, 1,
+                0, 0, 1
+            ];
+
+            return {
+                vertices: new Float32Array(points),
+                texcoords: texcoord,
+                normals: new Float32Array(normals),
+                view: mat4.create(),
+                rotation: vec3.fromValues(0, 0, 0),
+                rotateAround: vec3.fromValues(0, 0, 0),
+                render: function(dt) {}
+            };
         }
     },
     three: {
