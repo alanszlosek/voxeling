@@ -1,6 +1,8 @@
 voxeling
 ====
 
+Note: Rewrite in progress! Moving to ES Modules, and refactoring all the things. Check the "master" branch for the old code.
+
 Inspired by [voxel-engine](https://github.com/maxogden/voxel-engine) and [voxel.js](http://voxeljs.com), this is a multiplayer sandbox (like Minecraft creative mode) implemented in WebGL with very few dependencies. Very much a work in progress.
 
 Demo: https://voxeling.greaterscope.com (Google Chrome and Firefox 46+)
