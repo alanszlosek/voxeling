@@ -247,7 +247,7 @@ class Server {
                     case 'myPosition':
                         // client sends new position, rotation
                         //connection.on('myPosition', function(position, yaw, pitch, avatar) {
-                        self.log('Got positio');
+                        self.log('Got position');
                         client.position = payload[0];
                         client.yaw = payload[1];
                         client.pitch = payload[2];
