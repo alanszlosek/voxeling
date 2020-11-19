@@ -1,14 +1,20 @@
 import { mat4 } from 'gl-matrix';
 import { Renderable } from './entities/renderable.mjs';
-import { Tickable } from './entities/tickable.mjs';
 
 // http://webglfundamentals.org/webgl/lessons/webgl-scene-graph.html
 
-class Node extends Renderable {
+
+/*
+TODO: find a way to more seamlessly merge Model and these RootNode / Node classes
+*/
+
+class RootNode extends Renderable {
     constructor(gl, model) {
         super()
         this.gl = gl;
         this.children = [];
+
+        // TODO: I don't really like this pattern of passing in a model. it works, but it kinda sucks
         this.model = model;
 
         this.localMatrix = mat4.create();
@@ -37,7 +43,6 @@ class Node extends Renderable {
         this.children.push(node);
     };
 
-    // Update 
     tick(parentWorldMatrix, ts) {
         this.model.tick(parentWorldMatrix, ts);
 
@@ -59,4 +64,41 @@ class Node extends Renderable {
     };
 }
 
-export { Node };
+// Node is not Renderable, since it's up to the Root and each subsequent parent node to initiate tick() and render(),
+// using the appropriate transformation/rotation matrix
+class Node {
+    constructor(gl, model) {
+        this.gl = gl;
+        this.children = [];
+        this.model = model;
+
+        this.localMatrix = mat4.create();
+        this.worldMatrix = mat4.create();
+    };
+
+    addChild(node) {
+        this.children.push(node);
+    };
+
+    tick(parentWorldMatrix, ts) {
+        this.model.tick(parentWorldMatrix, ts);
+
+        for (var i = 0; i < this.children.length; i++) {
+            var child = this.children[i];
+            // Don't really like that this reaches in
+            child.tick(this.model.worldMatrix, ts);
+        }
+    };
+
+    render(ts) {
+        // Now render this item?
+        this.model.render(ts);
+
+        for (var i = 0; i < this.children.length; i++) {
+            var child = this.children[i];
+            child.render(ts);
+        }
+    };
+}
+
+export { RootNode, Node };

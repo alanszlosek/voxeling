@@ -12,7 +12,7 @@ import { ClientWorkerHandle } from './lib/client-worker-handle';
 import { Cursor } from './lib/cursor';
 import { Player } from './lib/models/player'
 import { Sky } from './lib/models/sky';
-import { Snow } from './lib/models/snow.mjs';
+//import { Snow } from './lib/models/snow.mjs';
 import Stats from './lib/stats.mjs';
 import { TextureAtlas } from './lib/texture-atlas';
 import { UserInterface } from './lib/user-interface';
@@ -44,7 +44,7 @@ game.cursor = new Cursor(game);
 game.physics = new Physics(game);
 game.player = new Player(game);
 game.sky = new Sky(game);
-game.snow = new Snow(game);
+//game.snow = new Snow(game);
 game.stats = new Stats(game);
 game.textureAtlas = new TextureAtlas(game);
 game.userInterface = new UserInterface(game);
@@ -107,7 +107,8 @@ game.userInterface.init()
     return game.camera.init();
 
 }).then(function() {
-    return game.snow.init();
+    //return game.snow.init();
+    return Promise.resolve();
 
 
 }).then(function() {

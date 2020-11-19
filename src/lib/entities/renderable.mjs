@@ -1,8 +1,14 @@
+import { Tickable } from './tickable';
+
 var renderables = [];
 
-class Renderable {
+class Renderable extends Tickable {
     constructor() {
+        super();
         renderables.push(this);
+    }
+
+    render(ts) {
     }
 }
 
