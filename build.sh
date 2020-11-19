@@ -1,3 +1,5 @@
 #!/bin/bash
-./node_modules/.bin/rollup -c rollup.client.js && ./node_modules/.bin/rollup -c rollup.client-worker.js
+./_build1.sh &
+./_build2.sh &
+wait
 
