@@ -23,8 +23,10 @@ class Cursor extends Tickable {
         this.material = 1; // ?
         this.currentVoxel = vec3.create();
         this.currentNormalVoxel = vec3.create();
+        this.selectStart = vec3.create();
         // If these two are Float32Arrays, it leads to casting (I think), loses precision, and results in incorrect hit coords
-        this.voxelHit = new Array(3);
+        
+        this.voxelHit = new Float64Array(3);
         this.voxelNormal = new Array(3);
         this.low = vec3.create();
         this.high = vec3.create();
@@ -50,6 +52,7 @@ class Cursor extends Tickable {
         let voxelNormal = this.voxelNormal;
         let currentVoxel = this.currentVoxel;
         let currentNormalVoxel = this.currentNormalVoxel;
+        let selectStart = this.selectStart;
         let low = this.low;
         let high = this.high;
         let userInterface = this.userInterface;
@@ -119,6 +122,10 @@ class Cursor extends Tickable {
                     high[1] = currentVoxel[1] + 1;
                     high[2] = currentVoxel[2] + 1;
                     lines.fill(Shapes.wire.cube(currentVoxel, high));
+
+                    if (userInterface.state.fire) {
+                        console.log('firing');
+                    }
                 }
             }
             lines.skip(false);

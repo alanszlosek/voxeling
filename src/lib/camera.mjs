@@ -17,20 +17,19 @@ class Camera extends Movable {
         // 32 * 20 = 640 ... 20 chunks away
         this.farDistance = 640;
         this.projection = mat4.create();
-        
-        this.view = 0;
-        this.firstPersonOffset = [0.0, 0.0, 0.0]; // this will be properly set in init()
-        this.shoulderOffset = [ 0.7, 0.0, 3.0 ];
-        this.thirdPersonOffset = [ 0.0, 0.0, 8.0 ];
     }
 
     init() {
         let game = this.game;
         this.canvas = game.userInterface.webgl.canvas;
         this.follow = game.player;
-        this.firstPersonOffset[0] = game.player.eyeOffset[0];
-        this.firstPersonOffset[2] = game.player.eyeOffset[2];
 
+        this.firstPersonOffset = vec3.fromValues(game.player.eyeOffset[0], 1.0, game.player.eyeOffset[2]); // this will be properly set in init()
+        this.shoulderOffset = vec3.fromValues(0.7, 2.0, 3.0);
+        this.thirdPersonOffset = vec3.fromValues(0.0, this.game.player.eyeOffset[1], 8.0);
+        this.view = -1;
+
+        this.nextView();
         this.canvasResized();
         this.updateProjection();
     }
@@ -45,40 +44,32 @@ class Camera extends Movable {
     }
 
     updateProjection() {
-        var offset;
+        let delta = 0.25;
+
+        // Rotate eye offset into tempVector, which we'll then add to player position
+        vec3.transformQuat(scratch.vec3, this.currentOffset, this.follow.getRotationQuat());
+        scratch.vec3[1] += this.desiredOffset[1];
+        console.log(this.desiredOffset, this.currentOffset, scratch.vec3);
+
+        vec3.add(this.position, this.follow.getPosition(), scratch.vec3);
 
 
-        switch (this.view) {
-            // Over shoulder
-            case 1:
-                vec3.transformQuat(scratch.vec3, this.shoulderOffset, this.follow.getRotationQuat());
-                // now raise up camera position to be shoulder height
-                scratch.vec3[1] += 1.0;
+        // TODO: test for collision with block
+        let block = this.game.voxelCache.getBlock(this.position[0], this.position[1], this.position[2]);
+        if (block > 0) {
+            this.currentOffset[2] -= delta;
+            if (this.currentOffset[2] <= 0.00) {
+                this.currentOffset[2] = 0.0;
+            }
 
-                vec3.add(this.position, this.follow.getPosition(), scratch.vec3);
-                break;
-
-            // Farther up and back
-            case 2:
-                vec3.transformQuat(scratch.vec3, this.thirdPersonOffset, this.follow.getRotationQuat());
-                // now raise up camera to be above player's head
-                scratch.vec3[1] += 2.0;
-
-                vec3.add(this.position, this.follow.getPosition(), scratch.vec3);
-                break;
-
-            // First-person
-            default:
-                // Rotate eye offset into tempVector, which we'll then add to player position
-                vec3.transformQuat(scratch.vec3, this.firstPersonOffset, this.follow.getRotationQuat());
-                // now raise camera to be eye-height
-                scratch.vec3[1] += this.game.player.eyeOffset[1];
-
-                vec3.transformQuat(scratch.vec3, this.follow.getEyeOffset(), scratch.quat);
-                vec3.add(this.position, this.follow.getPosition(), scratch.vec3);
-                break;
+        } else {
+            if (this.currentOffset[2] < this.desiredOffset[2]) {
+                this.currentOffset[2] += delta;
+            }
+            if (this.currentOffset[2] > this.desiredOffset[2]) {
+                this.currentOffset[2] = this.desiredOffset[2];
+            }
         }
-
 
 
         mat4.fromRotationTranslation(this.matrix, this.follow.getRotationQuat(), this.position);
@@ -95,6 +86,20 @@ class Camera extends Movable {
         if (this.view > 2) {
             this.view = 0;
         }
+        switch (this.view) {
+            case 0:
+                this.desiredOffset = this.firstPersonOffset;
+                break;
+            case 1:
+                this.desiredOffset = this.shoulderOffset;
+                break;
+            case 2:
+                this.desiredOffset = this.thirdPersonOffset;
+                break;
+        }
+        this.currentOffset = vec3.clone(this.desiredOffset);
+        // clear y offset, since we'll do that later after rotation
+        this.currentOffset[1] = 0.0
     }
 
     tick() {
