@@ -1,5 +1,5 @@
 // maybe replace pool with a version that handles types of objects too
-import pool from './object-pool';
+import pool from './object-pool.mjs';
 
 var Growable = function(type, initialSize) {
     this.type = type;
