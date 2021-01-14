@@ -292,11 +292,12 @@ class RectangleMesher {
         return out;
     }
 
-    // TODO: should this also check for complete blockage since it's gotta query peers anyway?
-    // plane: x, y, z
+    // Checks whether face is blocked by another cube withink this chunk
+    // TODO: add neighbor-chunk awareness
+    // TODO: don't skip if adjacent block has transparency and is different (see logic from previous mesher)
     skipFace(voxels, x, y, z, face) {
         switch (face) {
-            case this.bitwiseFaces.back: // concerned with z-- and z++
+            case this.bitwiseFaces.back:
                 if (z == 0) {
                     console.log('Back at outside edge, dont skip');
                     return false;
@@ -304,7 +305,7 @@ class RectangleMesher {
                 z--;
                 console.log('Checking Z: ' + z);
                 break;
-            case this.bitwiseFaces.front: // concerned with z-- and z++
+            case this.bitwiseFaces.front:
                 if (z == this.lastVoxel) {
                     console.log('Front at outer edge, dont skip');
                     return false;
@@ -312,278 +313,42 @@ class RectangleMesher {
                 z++;
                 break;
 
+            case this.bitwiseFaces.left:
+                if (x == 0) {
+                    console.log('Left at outside edge, dont skip');
+                    return false;
+                }
+                x--;
+                console.log('Checking Z: ' + z);
+                break;
+            case this.bitwiseFaces.right:
+                if (x == this.lastVoxel) {
+                    console.log('Right at outer edge, dont skip');
+                    return false;
+                }
+                x++;
+                break;
+        
+            case this.bitwiseFaces.top:
+                if (y == this.lastVoxel) {
+                    console.log('Top at outside edge, dont skip');
+                    return false;
+                }
+                y++;
+                console.log('Checking Z: ' + z);
+                break;
+            case this.bitwiseFaces.bottom:
+                if (y == 0) {
+                    console.log('Bottom at outer edge, dont skip');
+                    return false;
+                }
+                y--;
+                break;
+
         }
         let index = x + (y * this.chunkWidth) + (z * this.chunkWidth2);
         return voxels[ index ] != 0;
     }
-
-    run2(position, voxels) {
-        if (!voxels || voxels.length == 0) {
-            console.log('Empty voxels');
-            return null;
-        }
-
-        let out = {};
-        var start = Date.now();
-        //this.addPoints(position, voxels);
-        
-        // maps an index to the data structure that will take care of rendering it
-        /*
-         * bitwise faces
-         * 0 none
-         * 1 top
-         * 2 back
-         * 4 left
-         * 8 front
-         * 16 right
-         * 32 bottom
-         * */
-        this.visited.fill(0);
-
-        // GENERATED
-        let currentBlock;
-        let x, y, z;
-        // block to shapes
-
-        // END GENERATED
-        // planes for front and back meshing
-        for (z = 0; z < this.chunkWidth; z++) {
-            // front and back - X direction?
-            for (y = 0; y < this.chunkWidth; y++) {
-                let indexWithoutX = (y * this.chunkWidth) + (z * this.chunkWidth2);
-                for (let x = 0; x < this.chunkWidth; x++) {
-                    console.log('Checking ' + [x,y,z].join(','));
-                    let index = indexWithoutX + x;
-
-                    let voxelValue = voxels[index];
-                    if (voxelValue in this.config.voxelRemap) {
-                        voxelValue = this.config.voxelRemap[voxelValue];
-                    }
-                    if (voxelValue == 0) {
-                        console.log('Empty voxel, skipping');
-                        continue;
-                    }
-
-                    // need one of these that understands faces
-                    // front, back ... might need to switch these
-                    var faces = [1, 3];
-                    // back first
-                    // have we processed this face yet?
-                    // is this face blocked?
-                    // is column to the right uniform, AND not blocked AND matching current face?
-                    // is row above uniform AND not blocked AND matching our current face?
-
-                    let dims = this.expandXY(voxels, x, y, z, 3, 2);
-                    console.log(dims);
-                    // mark face as visited
-                    for (let w = 0; w < dims[0]; w++) {
-                        for (let h = 0; h < dims[1]; h++) {
-                            index = (x + w) + ((y + h) * this.chunkWidth) + (z * this.chunkWidth2);
-                            this.visited[index] |= 2;
-                        }
-                    }
-                    // add points
-
-                    // now front face
-                    dims = this.expandXY(voxels, x, y, z, 1, 8);
-                    // mark face as visited
-                    for (let w = 0; w < dims[0]; w++) {
-                        for (let h = 0; h < dims[1]; h++) {
-                            index = (x + w) + ((y + h) * this.chunkWidth) + (z * this.chunkWidth2);
-                            this.visited[index] |= 8;
-                        }
-                    }
-                    // now add points, but for which face?
-                    
-                    if (!(currentBlock in out)) {
-                        out[currentBlock] = {};
-                    }
-                    out[currentBlock][x + ',' + y + ',' + z] = dims;
-                }
-            }
-        }
-        /*
-        // loop for left and right meshing
-        for (let x = 0; x < this.chunkWidth; x++) {
-            // front and back - X direction?
-            for (y = 0; y < this.chunkWidth; y++) {
-                let indexWithoutZ = x + (y * this.chunkWidth);
-                for (z = 0; z < this.chunkWidth; z++) {
-                    let index = indexWithoutZ + (z * this.chunkWidth * this.chunkWidth);
-                    this.visited[index] = true;
-                    // left and right ?
-                    var faces = [2, 4];
-                }
-            }
-        }
-        // loop for top and bottom meshing
-        for (z = 0; z < this.chunkWidth; z++) {
-            // front and back - X direction?
-            for (y = 0; y < this.chunkWidth; y++) {
-                let indexWithoutY = x + (z * this.chunkWidth * this.chunkWidth);
-                for (let x = 0; x < this.chunkWidth; x++) {
-                    let index = indexWithoutY + (y * this.chunkWidth);
-                    this.visited[index] = true;
-
-                    // Top, bottom
-                    var faces = [0, 5];
-                }
-            }
-        }
-        */
-
-        timer.log('mesher', Date.now() - start);
-        return out;
-    }
-
-
-    expandXY(voxels, x, y, z, voxelsToTexturesFace, visitedFace) {
-        // start off with current dims of 0 because we don't know whether face is
-        // visible yet. it might be obstructed by another block
-        let width = 1;
-        let height = 1;
-        console.log('expandXY ' + [x,y,z].join(','));
-
-        let indexY = y * this.chunkWidth;
-        let indexZ = z * this.chunkWidth2;
-        let index = x + indexY + indexZ;
-        let voxelValue = voxels[index];
-        // we'll compare adjacent faces as we grow to these faces
-        let faces = this.voxelsToTextures[voxelValue].textures;
-
-
-        let adjacentIndexZ = z + (visitedFace == 2 ? -1 : 1);
-        if (0 <= adjacentIndexZ && adjacentIndexZ < this.chunkWidth) {
-            let adjacentIndex = x + (y * this.chunkWidth) + (adjacentIndexZ * this.chunkWidth2);
-            if (voxels[adjacentIndex] > 0) {
-                return [width, height];
-            }
-        }
-
-        let expanded = true;
-        let tryX = true;
-        let tryY = true;
-        while (expanded) {
-            expanded = false;
-            let success;
-            /*
-            // optimized test for whether face is blocked
-            if (voxelsToTexturesFace == 3) {
-                // calculate index for block adjacent to back
-                let index = indexX + indexY + ((z-1) * this.chunkWidth2);
-
-            } else if (voxelsToTexturesFace == 1) {
-
-            }
-            */
-
-
-            // TODO: i don't think face obstruction checking is quite right
-            // TODO: don't like the interplay between checking first face, adn subsequent faces
-
-            if (tryX) {
-                // make sure doesn't go beyond chunkWidth
-                let column = x + width;
-                if (column < this.chunkWidth) {
-                    // test the entire adjacent right column, at the current height
-                    let stopY = y + height;
-                    if (stopY < this.chunkWidth) {
-                        let success = true;
-                        for (let y2 = y; y2 < stopY; y2++) {
-                            console.log('Testing expansion at ' + [column,y2].join(','));
-                            let index = column + (y2 * this.chunkWidth) + indexZ;
-                            // check whether the face has been visited for this voxel
-                            if (this.visited[index] & visitedFace) {
-                                console.log('already visited face');
-                                success = false;
-                                tryX = false;
-                                break;
-                            }
-                            // check whether face is blocked
-                            let adjacentIndexZ = z + (visitedFace == 2 ? -1 : 1);
-                            if (0 <= adjacentIndexZ && adjacentIndexZ < this.chunkWidth) {
-                                console.log('Testing adjacent face');
-                                let adjacentIndex = column + (y2 * this.chunkWidth) + (adjacentIndexZ * this.chunkWidth2);
-                                if (voxels[adjacentIndex] > 0) {
-                                    console.log('Face blocked');
-                                    // blocked
-                                    success = false;
-                                    tryX = false;
-                                    break;
-                                }
-                            }
-                            // check for matching face
-                            let voxelValue2 = voxels[index];
-                            let faces2 = this.voxelsToTextures[voxelValue2].textures;
-                            if (faces[voxelsToTexturesFace] != faces2[voxelsToTexturesFace]) {
-                                console.log('Faces dont match');
-                                success = false;
-                                tryX = false;
-                                break;
-                            }
-                        }
-                        if (success) {
-                            width++;
-                            expanded = true;
-                        }
-                    } else {
-                        tryX = false;
-                    }
-                } else {
-                    tryX = false;
-                }
-            }
-            /*
-            success = true;
-            let yy = y + 1;
-            if (yy < this.chunkWidth) {
-                for (let i = 0; i < w && (x+i) < this.chunkWidth; i++) {
-                    let index = (x + i) + (yy * this.chunkWidth) + (z * this.chunkWidth2);
-                    let voxelValue2 = voxels[index];
-                    
-                    let faces2 = this.voxelsToTextures[voxelValue2].textures;
-                    if (faces[voxelsToTexturesFace] != faces2[voxelsToTexturesFace]) {
-                        success = false;
-                        break;
-                    }
-                }
-                if (success && (y + h) < this.chunkWidth) {
-                    h++;
-                    expanded = true;
-                }
-            }
-            */
-
-        }
-
-        return [width, height];
-    }
-
-
-    shouldSkipFace(currentVoxelValue, opposingVoxelValue) {
-        if (opposingVoxelValue == 0) {
-            return false;
-        }
-        /*
-        We don't want to draw the transparent face if it's against an opaque one, but we do want to draw the opaque one
-        Don't draw opaque face if opposite opaque face
-        Don't draw transparent face if opposite transparent face
-        */
-        if (currentVoxelValue < 100) {
-            if (opposingVoxelValue > 99) {
-                return false;
-            }
-            return true;
-        }
-        // If we got here, the current face is transparent
-        if (opposingVoxelValue > 0) {
-            return true;
-        }
-        return false;
-    }
-
-
-
 
 
     /*
@@ -858,34 +623,6 @@ class RectangleMesher {
     - then add 1 to each coord to result in 1,1,1
     - repeat face checks
 */
-let faces = {
-    'front': [],
-    'back': [],
-    'top': [],
-    'bottom': [],
-    'left': [],
-    'right': []
-};
 
-
-
-/*
-this just returns whether all blocks between P1 and P2 match current block
-but it'd be tedious to call this repeatedly to figure out where we can expand to
-*/
-function sameAdjacentBlocks(blocks, x1, y1, z1, x2, y2, z2, currentBlock) {
-    for (; x1 < x2; x1++) {
-        for (; y1 < y2; y1++) {
-            for (; z1 < z2; z1++) {
-                let index = x1 + (y1 * this.chunkWidth) + (z1 * this.chunkWidth * this.chunkWidth);
-                if (blocks[index] != currentBlock) {
-                    return false;
-                }
-            }
-
-        }
-    }
-    return true;
-}
 
 export { RectangleMesher };
