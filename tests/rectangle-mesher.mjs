@@ -15,10 +15,10 @@ let mesher = new RectangleMesher(config, config.voxels, textureOffsets, coordina
 
 let tests = {
     // same voxel on all sides of 2x2x2 blocks
-    '0|0|0': [3,3,3,3,3,3,3,3], // should be 24 points
+    //'0|0|0': [3,3,3,3,3,3,3,3], // should be 24 points
 
     // not all same
-    //'32|32|32': [3,3,3,0,3,3,0,0], // should be 24 points
+    '32|32|32': [3,2,0,2, 0,0,0,0], // should be 66 points
 
     //'64|64|64': [3,0,3,0,0,3,0,3], // should be 24 points
     //'128|128|128': [3,0,3,0,3,0,3,0], // should be 12 points
@@ -30,7 +30,13 @@ for (let key in tests) {
     let voxels = tests[key];
     let position = key.split('|'); //.map(parseInt);
     let out = mesher.run(position, voxels);
-    console.log(out[3].position.offset / 3);
+
+    // sum up all points
+    let points = 0;
+    for (let voxelValue in out) {
+        points += out[voxelValue].position.offset;
+    }
+    console.log(points / 3);
 }
 
 

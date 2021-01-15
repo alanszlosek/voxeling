@@ -14,9 +14,11 @@ class RectangleMesher {
         this.chunkWidth2 = 32 * 32;
         this.lastVoxel = 31;
 
+        /*
         this.chunkWidth = 2;
         this.chunkWidth2 = 4;
         this.lastVoxel = 1;
+        */
         this.visited = new Uint8Array( this.chunkWidth * this.chunkWidth * this.chunkWidth);
         // there might be room to exclude faces that are internal that are internal and surrounded by other blocks
         // but that will be hard to calculate
@@ -68,16 +70,16 @@ class RectangleMesher {
                     // PROCESS FRONT AND BACK FACES/PLANES
 
                     let faces = [
+                        // the order needs to line up with order specified in config->voxels->textures
+                        [this.bitwiseFaces.top, x, z],
                         [this.bitwiseFaces.back, x, y],
                         [this.bitwiseFaces.front, x, y],
-                        [this.bitwiseFaces.top, x, z],
-                        [this.bitwiseFaces.bottom, x, z],
                         [this.bitwiseFaces.left, z, y],
-                        [this.bitwiseFaces.right, z, y]
-
+                        [this.bitwiseFaces.right, z, y],
+                        [this.bitwiseFaces.bottom, x, z],
                     ];
-                    for (let i in faces) {
-                        let item = faces[i];
+                    for (let faceIndex in faces) {
+                        let item = faces[faceIndex];
                         console.log(item);
                         let bitwiseFace = item[0];
                         let startColumn = item[1];
@@ -92,6 +94,7 @@ class RectangleMesher {
                         let endRow = startRow;
                         let tryColumn = !skip;
                         let tryRow = !skip;
+                        let voxelFaceValue = this.voxelsToTextures[voxelValue].textures[ faceIndex ];
 
                         if (this.visited[index] & bitwiseFace) {
                             console.log(sh + 'Face is visited, skipping');
@@ -129,11 +132,16 @@ class RectangleMesher {
                                 }
 
                                 let voxelValue2 = voxels[index2];
+                                if (voxelValue2 == 0) {
+                                    tryColumn = false;
+                                    break;
+                                }
                                 if (voxelValue2 in this.config.voxelRemap) {
                                     voxelValue2 = this.config.voxelRemap[voxelValue2];
                                 }
+                                let voxelFaceValue2 = this.voxelsToTextures[voxelValue2].textures[ faceIndex ];
 
-                                console.log(sh + 'Testing expansion to new column: ' + newEndColumn);
+                                console.log(sh + 'Testing expansion to new column at: ' + [newEndColumn, endRow].join(','));
 
                                 let shouldSkipFace;
                                 switch (bitwiseFace) {
@@ -152,7 +160,7 @@ class RectangleMesher {
                                 if (
                                     this.visited[index2] & bitwiseFace
                                     ||
-                                    voxelValue != voxelValue2
+                                    voxelFaceValue != voxelFaceValue2
                                     ||
                                     shouldSkipFace
                                 ) {
@@ -184,6 +192,7 @@ class RectangleMesher {
                                         case this.bitwiseFaces.back:
                                         case this.bitwiseFaces.front:
                                             index2 = col + (newEndRow * this.chunkWidth) + (z * this.chunkWidth2);
+                                            console.log(sh + 'Back index: ' + index2);
                                             break;
                                         case this.bitwiseFaces.top:
                                         case this.bitwiseFaces.bottom:
@@ -196,9 +205,18 @@ class RectangleMesher {
                                     }
 
                                     let voxelValue2 = voxels[index2];
+                                    console.log('voxelValue2: ' + voxelValue2);
+                                    if (voxelValue2 == 0) {
+                                        console.log(sh + 'Empty voxel, skipping row');
+                                        tryRow = false;
+                                        break;
+                                    }
                                     if (voxelValue2 in this.config.voxelRemap) {
                                         voxelValue2 = this.config.voxelRemap[voxelValue2];
                                     }
+                                    console.log('voxelValue2: ' + voxelValue2);
+                                    console.log(voxelValue2);
+                                    let voxelFaceValue2 = this.voxelsToTextures[voxelValue2].textures[ faceIndex ];
 
                                     console.log(sh + 'Testing expansion on new row at: ' + [col, newEndRow].join(','));
             
@@ -221,7 +239,7 @@ class RectangleMesher {
                                     if (
                                         this.visited[index2] & bitwiseFace
                                         ||
-                                        voxelValue != voxelValue2
+                                        voxelFaceValue != voxelFaceValue2
                                         ||
                                         shouldSkipFace
                                     ) {
@@ -276,15 +294,15 @@ class RectangleMesher {
                             switch (bitwiseFace) {
                                 case this.bitwiseFaces.back:
                                 case this.bitwiseFaces.front:
-                                    this.addPoints(out, x, y, z, endColumn, endRow, z, voxelValue, bitwiseFace);
+                                    this.addPoints(out, x, y, z, endColumn, endRow, z, voxelFaceValue, bitwiseFace);
                                     break;
                                 case this.bitwiseFaces.top:
                                 case this.bitwiseFaces.bottom:
-                                    this.addPoints(out, x, y, z, endColumn, y, endRow, voxelValue, bitwiseFace);
+                                    this.addPoints(out, x, y, z, endColumn, y, endRow, voxelFaceValue, bitwiseFace);
                                     break;
                                 case this.bitwiseFaces.left:
                                 case this.bitwiseFaces.right:
-                                    this.addPoints(out, x, y, z, x, endRow, endColumn, voxelValue, bitwiseFace);
+                                    this.addPoints(out, x, y, z, x, endRow, endColumn, voxelFaceValue, bitwiseFace);
                                     break;
                             }
 
@@ -309,7 +327,6 @@ class RectangleMesher {
                     return false;
                 }
                 z--;
-                console.log('Checking Z: ' + z);
                 break;
             case this.bitwiseFaces.front:
                 if (z == this.lastVoxel) {
@@ -394,7 +411,7 @@ class RectangleMesher {
         var n = [0.0, 0.0, 0.0];
 
         if (!(textureValue in this.textureOffsets)) {
-            console.log(textureValue + ' not in ' + this.textureOffsets);
+            console.log('textureValue ' + textureValue + ' not in textureOffsets');
         }
         console.log('Texture: ' + textureValue);
 
