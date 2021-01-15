@@ -41,6 +41,7 @@ class RectangleMesher {
 
         let out = {};
         var start = Date.now();
+        let sh = "  ";
 
         this.visited.fill(0);
 
@@ -60,232 +61,237 @@ class RectangleMesher {
                     }
 
                     if (voxelValue == 0) {
-                        console.log('Empty voxel, moving on');
+                        console.log(sh + 'Empty voxel, moving on');
                         continue;
                     }
 
+                    // PROCESS FRONT AND BACK FACES/PLANES
 
-                    // BACK
-                    let skipBack = (
-                        this.visited[index] & this.bitwiseFaces.back
-                        ||
-                        this.skipFace(voxels, x, y, z, this.bitwiseFaces.back)
-                    );
-                    let tryBackX = !skipBack;
-                    let tryBackY = !skipBack;
-                    let startBackX = x;
-                    let startBackY = y ;
-                    let endBackX = x;
-                    let endBackY = y;
+                    let faces = [
+                        [this.bitwiseFaces.back, x, y],
+                        [this.bitwiseFaces.front, x, y],
+                        [this.bitwiseFaces.top, x, z],
+                        [this.bitwiseFaces.bottom, x, z],
+                        [this.bitwiseFaces.left, z, y],
+                        [this.bitwiseFaces.right, z, y]
 
-                    if (!skipBack) {
-                        console.log('Back is neither visited nor blocked');
-                    } else {
-                        console.log('Back is visited or blocked, should skip');
-                    }
+                    ];
+                    for (let i in faces) {
+                        let item = faces[i];
+                        console.log(item);
+                        let bitwiseFace = item[0];
+                        let startColumn = item[1];
+                        let startRow = item[2];
+                        let skip = (
+                            this.visited[index] & bitwiseFace
+                            ||
+                            this.skipFace(voxels, x, y, z, bitwiseFace)
+                        );
 
-                    while (tryBackX || tryBackY) {
-                        while (tryBackX) {
-                            if (endBackX >= this.lastVoxel) {
-                                console.log('Done for back in X direction');
-                                tryBackX = false;
-                                break;
-                            }
-                            let newEndBackX = endBackX + 1;
-                            let index2 = newEndBackX + (y * this.chunkWidth) + (z * this.chunkWidth2);
+                        let endColumn = startColumn;
+                        let endRow = startRow;
+                        let tryColumn = !skip;
+                        let tryRow = !skip;
 
-                            let voxelValue2 = voxels[index2];
-                            if (voxelValue2 in this.config.voxelRemap) {
-                                voxelValue2 = this.config.voxelRemap[voxelValue2];
-                            }
-
-                            console.log('Test back expanding along X at : ' + [newEndBackX, y, z].join(','));
-    
-                            if (
-                                this.visited[index2] & this.bitwiseFaces.back
-                                ||
-                                voxelValue != voxelValue2
-                                ||
-                                this.skipFace(voxels, newEndBackX, y, z, this.bitwiseFaces.back)
-                            ) {
-                                tryBackX = false;
-                                console.log('Expanding back along X not possible');
-                                break;
-                            }
-                            console.log('Expanding back possible');
-    
-                            // Mark relevant faces as visited
-                            this.visited[index2] |= this.bitwiseFaces.back;
-    
-                            endBackX = newEndBackX;
+                        if (this.visited[index] & bitwiseFace) {
+                            console.log(sh + 'Face is visited, skipping');
+                            continue;
+                        } else if (this.skipFace(voxels, x, y, z, bitwiseFace)) {
+                            console.log(sh + 'Face is blocked. Marking as visited at index: ' + index);
+                            this.visited[index] |= bitwiseFace;
+                            continue;
                         }
-                        
-                        // this does redundant row processing
-                        while (tryBackY) {
-                            if (endBackY >= this.lastVoxel) {
-                                console.log('Done for back in Y direction');
-                                tryBackY = false;
-                                break;
-                            }
-                            let newEndBackY = endBackY + 1;
-    
-                            for (let dx = startBackX; dx <= endBackX; dx++) {
-                                let index2 = dx + (newEndBackY * this.chunkWidth) + (z * this.chunkWidth2);
+                        console.log(sh + 'Marking face visited at index: ' + index);
+                        this.visited[index] |= bitwiseFace;
+
+                        while (tryColumn || tryRow) {
+                            while (tryColumn) {
+                                if (endColumn >= this.lastVoxel) {
+                                    //console.log(sh + 'Done with column');
+                                    tryColumn = false;
+                                    break;
+                                }
+                                let newEndColumn = endColumn + 1;
+                                let index2;
+                                // columns on four planes map to X
+                                // columns on two panes map to Z
+                                switch (bitwiseFace) {
+                                    case this.bitwiseFaces.back:
+                                    case this.bitwiseFaces.front:
+                                    case this.bitwiseFaces.top:
+                                    case this.bitwiseFaces.bottom:
+                                        index2 = newEndColumn + (y * this.chunkWidth) + (z * this.chunkWidth2);
+                                        break;
+                                    case this.bitwiseFaces.left:
+                                    case this.bitwiseFaces.right:
+                                        index2 = x + (y * this.chunkWidth) + (newEndColumn * this.chunkWidth2);
+                                        break;
+                                }
 
                                 let voxelValue2 = voxels[index2];
                                 if (voxelValue2 in this.config.voxelRemap) {
                                     voxelValue2 = this.config.voxelRemap[voxelValue2];
                                 }
 
-                                console.log('Test back expanding along Y at : ' + [dx, newEndBackY, z].join(','));
+                                console.log(sh + 'Testing expansion to new column: ' + newEndColumn);
+
+                                let shouldSkipFace;
+                                switch (bitwiseFace) {
+                                    case this.bitwiseFaces.back:
+                                    case this.bitwiseFaces.front:
+                                    case this.bitwiseFaces.top:
+                                    case this.bitwiseFaces.bottom:
+                                        shouldSkipFace = this.skipFace(voxels, newEndColumn, y, z, bitwiseFace);
+                                        break;
+                                    case this.bitwiseFaces.left:
+                                    case this.bitwiseFaces.right:
+                                        shouldSkipFace = this.skipFace(voxels, x, y, newEndColumn, bitwiseFace);
+                                        break;
+                                }
         
                                 if (
-                                    this.visited[index2] & this.bitwiseFaces.back
+                                    this.visited[index2] & bitwiseFace
                                     ||
                                     voxelValue != voxelValue2
                                     ||
-                                    this.skipFace(voxels, dx, newEndBackY, z, this.bitwiseFaces.back)
+                                    shouldSkipFace
                                 ) {
-                                    tryBackY = false;
-                                    console.log('Expanding back along Y not possible');
+                                    tryColumn = false;
+                                    console.log(sh + 'Expanding to new column not possible');
                                     break;
                                 }
-                            }
-                            if (!tryBackY) {
-                                break;
-                            }
-                            console.log('Expanded back along Y of ' + newEndBackY);
-                            // mark the row as visited
-                            let indexWithoutX = (newEndBackY * this.chunkWidth) + (z * this.chunkWidth2);
-                            for (let dx = startBackX; dx <= endBackX; dx++) {
-                                this.visited[dx + indexWithoutX] |= this.bitwiseFaces.back;
-                            }
-                            endBackY = newEndBackY;
-                            if (newEndBackY >= this.lastVoxel) {
-                                tryBackY = false;
-                                console.log('Done for back in Y direction');
-                                break;
-                            }
-                        }
-
-                        // insert triangles
-                        // front startBackX to endBackX, from startBackY to endBackY
-                        this.addPoints(out, x, y, z, endBackX, endBackY, z, voxelValue, this.bitwiseFaces.back);
-                        console.log('Added back face points for texture: ' + voxelValue);
-                    }
-                    // END BACK
-
-
-                    // FRONT
-                    let skipFront = (
-                        this.visited[index] & this.bitwiseFaces.front
-                        ||
-                        this.skipFace(voxels, x, y, z, this.bitwiseFaces.front)
-                    );
-                    let tryFrontX = !skipFront;
-                    let tryFrontY = !skipFront;
-                    let startFrontX = x;
-                    let startFrontY = y ;
-                    let endFrontX = x;
-                    let endFrontY = y;
-
-                    if (!skipFront) {
-                        console.log('Front is neither visited nor blocked');
-                    } else {
-                        console.log('Front is visited or blocked, should skip');
-                    }
-
-                    while (tryFrontX || tryFrontY) {
-                        while (tryFrontX) {
-                            if (endFrontX >= this.lastVoxel) {
-                                console.log('Done for front in Y direction');
-                                tryFrontX = false;
-                                break;
-                            }
-                            let newEndFrontX = endFrontX + 1;
-                            let index2 = newEndFrontX + (y * this.chunkWidth) + (z * this.chunkWidth2);
-
-                            let voxelValue2 = voxels[index2];
-                            if (voxelValue2 in this.config.voxelRemap) {
-                                voxelValue2 = this.config.voxelRemap[voxelValue2];
-                            }
-
-                            console.log('Test front expanding along X at : ' + [newEndFrontX, y, z].join(','));
-    
-                            if (
-                                this.visited[index2] & this.bitwiseFaces.Front
-                                ||
-                                voxelValue != voxelValue2
-                                ||
-                                this.skipFace(voxels, newEndFrontX, y, z, this.bitwiseFaces.front)
-                            ) {
-                                tryFrontX = false;
-                                console.log('Expanding front along X not possible');
-                                break;
-                            }
-                            console.log('Expanding front possible');
-    
-                            // Mark relevant faces as visited
-                            this.visited[index2] |= this.bitwiseFaces.front;
-    
-                            endFrontX = newEndFrontX;
-                        }
-                        
-                        // this does redundant row processing
-                        while (tryFrontY) {
-                            if (endFrontY >= this.lastVoxel) {
-                                console.log('Done for front in Y direction');
-                                tryFrontY = false;
-                                break;
-                            }
-                            let newEndFrontY = endFrontY + 1;
-    
-                            for (let dx = startFrontX; dx <= endFrontX; dx++) {
-                                let index2 = dx + (newEndFrontY * this.chunkWidth) + (z * this.chunkWidth2);
-
-                                let voxelValue2 = voxels[index2];
-                                if (voxelValue2 in this.config.voxelRemap) {
-                                    voxelValue2 = this.config.voxelRemap[voxelValue2];
-                                }
-
-                                console.log('Test expanding front along Y at : ' + [dx, newEndFrontY, z].join(','));
+                                console.log(sh + 'Expanded to new column at ' + [newEndColumn, endRow].join(','));
         
-                                if (
-                                    this.visited[index2] & this.bitwiseFaces.front
-                                    ||
-                                    voxelValue != voxelValue2
-                                    ||
-                                    this.skipFace(voxels, dx, newEndFrontY, z, this.bitwiseFaces.front)
-                                ) {
-                                    tryFrontY = false;
-                                    console.log('Expanding front along Y not possible');
+                                // Mark relevant faces as visited
+                                console.log(sh + 'Marking face visited at index: ' + index2);
+                                this.visited[index2] |= bitwiseFace;
+        
+                                endColumn = newEndColumn;
+                            }
+                            
+                            // this does redundant row processing
+                            while (tryRow) {
+                                if (endRow >= this.lastVoxel) {
+                                    //console.log(sh + 'Done processing row');
+                                    tryRow = false;
+                                    break;
+                                }
+                                let newEndRow = endRow + 1;
+        
+                                for (let col = startColumn; col <= endColumn; col++) {
+                                    let index2;
+                                    switch (bitwiseFace) {
+                                        case this.bitwiseFaces.back:
+                                        case this.bitwiseFaces.front:
+                                            index2 = col + (newEndRow * this.chunkWidth) + (z * this.chunkWidth2);
+                                            break;
+                                        case this.bitwiseFaces.top:
+                                        case this.bitwiseFaces.bottom:
+                                            index2 = col + (y * this.chunkWidth) + (newEndRow * this.chunkWidth2);
+                                            break;
+                                        case this.bitwiseFaces.left:
+                                        case this.bitwiseFaces.right:
+                                            index2 = x + (newEndRow * this.chunkWidth) + (col * this.chunkWidth2);
+                                            break;
+                                    }
+
+                                    let voxelValue2 = voxels[index2];
+                                    if (voxelValue2 in this.config.voxelRemap) {
+                                        voxelValue2 = this.config.voxelRemap[voxelValue2];
+                                    }
+
+                                    console.log(sh + 'Testing expansion on new row at: ' + [col, newEndRow].join(','));
+            
+                                    let shouldSkipFace;
+                                    switch (bitwiseFace) {
+                                        case this.bitwiseFaces.back:
+                                        case this.bitwiseFaces.front:
+                                            shouldSkipFace = this.skipFace(voxels, col, newEndRow, z, bitwiseFace);
+                                            break;
+                                        case this.bitwiseFaces.top:
+                                        case this.bitwiseFaces.bottom:
+                                            shouldSkipFace = this.skipFace(voxels, col, y, newEndRow, bitwiseFace);
+                                            break;
+                                        case this.bitwiseFaces.left:
+                                        case this.bitwiseFaces.right:
+                                            shouldSkipFace = this.skipFace(voxels, x, newEndRow, col, bitwiseFace);
+                                            break;
+                                    }
+                                    
+                                    if (
+                                        this.visited[index2] & bitwiseFace
+                                        ||
+                                        voxelValue != voxelValue2
+                                        ||
+                                        shouldSkipFace
+                                    ) {
+                                        tryRow = false;
+                                        //console.log(sh + 'Expanding to new row not possible');
+                                        break;
+                                    }
+                                }
+                                if (!tryRow) {
+                                    break;
+                                }
+                                console.log(sh + 'Expanded to new row at ' + [endColumn, newEndRow].join(','));
+
+                                let indexWithoutX;
+                                let indexWithoutZ;
+                                // mark the row as visited
+                                switch (bitwiseFace) {
+                                    case this.bitwiseFaces.back:
+                                    case this.bitwiseFaces.front:
+                                        indexWithoutX = (newEndRow * this.chunkWidth) + (z * this.chunkWidth2);
+                                        for (let col = startColumn; col <= endColumn; col++) {
+                                            this.visited[col + indexWithoutX] |= bitwiseFace;
+                                        }
+                                        break;
+                                    case this.bitwiseFaces.top:
+                                    case this.bitwiseFaces.bottom:
+                                        indexWithoutX = (y * this.chunkWidth) + (newEndRow * this.chunkWidth2);
+                                        for (let col = startColumn; col <= endColumn; col++) {
+                                            this.visited[col + indexWithoutX] |= bitwiseFace;
+                                        }
+                                        break;
+                                    case this.bitwiseFaces.left:
+                                    case this.bitwiseFaces.right:
+                                        indexWithoutZ = x + (newEndRow * this.chunkWidth);
+                                        for (let col = startColumn; col <= endColumn; col++) {
+                                            let indexZ = col * this.chunkWidth2;
+                                            console.log(sh + 'Marking right face visited at index: ' + (indexWithoutZ + indexZ));
+                                            this.visited[indexWithoutZ + indexZ] |= bitwiseFace;
+                                        }
+                                        break;
+                                }
+
+                                endRow = newEndRow;
+                                if (newEndRow >= this.lastVoxel) {
+                                    tryRow = false;
+                                    //console.log(sh + 'Done for face along row');
                                     break;
                                 }
                             }
-                            if (!tryFrontY) {
-                                break;
+
+                            // insert points for triangles
+                            switch (bitwiseFace) {
+                                case this.bitwiseFaces.back:
+                                case this.bitwiseFaces.front:
+                                    this.addPoints(out, x, y, z, endColumn, endRow, z, voxelValue, bitwiseFace);
+                                    break;
+                                case this.bitwiseFaces.top:
+                                case this.bitwiseFaces.bottom:
+                                    this.addPoints(out, x, y, z, endColumn, y, endRow, voxelValue, bitwiseFace);
+                                    break;
+                                case this.bitwiseFaces.left:
+                                case this.bitwiseFaces.right:
+                                    this.addPoints(out, x, y, z, x, endRow, endColumn, voxelValue, bitwiseFace);
+                                    break;
                             }
-                            console.log('Expanded front along Y of ' + newEndFrontY);
-                            // mark the row as visited
-                            let indexWithoutX = (newEndFrontY * this.chunkWidth) + (z * this.chunkWidth2);
-                            for (let dx = startFrontX; dx <= endFrontX; dx++) {
-                                this.visited[dx + indexWithoutX] |= this.bitwiseFaces.front;
-                            }
-                            endFrontY = newEndFrontY;
-                            if (newEndFrontY >= this.lastVoxel) {
-                                tryFrontY = false;
-                                console.log('Done for front in Y direction');
-                                break;
-                            }
+
+
+                            console.log(sh + 'Added face points for texture: ' + voxelValue);
                         }
-
-                        // insert triangles
-                        // front startFrontX to endFrontX, from startFrontY to endFrontY
-                        this.addPoints(out, x, y, z, endFrontX, endFrontY, z, voxelValue, this.bitwiseFaces.front);
-                        console.log('Added front face points at texture: ' + voxelValue);
                     }
-                    // END FRONT
-
                 }
             }
         }
@@ -299,7 +305,7 @@ class RectangleMesher {
         switch (face) {
             case this.bitwiseFaces.back:
                 if (z == 0) {
-                    console.log('Back at outside edge, dont skip');
+                    console.log('  Back at outside edge, dont skip');
                     return false;
                 }
                 z--;
@@ -307,7 +313,7 @@ class RectangleMesher {
                 break;
             case this.bitwiseFaces.front:
                 if (z == this.lastVoxel) {
-                    console.log('Front at outer edge, dont skip');
+                    console.log('  Front at outer edge, dont skip');
                     return false;
                 }
                 z++;
@@ -315,15 +321,14 @@ class RectangleMesher {
 
             case this.bitwiseFaces.left:
                 if (x == 0) {
-                    console.log('Left at outside edge, dont skip');
+                    console.log('  Left at outside edge, dont skip');
                     return false;
                 }
                 x--;
-                console.log('Checking Z: ' + z);
                 break;
             case this.bitwiseFaces.right:
                 if (x == this.lastVoxel) {
-                    console.log('Right at outer edge, dont skip');
+                    console.log('  Right at outer edge, dont skip');
                     return false;
                 }
                 x++;
@@ -331,15 +336,14 @@ class RectangleMesher {
         
             case this.bitwiseFaces.top:
                 if (y == this.lastVoxel) {
-                    console.log('Top at outside edge, dont skip');
+                    console.log('  Top at outside edge, dont skip');
                     return false;
                 }
                 y++;
-                console.log('Checking Z: ' + z);
                 break;
             case this.bitwiseFaces.bottom:
                 if (y == 0) {
-                    console.log('Bottom at outer edge, dont skip');
+                    console.log('  Bottom at outer edge, dont skip');
                     return false;
                 }
                 y--;
@@ -451,32 +455,30 @@ class RectangleMesher {
                 points.data[ points.offset++ ] = z;
                 break;
 
-            //case 'left':
-            case 2:
+            case this.bitwiseFaces.left:
                 n[0] = -1.0;
                 points.data[ points.offset++ ] = x;
                 points.data[ points.offset++ ] = y;
-                points.data[ points.offset++ ] = z + w;
+                points.data[ points.offset++ ] = z2 + 1;
                 points.data[ points.offset++ ] = x;
                 points.data[ points.offset++ ] = y;
                 points.data[ points.offset++ ] = z;
                 points.data[ points.offset++ ] = x;
-                points.data[ points.offset++ ] = y + h;
+                points.data[ points.offset++ ] = y2 + 1;
                 points.data[ points.offset++ ] = z;
 
                 points.data[ points.offset++ ] = x;
                 points.data[ points.offset++ ] = y;
-                points.data[ points.offset++ ] = z + w;
+                points.data[ points.offset++ ] = z2 + 1;
                 points.data[ points.offset++ ] = x;
-                points.data[ points.offset++ ] = y + h;
+                points.data[ points.offset++ ] = y2 + 1;
                 points.data[ points.offset++ ] = z;
                 points.data[ points.offset++ ] = x;
-                points.data[ points.offset++ ] = y + h;
-                points.data[ points.offset++ ] = z + w;
+                points.data[ points.offset++ ] = y2 + 1;
+                points.data[ points.offset++ ] = z2 + 1;
                 break;
 
-            //case 'right':
-            case 4:
+            case this.bitwiseFaces.right:
                 x++;
                 n[0] = 1.0;
                 points.data[ points.offset++ ] = x;
@@ -484,67 +486,65 @@ class RectangleMesher {
                 points.data[ points.offset++ ] = z;
                 points.data[ points.offset++ ] = x;
                 points.data[ points.offset++ ] = y;
-                points.data[ points.offset++ ] = z + w;
+                points.data[ points.offset++ ] = z2 + 1;
                 points.data[ points.offset++ ] = x;
-                points.data[ points.offset++ ] = y + h;
-                points.data[ points.offset++ ] = z + w;
+                points.data[ points.offset++ ] = y2 + 1;
+                points.data[ points.offset++ ] = z2 + 1;
 
                 points.data[ points.offset++ ] = x;
                 points.data[ points.offset++ ] = y;
                 points.data[ points.offset++ ] = z;
                 points.data[ points.offset++ ] = x;
-                points.data[ points.offset++ ] = y + h;
-                points.data[ points.offset++ ] = z + w;
+                points.data[ points.offset++ ] = y2 + 1;
+                points.data[ points.offset++ ] = z2 + 1;
                 points.data[ points.offset++ ] = x;
-                points.data[ points.offset++ ] = y + h;
+                points.data[ points.offset++ ] = y2 + 1;
                 points.data[ points.offset++ ] = z;
                 break;
 
-            //case 'top':
-            case 0:
+            case this.bitwiseFaces.top:
                 y++;
                 n[1] = 1.0;
                 points.data[ points.offset++ ] = x;
                 points.data[ points.offset++ ] = y;
                 points.data[ points.offset++ ] = z;
-                points.data[ points.offset++ ] = x + w;
+                points.data[ points.offset++ ] = x2 + 1;
                 points.data[ points.offset++ ] = y;
                 points.data[ points.offset++ ] = z;
-                points.data[ points.offset++ ] = x + w;
+                points.data[ points.offset++ ] = x2 + 1;
                 points.data[ points.offset++ ] = y;
-                points.data[ points.offset++ ] = z + h;
+                points.data[ points.offset++ ] = z2 + 1;
 
                 points.data[ points.offset++ ] = x;
                 points.data[ points.offset++ ] = y;
                 points.data[ points.offset++ ] = z;
-                points.data[ points.offset++ ] = x + w;
+                points.data[ points.offset++ ] = x2 + 1;
                 points.data[ points.offset++ ] = y;
-                points.data[ points.offset++ ] = z + h
+                points.data[ points.offset++ ] = z2 + 1;
                 points.data[ points.offset++ ] = x;
                 points.data[ points.offset++ ] = y;
-                points.data[ points.offset++ ] = z + h;
+                points.data[ points.offset++ ] = z2 + 1;
                 break;
 
-            //case 'bottom':
-            case 5:
+            case this.bitwiseFaces.bottom:
                 n[1] = -1.0;
                 points.data[ points.offset++ ] = x;
                 points.data[ points.offset++ ] = y;
                 points.data[ points.offset++ ] = z;
                 points.data[ points.offset++ ] = x;
                 points.data[ points.offset++ ] = y;
-                points.data[ points.offset++ ] = z + h;
-                points.data[ points.offset++ ] = x + w;
+                points.data[ points.offset++ ] = z2 + 1;
+                points.data[ points.offset++ ] = x2 + 1;
                 points.data[ points.offset++ ] = y;
-                points.data[ points.offset++ ] = z + h;
+                points.data[ points.offset++ ] = z2 + 1;
 
                 points.data[ points.offset++ ] = x;
                 points.data[ points.offset++ ] = y;
                 points.data[ points.offset++ ] = z;
-                points.data[ points.offset++ ] = x + w;
+                points.data[ points.offset++ ] = x2 + 1;
                 points.data[ points.offset++ ] = y;
-                points.data[ points.offset++ ] = z + h;
-                points.data[ points.offset++ ] = x + w;
+                points.data[ points.offset++ ] = z2 + 1;
+                points.data[ points.offset++ ] = x2 + 1;
                 points.data[ points.offset++ ] = y;
                 points.data[ points.offset++ ] = z;
                 break;
