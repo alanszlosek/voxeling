@@ -4,15 +4,16 @@ import timer from '../timer.mjs';
 
 class RectangleMesher {
     constructor(config, voxToTex, texOffsets, coordinates, cache) {
+        this._debug = false;
         this.config = config;
         this.voxelsToTextures = voxToTex;
         this.textureOffsets = texOffsets;
         this.coordinates = coordinates;
         this.cache = cache;
 
-        this.chunkWidth = 32;
-        this.chunkWidth2 = 32 * 32;
-        this.lastVoxel = 31;
+        this.chunkWidth = config.chunkWidth;
+        this.chunkWidth2 = config.chunkWidth * config.chunkWidth;
+        this.lastVoxel = config.chunkWidth - 1;
 
         /*
         this.chunkWidth = 2;
@@ -20,11 +21,11 @@ class RectangleMesher {
         this.lastVoxel = 1;
         */
         this.visited = new Uint8Array( this.chunkWidth * this.chunkWidth * this.chunkWidth);
-        // there might be room to exclude faces that are internal that are internal and surrounded by other blocks
-        // but that will be hard to calculate
-        //this.willBeDrawn = new Uint8Array( this.chunkWidth * this.chunkWidth * this.chunkWidth);
 
-
+        // Z goes positive toward the viewer, negative into the distance
+        // to keep in convention with WebGL, "front" refers to the face that faces the viewer.
+        // that should make things less confusing when one has to reason about which faces are being culled.
+        // left and right are relative to the viewer
         this.bitwiseFaces = {
             "back": 1,
             "bottom": 2,
@@ -35,26 +36,33 @@ class RectangleMesher {
         };
     }
 
+    debug(message) {
+        if (this._debug) {
+            console.log(message);
+        }
+    }
+
     run(basePosition, voxels) {
         if (!voxels || voxels.length == 0) {
-            console.log('Empty voxels');
+            this.debug('Empty voxels');
             return null;
         }
 
         let out = {};
         var start = Date.now();
         let sh = "  ";
+        this.debug('meshing at ' + basePosition);
 
         this.visited.fill(0);
 
-        console.log(basePosition, voxels);
+        //this.debug(basePosition, voxels);
 
         // PROCESS FRONT AND BACK FACES/PLANES
         for (let z = 0; z < this.chunkWidth; z++) {
             for (let y = 0; y < this.chunkWidth; y++) {
                 let indexWithoutX = (y * this.chunkWidth) + (z * this.chunkWidth2);
                 for (let x = 0; x < this.chunkWidth; x++) {
-                    console.log('Checking ' + [x,y,z].join(','));
+                    this.debug('Checking ' + [x,y,z].join(','));
                     let index = indexWithoutX + x;
 
                     let voxelValue = voxels[index];
@@ -63,7 +71,7 @@ class RectangleMesher {
                     }
 
                     if (voxelValue == 0) {
-                        console.log(sh + 'Empty voxel, moving on');
+                        this.debug(sh + 'Empty voxel, moving on');
                         continue;
                     }
 
@@ -80,7 +88,7 @@ class RectangleMesher {
                     ];
                     for (let faceIndex in faces) {
                         let item = faces[faceIndex];
-                        console.log(item);
+                        this.debug(item);
                         let bitwiseFace = item[0];
                         let startColumn = item[1];
                         let startRow = item[2];
@@ -97,20 +105,21 @@ class RectangleMesher {
                         let voxelFaceValue = this.voxelsToTextures[voxelValue].textures[ faceIndex ];
 
                         if (this.visited[index] & bitwiseFace) {
-                            console.log(sh + 'Face is visited, skipping');
+                            this.debug(sh + 'Face is visited, skipping');
                             continue;
                         } else if (this.skipFace(voxels, x, y, z, bitwiseFace)) {
-                            console.log(sh + 'Face is blocked. Marking as visited at index: ' + index);
+                            this.debug(sh + 'Face is blocked. Marking as visited at index: ' + index);
                             this.visited[index] |= bitwiseFace;
                             continue;
                         }
-                        console.log(sh + 'Marking face visited at index: ' + index);
+                        this.debug(sh + 'Marking face visited at index: ' + index);
                         this.visited[index] |= bitwiseFace;
 
+                        // TODO: be able to enforce limits on expansion, maybe to 2x2, etc
                         while (tryColumn || tryRow) {
                             while (tryColumn) {
                                 if (endColumn >= this.lastVoxel) {
-                                    //console.log(sh + 'Done with column');
+                                    //this.debug(sh + 'Done with column');
                                     tryColumn = false;
                                     break;
                                 }
@@ -141,7 +150,7 @@ class RectangleMesher {
                                 }
                                 let voxelFaceValue2 = this.voxelsToTextures[voxelValue2].textures[ faceIndex ];
 
-                                console.log(sh + 'Testing expansion to new column at: ' + [newEndColumn, endRow].join(','));
+                                this.debug(sh + 'Testing expansion to new column at: ' + [newEndColumn, endRow].join(','));
 
                                 let shouldSkipFace;
                                 switch (bitwiseFace) {
@@ -165,26 +174,28 @@ class RectangleMesher {
                                     shouldSkipFace
                                 ) {
                                     tryColumn = false;
-                                    console.log(sh + 'Expanding to new column not possible');
+                                    this.debug(sh + 'Expanding to new column not possible');
                                     break;
                                 }
-                                console.log(sh + 'Expanded to new column at ' + [newEndColumn, endRow].join(','));
+                                this.debug(sh + 'Expanded to new column at ' + [newEndColumn, endRow].join(','));
         
                                 // Mark relevant faces as visited
-                                console.log(sh + 'Marking face visited at index: ' + index2);
+                                this.debug(sh + 'Marking face visited at index: ' + index2);
                                 this.visited[index2] |= bitwiseFace;
         
                                 endColumn = newEndColumn;
                             }
                             
                             // this does redundant row processing
+                            let rows = 0;
                             while (tryRow) {
                                 if (endRow >= this.lastVoxel) {
-                                    //console.log(sh + 'Done processing row');
+                                    //this.debug(sh + 'Done processing row');
                                     tryRow = false;
                                     break;
                                 }
                                 let newEndRow = endRow + 1;
+
         
                                 for (let col = startColumn; col <= endColumn; col++) {
                                     let index2;
@@ -192,7 +203,7 @@ class RectangleMesher {
                                         case this.bitwiseFaces.back:
                                         case this.bitwiseFaces.front:
                                             index2 = col + (newEndRow * this.chunkWidth) + (z * this.chunkWidth2);
-                                            console.log(sh + 'Back index: ' + index2);
+                                            this.debug(sh + 'Back index: ' + index2);
                                             break;
                                         case this.bitwiseFaces.top:
                                         case this.bitwiseFaces.bottom:
@@ -205,20 +216,20 @@ class RectangleMesher {
                                     }
 
                                     let voxelValue2 = voxels[index2];
-                                    console.log('voxelValue2: ' + voxelValue2);
+                                    this.debug('voxelValue2: ' + voxelValue2);
                                     if (voxelValue2 == 0) {
-                                        console.log(sh + 'Empty voxel, skipping row');
+                                        this.debug(sh + 'Empty voxel, skipping row');
                                         tryRow = false;
                                         break;
                                     }
                                     if (voxelValue2 in this.config.voxelRemap) {
                                         voxelValue2 = this.config.voxelRemap[voxelValue2];
                                     }
-                                    console.log('voxelValue2: ' + voxelValue2);
-                                    console.log(voxelValue2);
+                                    this.debug('voxelValue2: ' + voxelValue2);
+                                    this.debug(voxelValue2);
                                     let voxelFaceValue2 = this.voxelsToTextures[voxelValue2].textures[ faceIndex ];
 
-                                    console.log(sh + 'Testing expansion on new row at: ' + [col, newEndRow].join(','));
+                                    this.debug(sh + 'Testing expansion on new row at: ' + [col, newEndRow].join(','));
             
                                     let shouldSkipFace;
                                     switch (bitwiseFace) {
@@ -244,14 +255,14 @@ class RectangleMesher {
                                         shouldSkipFace
                                     ) {
                                         tryRow = false;
-                                        //console.log(sh + 'Expanding to new row not possible');
+                                        //this.debug(sh + 'Expanding to new row not possible');
                                         break;
                                     }
                                 }
                                 if (!tryRow) {
                                     break;
                                 }
-                                console.log(sh + 'Expanded to new row at ' + [endColumn, newEndRow].join(','));
+                                this.debug(sh + 'Expanded to new row at ' + [endColumn, newEndRow].join(','));
 
                                 let indexWithoutX;
                                 let indexWithoutZ;
@@ -276,38 +287,75 @@ class RectangleMesher {
                                         indexWithoutZ = x + (newEndRow * this.chunkWidth);
                                         for (let col = startColumn; col <= endColumn; col++) {
                                             let indexZ = col * this.chunkWidth2;
-                                            console.log(sh + 'Marking right face visited at index: ' + (indexWithoutZ + indexZ));
+                                            this.debug(sh + 'Marking right face visited at index: ' + (indexWithoutZ + indexZ));
                                             this.visited[indexWithoutZ + indexZ] |= bitwiseFace;
                                         }
                                         break;
                                 }
 
                                 endRow = newEndRow;
+                                rows++;
                                 if (newEndRow >= this.lastVoxel) {
                                     tryRow = false;
-                                    //console.log(sh + 'Done for face along row');
+                                    //this.debug(sh + 'Done for face along row');
                                     break;
                                 }
+                                if (rows > (this.config.meshedTriangleMaxRowSpan - 1)) {
+                                    this.debug('Expanded to max of 8 rows');
+                                    tryRow = false;
+                                    break;
+                                }
+
                             }
 
                             // insert points for triangles
                             switch (bitwiseFace) {
                                 case this.bitwiseFaces.back:
                                 case this.bitwiseFaces.front:
-                                    this.addPoints(out, x, y, z, endColumn, endRow, z, voxelFaceValue, bitwiseFace);
+                                    this.addPoints(
+                                        out,
+                                        basePosition[0] + x,
+                                        basePosition[1] + y,
+                                        basePosition[2] + z,
+                                        basePosition[0] + endColumn,
+                                        basePosition[1] + endRow,
+                                        basePosition[2] + z,
+                                        voxelFaceValue,
+                                        bitwiseFace
+                                    );
                                     break;
                                 case this.bitwiseFaces.top:
                                 case this.bitwiseFaces.bottom:
-                                    this.addPoints(out, x, y, z, endColumn, y, endRow, voxelFaceValue, bitwiseFace);
+                                    this.addPoints(
+                                        out,
+                                        basePosition[0] + x,
+                                        basePosition[1] + y,
+                                        basePosition[2] + z,
+                                        basePosition[0] + endColumn,
+                                        basePosition[1] + y,
+                                        basePosition[2] + endRow,
+                                        voxelFaceValue,
+                                        bitwiseFace
+                                    );
                                     break;
                                 case this.bitwiseFaces.left:
                                 case this.bitwiseFaces.right:
-                                    this.addPoints(out, x, y, z, x, endRow, endColumn, voxelFaceValue, bitwiseFace);
+                                    this.addPoints(
+                                        out,
+                                        basePosition[0] + x,
+                                        basePosition[1] + y,
+                                        basePosition[2] + z,
+                                        basePosition[0] + x,
+                                        basePosition[1] + endRow,
+                                        basePosition[2] + endColumn,
+                                        voxelFaceValue,
+                                        bitwiseFace
+                                    );
                                     break;
                             }
 
 
-                            console.log(sh + 'Added face points for texture: ' + voxelValue);
+                            this.debug(sh + 'Added face points for texture: ' + voxelValue);
                         }
                     }
                 }
@@ -323,14 +371,14 @@ class RectangleMesher {
         switch (face) {
             case this.bitwiseFaces.back:
                 if (z == 0) {
-                    console.log('  Back at outside edge, dont skip');
+                    this.debug('  Back at outside edge, dont skip');
                     return false;
                 }
                 z--;
                 break;
             case this.bitwiseFaces.front:
                 if (z == this.lastVoxel) {
-                    console.log('  Front at outer edge, dont skip');
+                    this.debug('  Front at outer edge, dont skip');
                     return false;
                 }
                 z++;
@@ -338,14 +386,14 @@ class RectangleMesher {
 
             case this.bitwiseFaces.left:
                 if (x == 0) {
-                    console.log('  Left at outside edge, dont skip');
+                    this.debug('  Left at outside edge, dont skip');
                     return false;
                 }
                 x--;
                 break;
             case this.bitwiseFaces.right:
                 if (x == this.lastVoxel) {
-                    console.log('  Right at outer edge, dont skip');
+                    this.debug('  Right at outer edge, dont skip');
                     return false;
                 }
                 x++;
@@ -353,14 +401,14 @@ class RectangleMesher {
         
             case this.bitwiseFaces.top:
                 if (y == this.lastVoxel) {
-                    console.log('  Top at outside edge, dont skip');
+                    this.debug('  Top at outside edge, dont skip');
                     return false;
                 }
                 y++;
                 break;
             case this.bitwiseFaces.bottom:
                 if (y == 0) {
-                    console.log('  Bottom at outer edge, dont skip');
+                    this.debug('  Bottom at outer edge, dont skip');
                     return false;
                 }
                 y--;
@@ -373,20 +421,18 @@ class RectangleMesher {
 
 
     /*
-    to understand sides, consider oneself as the cube
-    - back represents your back
-    - front your front
-    - top your head
-    - bottom you feet
-
-    with 0,0,0 being left, bottom, back
-
-    LOGIC ERROR
-    can't distill rect boundaries to lower left and upper left points ... that doens't work for all faces
-    maybe instead distill to left, right, top, bottom values
+    to understand sides, consider if the cube were a dresser
+    - front represents the face you see first
+    - back represents the back side you can't see
+    - left is the side corresponding to you left hand
+    - and so on
     */
 
     addPoints(out, x, y, z, x2, y2, z2, textureValue, face) {
+        if (!(textureValue in this.textureOffsets['offsets'])) {
+            this.debug('textureValue ' + textureValue + ' not in textureOffsets');
+            return;
+        }
 
         if (!(textureValue in out)) {
             // Start points Growable at 1/10 of chunk with single texture, 353808 floats
@@ -409,47 +455,15 @@ class RectangleMesher {
         var texcoord = out[textureValue].texcoord;
         var normals = out[textureValue].normal;
         var n = [0.0, 0.0, 0.0];
+        let textureRows;
+        let textureColumns;
 
-        if (!(textureValue in this.textureOffsets)) {
-            console.log('textureValue ' + textureValue + ' not in textureOffsets');
-        }
-        console.log('Texture: ' + textureValue);
-
-        var textureBottom = this.textureOffsets[textureValue][0];
-        var textureTop = this.textureOffsets[textureValue][1];
-        var textureRight = this.textureOffsets[textureValue][2];
-        
         // i changed this to be different from horiz merge mesher ... hope it doesn't screw stuff up
         switch (face) {
-            // front should be normal in positive z, i think
-            // back
-            // 2020-01-13 - winding on this seems right
             case this.bitwiseFaces.back:
-                n[2] = 1.0;
-                points.data[ points.offset++ ] = x;
-                points.data[ points.offset++ ] = y;
-                points.data[ points.offset++ ] = z;
-                points.data[ points.offset++ ] = x2 + 1;
-                points.data[ points.offset++ ] = y;
-                points.data[ points.offset++ ] = z;
-                points.data[ points.offset++ ] = x2 + 1;
-                points.data[ points.offset++ ] = y2 + 1;
-                points.data[ points.offset++ ] = z;
-
-                points.data[ points.offset++ ] = x;
-                points.data[ points.offset++ ] = y;
-                points.data[ points.offset++ ] = z;
-                points.data[ points.offset++ ] = x2 + 1;
-                points.data[ points.offset++ ] = y2 + 1;
-                points.data[ points.offset++ ] = z;
-                points.data[ points.offset++ ] = x;
-                points.data[ points.offset++ ] = y2 + 1;
-                points.data[ points.offset++ ] = z;
-                break;
-
-            // 2020-01-13 - winding on this seems right
-            case this.bitwiseFaces.front:
-                z++;
+                // winding should be clockwise for this back face
+                // starting from the left if you're around the back side of the cube
+                // think this will keep the texture wrapping order the same
                 n[2] = -1.0;
                 points.data[ points.offset++ ] = x2 + 1;
                 points.data[ points.offset++ ] = y;
@@ -470,29 +484,63 @@ class RectangleMesher {
                 points.data[ points.offset++ ] = x2 + 1;
                 points.data[ points.offset++ ] = y2 + 1;
                 points.data[ points.offset++ ] = z;
+
+                textureColumns = (x2 + 1) - x;
+                textureRows = (y2 + 1) - y;
+                break;
+
+            // 2020-01-13 - winding on this seems right
+            case this.bitwiseFaces.front:
+                z++;
+                n[2] = 1.0;
+                points.data[ points.offset++ ] = x;
+                points.data[ points.offset++ ] = y;
+                points.data[ points.offset++ ] = z;
+                points.data[ points.offset++ ] = x2 + 1;
+                points.data[ points.offset++ ] = y;
+                points.data[ points.offset++ ] = z;
+                points.data[ points.offset++ ] = x2 + 1;
+                points.data[ points.offset++ ] = y2 + 1;
+                points.data[ points.offset++ ] = z;
+
+                points.data[ points.offset++ ] = x;
+                points.data[ points.offset++ ] = y;
+                points.data[ points.offset++ ] = z;
+                points.data[ points.offset++ ] = x2 + 1;
+                points.data[ points.offset++ ] = y2 + 1;
+                points.data[ points.offset++ ] = z;
+                points.data[ points.offset++ ] = x;
+                points.data[ points.offset++ ] = y2 + 1;
+                points.data[ points.offset++ ] = z;
+
+                textureColumns = (x2 + 1) - x;
+                textureRows = (y2 + 1) - y;
                 break;
 
             case this.bitwiseFaces.left:
                 n[0] = -1.0;
                 points.data[ points.offset++ ] = x;
                 points.data[ points.offset++ ] = y;
+                points.data[ points.offset++ ] = z;
+                points.data[ points.offset++ ] = x;
+                points.data[ points.offset++ ] = y;
                 points.data[ points.offset++ ] = z2 + 1;
+                points.data[ points.offset++ ] = x;
+                points.data[ points.offset++ ] = y2 + 1;
+                points.data[ points.offset++ ] = z2 + 1;
+
                 points.data[ points.offset++ ] = x;
                 points.data[ points.offset++ ] = y;
                 points.data[ points.offset++ ] = z;
+                points.data[ points.offset++ ] = x;
+                points.data[ points.offset++ ] = y2 + 1;
+                points.data[ points.offset++ ] = z2 + 1;
                 points.data[ points.offset++ ] = x;
                 points.data[ points.offset++ ] = y2 + 1;
                 points.data[ points.offset++ ] = z;
 
-                points.data[ points.offset++ ] = x;
-                points.data[ points.offset++ ] = y;
-                points.data[ points.offset++ ] = z2 + 1;
-                points.data[ points.offset++ ] = x;
-                points.data[ points.offset++ ] = y2 + 1;
-                points.data[ points.offset++ ] = z;
-                points.data[ points.offset++ ] = x;
-                points.data[ points.offset++ ] = y2 + 1;
-                points.data[ points.offset++ ] = z2 + 1;
+                textureColumns = (z2 + 1) - z;
+                textureRows = (y2 + 1) - y;
                 break;
 
             case this.bitwiseFaces.right:
@@ -500,23 +548,26 @@ class RectangleMesher {
                 n[0] = 1.0;
                 points.data[ points.offset++ ] = x;
                 points.data[ points.offset++ ] = y;
+                points.data[ points.offset++ ] = z2 + 1;
+                points.data[ points.offset++ ] = x;
+                points.data[ points.offset++ ] = y;
                 points.data[ points.offset++ ] = z;
+                points.data[ points.offset++ ] = x;
+                points.data[ points.offset++ ] = y2 + 1;
+                points.data[ points.offset++ ] = z;
+
                 points.data[ points.offset++ ] = x;
                 points.data[ points.offset++ ] = y;
                 points.data[ points.offset++ ] = z2 + 1;
+                points.data[ points.offset++ ] = x;
+                points.data[ points.offset++ ] = y2 + 1;
+                points.data[ points.offset++ ] = z;
                 points.data[ points.offset++ ] = x;
                 points.data[ points.offset++ ] = y2 + 1;
                 points.data[ points.offset++ ] = z2 + 1;
 
-                points.data[ points.offset++ ] = x;
-                points.data[ points.offset++ ] = y;
-                points.data[ points.offset++ ] = z;
-                points.data[ points.offset++ ] = x;
-                points.data[ points.offset++ ] = y2 + 1;
-                points.data[ points.offset++ ] = z2 + 1;
-                points.data[ points.offset++ ] = x;
-                points.data[ points.offset++ ] = y2 + 1;
-                points.data[ points.offset++ ] = z;
+                textureColumns = (z2 + 1) - z;
+                textureRows = (y2 + 1) - y;
                 break;
 
             case this.bitwiseFaces.top:
@@ -524,23 +575,26 @@ class RectangleMesher {
                 n[1] = 1.0;
                 points.data[ points.offset++ ] = x;
                 points.data[ points.offset++ ] = y;
-                points.data[ points.offset++ ] = z;
-                points.data[ points.offset++ ] = x2 + 1;
-                points.data[ points.offset++ ] = y;
-                points.data[ points.offset++ ] = z;
+                points.data[ points.offset++ ] = z2 + 1;
                 points.data[ points.offset++ ] = x2 + 1;
                 points.data[ points.offset++ ] = y;
                 points.data[ points.offset++ ] = z2 + 1;
+                points.data[ points.offset++ ] = x2 + 1;
+                points.data[ points.offset++ ] = y;
+                points.data[ points.offset++ ] = z;
 
                 points.data[ points.offset++ ] = x;
                 points.data[ points.offset++ ] = y;
-                points.data[ points.offset++ ] = z;
+                points.data[ points.offset++ ] = z2 + 1;
                 points.data[ points.offset++ ] = x2 + 1;
                 points.data[ points.offset++ ] = y;
-                points.data[ points.offset++ ] = z2 + 1;
+                points.data[ points.offset++ ] = z;
                 points.data[ points.offset++ ] = x;
                 points.data[ points.offset++ ] = y;
-                points.data[ points.offset++ ] = z2 + 1;
+                points.data[ points.offset++ ] = z;
+
+                textureColumns = (x2 + 1) - x;
+                textureRows = (z2 + 1) - z;
                 break;
 
             case this.bitwiseFaces.bottom:
@@ -548,9 +602,9 @@ class RectangleMesher {
                 points.data[ points.offset++ ] = x;
                 points.data[ points.offset++ ] = y;
                 points.data[ points.offset++ ] = z;
-                points.data[ points.offset++ ] = x;
+                points.data[ points.offset++ ] = x2 + 1;
                 points.data[ points.offset++ ] = y;
-                points.data[ points.offset++ ] = z2 + 1;
+                points.data[ points.offset++ ] = z;
                 points.data[ points.offset++ ] = x2 + 1;
                 points.data[ points.offset++ ] = y;
                 points.data[ points.offset++ ] = z2 + 1;
@@ -561,43 +615,31 @@ class RectangleMesher {
                 points.data[ points.offset++ ] = x2 + 1;
                 points.data[ points.offset++ ] = y;
                 points.data[ points.offset++ ] = z2 + 1;
-                points.data[ points.offset++ ] = x2 + 1;
+                points.data[ points.offset++ ] = x;
                 points.data[ points.offset++ ] = y;
-                points.data[ points.offset++ ] = z;
+                points.data[ points.offset++ ] = z2 + 1;
+
+                textureColumns = (x2 + 1) - x;
+                textureRows = (z2 + 1) - z;
                 break;
         }
 
-        /*
+        let textureBottom = this.textureOffsets['offsets'][textureValue];
+        let textureTop = textureBottom + (this.textureOffsets['textureRowHeight'] * textureRows);
 
         texcoord.data[ texcoord.offset++ ] = 0.0;
         texcoord.data[ texcoord.offset++ ] = textureBottom;
-        texcoord.data[ texcoord.offset++ ] = 1.0 * len;
+        texcoord.data[ texcoord.offset++ ] = 1.0 * textureColumns;
         texcoord.data[ texcoord.offset++ ] = textureBottom;
-        texcoord.data[ texcoord.offset++ ] = 1.0 * len;
-        texcoord.data[ texcoord.offset++ ] = textureTop; //endY - startY + 1 + textureOffset;
+        texcoord.data[ texcoord.offset++ ] = 1.0 * textureColumns;
+        texcoord.data[ texcoord.offset++ ] = textureTop
         texcoord.data[ texcoord.offset++ ] = 0;
         texcoord.data[ texcoord.offset++ ] = textureBottom;
-        texcoord.data[ texcoord.offset++ ] = 1.0 * len;
+        texcoord.data[ texcoord.offset++ ] = 1.0 * textureColumns;
         texcoord.data[ texcoord.offset++ ] = textureTop;
         texcoord.data[ texcoord.offset++ ] = 0;
         texcoord.data[ texcoord.offset++ ] = textureTop;
-        */
 
-
-        /*
-        texcoord.data[ texcoord.offset++ ] = 0.0;
-        texcoord.data[ texcoord.offset++ ] = textureBottom;
-        texcoord.data[ texcoord.offset++ ] = 1.0;
-        texcoord.data[ texcoord.offset++ ] = textureBottom;
-        texcoord.data[ texcoord.offset++ ] = 1.0;
-        texcoord.data[ texcoord.offset++ ] = textureTop; //endY - startY + 1 + textureOffset;
-        texcoord.data[ texcoord.offset++ ] = 0;
-        texcoord.data[ texcoord.offset++ ] = textureBottom;
-        texcoord.data[ texcoord.offset++ ] = 1.0;
-        texcoord.data[ texcoord.offset++ ] = textureTop;
-        texcoord.data[ texcoord.offset++ ] = 0;
-        texcoord.data[ texcoord.offset++ ] = textureTop;
-        */
 
         normals.data[ normals.offset++ ] = n[0];
         normals.data[ normals.offset++ ] = n[1];
