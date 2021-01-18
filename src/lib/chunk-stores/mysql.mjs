@@ -19,13 +19,13 @@ class MysqlChunkStore extends ChunkStore {
         this.changes = {};
         this.mysqlPool = mysql.createPool(config);
 
-        setInterval(
+        this.applyChangesHandle = setInterval(
             function() {
                 self.applyChanges();
             },
             500
         );
-        setInterval(
+        this.saveHandle = setInterval(
             function() {
                 self.save();
             },
@@ -201,6 +201,12 @@ class MysqlChunkStore extends ChunkStore {
             );
         });
     };
+
+    end() {
+        this.mysqlPool.end();
+        clearInterval(this.applyChangesHandle);
+        clearInterval(this.saveHandle);
+    }
 }
 
 export { MysqlChunkStore };
