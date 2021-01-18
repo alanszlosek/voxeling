@@ -1,6 +1,7 @@
 import config from '../config';
 import { Coordinates } from './lib/coordinates';
-import mesher from './lib/meshers/horizontal-merge2';
+//import mesher from './lib/meshers/horizontal-merge2';
+import { RectangleMesher } from '../src/lib/meshers/rectangle.mjs';
 import Log from './lib/log';
 import MC from './lib/max-concurrent';
 import textureOffsets from '../texture-offsets';
@@ -86,7 +87,8 @@ var worker = {
         var coordinates = this.coordinates = new Coordinates(config.chunkSize);
         var websocket = this.connection = new WebSocket(config.websocketServer);
 
-        mesher.config(config.chunkSize, config.voxels, textureOffsets, coordinates, chunkCache);
+        //mesher.config(config, config.voxels, textureOffsets, coordinates, chunkCache);
+        this.mesher = new RectangleMesher(config, config.voxels, textureOffsets, coordinates);
 
         websocket.onopen = function() {
             self.connected = true;
@@ -309,7 +311,8 @@ var worker = {
             }
 
             var chunk = chunkCache[chunkId];
-            var mesh = mesher.mesh(chunk.position, chunk.voxels);
+            //var mesh = mesher.mesh(chunk.position, chunk.voxels);
+            var mesh = this.mesher.run(chunk.position, chunk.voxels);
 
             var transfer = {};
             var transferList = [];

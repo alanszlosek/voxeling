@@ -6,6 +6,7 @@ import mesher from '../src/lib/meshers/horizontal-merge2.mjs';
 import { MysqlChunkStore } from '../src/lib/chunk-stores/mysql.mjs';
 import textureOffsets from '../texture-offsets.js';
 import mysql from 'mysql';
+import { performance } from 'perf_hooks';
 
 // override some config values just for testing ease
 config.chunkWidth = 32;
@@ -33,8 +34,11 @@ chunkStore.get('0|-32|0', function(error, chunk) {
     }
     console.log('got chunk');
 
+    let t1 = performance.now();
     var mesh1 = mesher.mesh(chunk.position, chunk.voxels);
+    let t2 = performance.now();
     let mesh2 = rectangle.run(chunk.position, chunk.voxels);
+    let t3 = performance.now();
 
     /*
     let position = key.split('|'); //.map(parseInt);
@@ -53,6 +57,8 @@ chunkStore.get('0|-32|0', function(error, chunk) {
         points2 += mesh2[voxelValue].position.offset;
     }
     console.log((points1 / 3) + ' vs ' + (points2 / 3));
+
+    console.log((t2 - t1) + ' ms vs ' + (t3 - t2) + ' ms');
 
 
     chunkStore.end();

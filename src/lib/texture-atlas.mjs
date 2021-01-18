@@ -45,6 +45,8 @@ class TextureAtlas {
     init() {
         let gl = this.game.userInterface.webgl.gl;
         let self = this;
+
+        console.log('Max texture units: ' + gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS));
         return new Promise(function(resolve, reject) {
             var toLoad = 0;
             // skip null (empty block) texture
@@ -72,7 +74,10 @@ class TextureAtlas {
                 };
             };
             // Bind textures to subsequent texture units
-            let textureUnits = [gl.TEXTURE0, gl.TEXTURE1, gl.TEXTURE2, gl.TEXTURE3, gl.TEXTURE4];
+            let textureUnits = [
+                gl.TEXTURE0, gl.TEXTURE1, gl.TEXTURE2, gl.TEXTURE3, gl.TEXTURE4, gl.TEXTURE5, gl.TEXTURE6, gl.TEXTURE7,
+                gl.TEXTURE8, gl.TEXTURE9, gl.TEXTURE10, gl.TEXTURE11, gl.TEXTURE12, gl.TEXTURE13, gl.TEXTURE14, gl.TEXTURE15
+            ];
 
             // Pre-multiply so opacity works correctly
             // http://www.realtimerendering.com/blog/gpus-prefer-premultiplication/
@@ -80,20 +85,22 @@ class TextureAtlas {
             // PNGs require this, right?
             gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
-            // Load combined texture file
-            toLoad++;
-            var glTexture = gl.createTexture();
-            var image = new Image();
-            // Need closure here, to wrap texture
-            image.onload = textureClosure(textureUnits, glTexture, image);
-            image.onerror = function(err) {
-                reject('Failed to load texture image: ' + image.src);
-            };
-            image.crossOrigin = 'Anonymous';
-            image.src = '/textures.png';
-            // TODO: just store int value of texture unit
-            self.byValue[0] = 0;
-            self.byValue[0] = glTexture;
+            // Load texture atlas files
+            for (let i = 0; i < self.textureOffsets.numAtlases; i++) {
+                toLoad++;
+                var glTexture = gl.createTexture();
+                var image = new Image();
+                // Need closure here, to wrap texture
+                image.onload = textureClosure(textureUnits, glTexture, image);
+                image.onerror = function(err) {
+                    reject('Failed to load texture image: ' + image.src);
+                };
+                image.crossOrigin = 'Anonymous';
+                image.src = '/textures' + i + '.png';
+                // TODO: just store int value of texture unit
+                self.byValue[0] = i;
+                self.byValue[0] = glTexture;
+            }
 
             // Load player textures
             for (var value in self.players) {

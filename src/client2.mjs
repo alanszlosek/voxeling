@@ -1,7 +1,7 @@
 // imports
 
 import { default as config } from '../config.mjs';
-//import { textureOffsets } from './texture-offsets.js'
+import textureOffsets from '../texture-offsets.js'
 
 import { Camera } from './lib/camera'
 //import { Physics } from './lib/physics.mjs'
@@ -46,10 +46,10 @@ game.player = new Player(game);
 game.sky = new Sky(game);
 //game.snow = new Snow(game);
 game.stats = new Stats(game);
-game.textureAtlas = new TextureAtlas(game);
+game.textureAtlas = new TextureAtlas(game, textureOffsets);
 game.userInterface = new UserInterface(game);
 game.voxelCache = new VoxelCache(game);
-game.voxels = new Voxels(game);
+game.voxels = new Voxels(game, textureOffsets);
 game.world = new World(game);
 
 

@@ -1,16 +1,23 @@
-0.0.0.0:9966 {
-    root /home/user/Documents/voxeling/www
-    timeouts 2h
+{
+    email alan.szlosek@gmail.com
+    admin off
+    auto_https off
+}
 
-    proxy /ws localhost:10005 {
-        websocket
-        transparent
+http://192.168.1.128:9966 {
+    root * /home/user/Documents/voxeling/www
+    file_server
+    #timeouts 2h
+
+    route /ws/* {
+        #uri strip_prefix /ws
+        reverse_proxy http://localhost:10005
     }
-    proxy /chunk localhost:10005 {
-        transparent
+    route /chunk/* {
+        reverse_proxy http://localhost:10005
     }
 }
 
-0.0.0.0:9966/js {
-    root /home/user/Documents/voxeling/src
-}
+#0.0.0.0:9966/js {
+#    root /home/user/Documents/voxeling/src
+#}

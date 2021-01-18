@@ -5,12 +5,16 @@ let debug = false;
 WebGL stuff that pertains only to voxels
 */
 
+/*
+
+*/
 class Voxels extends Renderable {
-    constructor(game) {
+    constructor(game, textureOffsets) {
         super();
         this.game = game;
         
         this.textures = game.textureAtlas;
+        this.textureOffsets = textureOffsets;
         this.nearBuffersByTexture = {};
         this.farBuffersByTexture = {};
 
@@ -266,7 +270,8 @@ class Voxels extends Renderable {
                     normal: gl.createBuffer(),
                     tuples: 0,
                     positionBytes: bytes.position,
-                    texcoordBytes: bytes.texcoord
+                    texcoordBytes: bytes.texcoord,
+                    textureUnit: this.textureOffsets['textureToTextureUnit'][ textureValue ]
                 };
                 gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
                 gl.bufferData(gl.ARRAY_BUFFER, bytes.position, gl.STATIC_DRAW);
@@ -336,7 +341,10 @@ class Voxels extends Renderable {
         // think we can just set the uniform.texture to the right integer
         // to correspond to TEXTURE#
         // Voxel textures are loaded and bound to gl.TEXTURE0
+
+        // need to smartly set this based on which atlas a texture is part of
         gl.uniform1i(this.shader.uniforms.texture, 0);
+        
 
         // set which of the 32 handles we want this bound to
         //gl.bindTexture(gl.TEXTURE_2D, this.textures.byValue[0]);
@@ -370,7 +378,7 @@ class Voxels extends Renderable {
             //gl.bindTexture(gl.TEXTURE_2D, this.textures.byValue[textureValue].glTexture);
 
             // bind the texture to this handle
-            //gl.uniform1i(this.shader.uniforms.texture, 0);
+            gl.uniform1i(this.shader.uniforms.texture, bufferBundle.textureUnit);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, bufferBundle.position);
             gl.enableVertexAttribArray(this.shader.attributes.position);
@@ -416,6 +424,7 @@ class Voxels extends Renderable {
 
             // bind the texture to this handle
             //gl.uniform1i(this.shader.uniforms.texture, 0);
+            gl.uniform1i(this.shader.uniforms.texture, bufferBundle.textureUnit);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, bufferBundle.position);
             gl.enableVertexAttribArray(this.shader.attributes.position);

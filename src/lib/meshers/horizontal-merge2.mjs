@@ -1,11 +1,12 @@
 // TODO: clean this up. fewer globals
 
 // TODO: use object pool for vector arrays
-import { Growable } from '../growable';
-import timer from '../timer';
+import { Growable } from '../growable.mjs';
+import timer from '../timer.mjs';
 
 var Coordinator;
 var chunkCache;
+var config;
 var chunkSize = 2;
 var voxelArraySize = chunkSize * chunkSize * chunkSize;
 var tab = " ";
@@ -46,13 +47,14 @@ var addFace = function(basePosition, x, y, z, face, len, textureValue) {
     var normals = out[textureValue].normal;
     var n = [0.0, 0.0, 0.0];
 
-    if (!(textureValue in textureOffsets)) {
-        console.log(textureValue + 'not in ' + textureOffsets);
+    if (!(textureValue in textureOffsets.offsets)) {
+        console.log(textureValue + ' not in ' + textureOffsets);
+        return out;
     }
 
-    var textureBottom = textureOffsets[textureValue][0];
-    var textureTop = textureOffsets[textureValue][1];
-    var textureRight = textureOffsets[textureValue][2];
+    var textureBottom = textureOffsets.offsets[textureValue][0];
+    var textureTop = textureOffsets.offsets[textureValue][1];
+    var textureRight = textureOffsets.offsets[textureValue][2];
 
 
     // Default winding for WebGL is counter clockwise
@@ -453,11 +455,8 @@ var calculate = function(basePosition, voxels) {
             for (var x = 0; x < chunkSize; x++) {
                 var voxelValue = voxels[index + x];
 
-                if (voxelValue == 16) {
-                    voxelValue = 5;
-                }
-                if (voxelValue == 20) {
-                    voxelValue = 5;
+                if (voxelValue in config.voxelRemap) {
+                    voxelValue = config.voxelRemap[voxelValue];
                 }
 
                 if (voxelValue == 0) {
@@ -577,8 +576,9 @@ if (!module) {
 }
 
 export default {
-    config: function(cs, voxToTex, texOffsets, coordinatorHandle, cache) {
-        chunkSize = cs;
+    config: function(conf, voxToTex, texOffsets, coordinatorHandle, cache) {
+        config = conf;
+        chunkSize = config.chunkSize;
         voxelArraySize = chunkSize * chunkSize * chunkSize;
         voxelsToTextures = voxToTex;
         textureOffsets = texOffsets;
