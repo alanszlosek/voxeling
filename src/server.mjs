@@ -119,6 +119,13 @@ class Server {
             self.log('HTTPRequest');
             var parsedUrl = url.parse(request.url);
             var path = decodeURIComponent(parsedUrl.path);
+            if (request.method.toUpperCase() != 'GET') {
+                console.log('Returning 405 for unexpected HTTP method: ' + request.method);
+                // not supported
+                response.writeHead(405, 'Method Not Allowed');
+                response.end();
+                return;
+            }
             if (path.substr(0, 7) == '/chunk/') {
                 var chunkId = path.substr(7);
                 if (!chunkId) {
