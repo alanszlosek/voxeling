@@ -1,6 +1,7 @@
 import { Growable } from '../growable.mjs';
 import timer from '../timer.mjs';
 
+// heavily inspired by: https://devforum.roblox.com/t/how-to-make-a-greedy-mesher/474436
 
 class RectangleMesher {
     constructor(config, voxToTex, texOffsets, coordinates, cache) {
@@ -49,7 +50,6 @@ class RectangleMesher {
         }
 
         let out = {};
-        var start = Date.now();
         let sh = "  ";
         this.debug('meshing at ' + basePosition);
 
@@ -662,26 +662,5 @@ class RectangleMesher {
     }
 
 }
-
-/*
-- start with small chunk
-- precompute logic to visit all 3 planes that pass through 0,0,0
-    - start at 0,0,0
-    - for front and back checks
-        - loop over x direction
-            - loop over y direction
-                - if empty block, skip
-                - if not visited before
-                    - create struct
-                - if previous neighbor is same type .. this is going to be tricky to handle in generated code
-    - check indices pertaining to front and back
-    - then top and bottom
-    - then left and right
-    - at each block check whether it's visible
-    - keep a temp map of each block that points to the structure that contains it, null otherwise
-    - then add 1 to each coord to result in 1,1,1
-    - repeat face checks
-*/
-
 
 export { RectangleMesher };
