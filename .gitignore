@@ -1,3 +1,4 @@
 config.js
 chunks
 node_modules
+www/textures*.png
