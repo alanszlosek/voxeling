@@ -1,7 +1,8 @@
 import { default as config } from '../config.mjs';
 import chunkGenerator from '../src/lib/generators/server-terraced.mjs';
 import { Coordinates } from '../src/lib/coordinates.mjs';
-import { RectangleMesher } from '../src/lib/meshers/rectangle5.mjs';
+import { RectangleMesher } from '../src/lib/meshers/rectangle.mjs';
+import { RectangleMesher as RectangleMesher2 } from '../src/lib/meshers/rectangle5.mjs';
 import mesher from '../src/lib/meshers/horizontal-merge2.mjs';
 import { MysqlChunkStore } from '../src/lib/chunk-stores/mysql.mjs';
 import textureOffsets from '../texture-offsets.js';
@@ -17,8 +18,8 @@ config.chunkElements = 32*32*32;
 let coordinates = new Coordinates(config);
 var chunkCache = {};
 
-let rectangle = new RectangleMesher(config, config.voxels, textureOffsets, coordinates);
-mesher.config(config, config.voxels, textureOffsets, coordinates, chunkCache);
+let rectangle1 = new RectangleMesher(config, config.voxels, textureOffsets, coordinates);
+let rectangle2 = new RectangleMesher2(config, config.voxels, textureOffsets, coordinates);
 
 
 let mysqlPool = mysql.createPool(config.mysql);
@@ -39,9 +40,9 @@ let cb = function(error, chunk) {
     }
 
     let t1 = performance.now();
-    var mesh1 = mesher.mesh(chunk.position, chunk.voxels);
+    var mesh1 = rectangle1.run(chunk.position, chunk.voxels);
     let t2 = performance.now();
-    let mesh2 = rectangle.run(chunk.position, chunk.voxels);
+    let mesh2 = rectangle2.run(chunk.position, chunk.voxels);
     let t3 = performance.now();
 
     /*
