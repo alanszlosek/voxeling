@@ -45,11 +45,14 @@ textureValues.sort()
 out = {
      # height of a single texture within the atlas. we mult this by the number of rows a triangle spans
     "textureRowHeight": 128 /  atlasHeight,
+    "textureRowPixels": 128,
+    # rename this
     "offsets": {
         # texture value
         #"1": 0.123 # percentageOffset within texture]
 
     },
+    "pixelOffsets": {},
     "textureToTextureUnit": {},
     "numAtlases": 0
 }
@@ -87,8 +90,11 @@ while i < numAtlases:
                 # we only log the offset of the second row of this block
                 # because the first row is only there to ensure mipmapping doesn't
                 # result in artifacts
+
+                # TODO: rethink this again, when not tired
                 if k == 1:
                     out['offsets'][textureValue] = yOffset / atlasHeight
+                    out['pixelOffsets'][textureValue] = yOffset
                 yOffset += width
                 k += 1
             #yOffset += 2
@@ -97,8 +103,9 @@ while i < numAtlases:
     
     # save
     # do we really need to flip, if we need to flip again on the webgl side?
-    flipped = combined.transpose(Image.FLIP_TOP_BOTTOM)
-    flipped.save('../www/textures%d.png' % i, quality=100.0)
+    #flipped = combined.transpose(Image.FLIP_TOP_BOTTOM)
+    # let's try not to flip ... but make sure coordinates map to bottom, since GPU draws bottom up
+    combined.save('../www/textures%d.png' % i, quality=100.0)
 
     i += 1
 

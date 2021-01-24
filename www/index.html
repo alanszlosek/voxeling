@@ -90,6 +90,7 @@ canvas {
 #overlay.disconnected, #overlay.disconnected > div.disconnected {
 	display: block;
 }
+/*
 #overlay div.textures > div {
   width: 90px;
   height: 110px;
@@ -108,12 +109,13 @@ canvas {
 #overlay div.textures > div.selected {
   border: 1px solid red;
 }
+*/
 
 #overlay div.padding {
   padding: 10px;
 }
 
-#overlay.textures, #overlay.textures div.textures {
+#overlay.textures > div.textures {
   display: block;
 }
 #overlay.map, #overlay.map div.map {
@@ -171,6 +173,16 @@ canvas {
 #chat.active input {
 	border: 1px solid black;
 }
+
+#textureContainer {
+	display: grid;
+	grid-template-columns: 90px 90px 90px 90px 90px 90px;
+}
+#textureContainer > div {
+	width: 90px;
+	height: 90px;
+}
+
 input, input:focus {
 	outline: none;
 }
@@ -243,7 +255,8 @@ label {
 
 		</div></div>
 
-		<div class="textures" id="textureContainer">
+		<div class="textures">
+			<div id="textureContainer"></div>
 		</div>
 
 		<div class="map"><div class="padding">

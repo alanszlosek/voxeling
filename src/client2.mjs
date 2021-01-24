@@ -33,6 +33,7 @@ import { World } from './lib/world.mjs';
 
 let game = {
     config: config,
+    textureOffsets: textureOffsets,
     coordinates: new Coordinates(config),
     players: {},
     settings: {}

@@ -170,6 +170,14 @@ var states = {
                 this.transition('map');
                 return;
             }
+            // C - toggle cursor?
+            /*
+            if (event.which == 67) {
+                // toggle cursor
+                gameGlobal.cursor.enabled = !gameGlobal.cursor.enabled;
+                return;
+            }
+            */
             // Escape
             if (code == 27) {
                 console.log('escape');
@@ -365,6 +373,26 @@ var currentState = '';
 
 var gamepad;
 
+var tag = function(tagName, attributes, children) {
+    var element = document.createElement(tagName);
+    for (var i in attributes) {
+        element.setAttribute(i, attributes[i]);
+    }
+    // Convert text to text node
+    for (var i = 0; i < children.length; i ++) {
+        var node = children[i];
+        if (node == null) {
+            continue;
+        } else if (node instanceof Node) {
+        } else {
+            node = document.createTextNode(node);
+        }
+        element.appendChild(node);
+    }
+
+    return element;
+};
+
 // Really want to proxy events, so that way I can convert controller events to mouse events and send them to the player/camera
 // movement handler.
 class UserInterface extends Tickable {
@@ -403,11 +431,51 @@ class UserInterface extends Tickable {
             },
             false
         );
+        this.drawTextures();
 
         this.transition('start');
 
         // TODO: handle control change .... inventory gamepads whennew one is connected
         return Promise.resolve();
+    }
+
+    drawTextures() {
+        let self = this;
+        let container = document.getElementById('textureContainer');
+        let textures = this.game.config.voxels;
+        let textureOffsets = this.game.textureOffsets;
+        let pixelOffsets = textureOffsets.pixelOffsets;
+        // pixelOffsets assumes we're not scaling down the image,
+        // but here we are ... showing textures in 90 pixel divs
+        let scale = 90 / textureOffsets['textureRowPixels'];
+        let scaleTo = '90px';
+
+        this.game.config.texturePicker.forEach(function(voxelValue, index) {
+            // get texture value from top face of voxel cube
+            let textureValue = self.game.config.voxels[voxelValue].textures[1];
+            console.log(textureValue);
+            let textureUnit = self.game.textureOffsets.textureToTextureUnit[ textureValue ];
+            
+            let offsetY = scale * pixelOffsets[ textureValue ];
+            let styles = {
+                'background-image': 'url("' + '/textures' + textureUnit + '.png")',
+                'background-position': '0px -' + offsetY + 'px',
+                'background-size': scaleTo,
+            };
+            let style = '';
+            for (let key in styles) {
+                let value = styles[key];
+                style += key + ':' + value + ';';
+            }
+            let div = tag(
+                'DIV',
+                {
+                    'style': style
+                },
+                []
+            );
+            container.appendChild(div);
+        });
     }
 
     
