@@ -106,7 +106,7 @@ class MysqlChunkStore extends ChunkStore {
             }
             Array.prototype.push.apply(self.changes[chunkID], chunks[chunkID]);
             // changes are an index+value pair, so divide by 2 to get total number of changes
-            stats.count('blocks.changed', chunks[chunkID].length / 2);
+            //stats.count('blocks.changed', chunks[chunkID].length / 2);
         }
     };
 
