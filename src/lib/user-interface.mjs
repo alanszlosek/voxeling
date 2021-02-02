@@ -291,6 +291,7 @@ var states = {
             if (adjustment != 0) {
                 var matches = document.querySelectorAll('#textureContainer > div');
                 var from = 0;
+                var tentative = 0;
                 for (var i = 0; i < matches.length; i++) {
                     if (matches[i].className == 'selected') {
                         from = i;
@@ -299,15 +300,21 @@ var states = {
                 }
                 // TODO: need more logic here for moving before first row
                 // and beyond last row. tricky maths if last row not filled out.
-                from += adjustment;
+                tentative = from + adjustment;
 
-                /*
-                if (from < 0) {
-                    from = matches.length - from;
-                } else if (from > matches.length) {
-
+                if (tentative == -1) {
+                    // carry on
+                    from = matches.length - 1;
+                } else if (tentative == matches.length) {
+                    // carry on
+                    from = 0;
+                } else if (0 <= tentative && tentative < matches.length) {
+                    // carry on
+                    from = tentative;
+                } else {
+                    // don't change
                 }
-                */
+                
                 matches[from].className = 'selected';
                 gameGlobal.cursor.currentMaterial = Number(
                     matches[from].getAttribute('data-texturevalue')
