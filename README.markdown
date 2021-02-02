@@ -1,7 +1,7 @@
 voxeling
 ====
 
-Note: Rewrite in progress! Moving to ES Modules, and refactoring all the things. Check the "master" branch for the old code.
+Note: Rewrite in progress! Moving to ES Modules, and refactoring all the things. I've moved everything to a branch called "main". Check the "master" branch for the old code.
 
 Inspired by [voxel-engine](https://github.com/maxogden/voxel-engine) and [voxel.js](http://voxeljs.com), this is a multiplayer sandbox (like Minecraft creative mode) implemented in WebGL with very few dependencies. Very much a work in progress.
 
@@ -9,13 +9,7 @@ Demo: https://voxeling.greaterscope.com (Google Chrome and Firefox 46+)
 
 Project blog: https://blog.alanszlosek.com/tags/voxeling/
 
-Preferred texture set:
-
-* http://bdcraft.net/purebdcraft-minetest
-
-Past textures provided by:
-* https://github.com/deathcap/ProgrammerArt
-* https://github.com/phionabrie
+As of 2021 I've hired a graphic designer to create new textures, so will be phasing out bdcraft shortly (http://bdcraft.net/purebdcraft-minetest).
 
 Player skins from:
 
@@ -23,8 +17,7 @@ Player skins from:
 * https://github.com/deathcap/avatar
 
 
-Gameplay Features
-====
+# Gameplay Features
 
 * Multiplayer, with maxogden, substack and viking skins
 * Block creation and destruction (batch operations via click-and-drag)
@@ -36,15 +29,17 @@ Gameplay Features
 * World state is saved to files or mysql (install mysql npm module)
 
 
-What I'm working on
-====
+# What I'm working on
+
+## Currently
 
 * Optimizations, always and forever
+
+## Perhaps in the Future 
+
 * Point light sources and shadow mapping
 
-
-Technical Features
-====
+# Technical Features
 
 * Client and Server (ported bits from my voxel-client and voxel-server forks)
 * Simple physics engine for player movements
@@ -65,8 +60,7 @@ See it in action in the demo (Google Chrome or Firefox): https://voxeling.greate
 Or follow the installation instructions below to run it locally.
 
 
-Installation
-====
+# Installation
 
 In terminal 1:
 
@@ -80,8 +74,12 @@ cd /path/to/voxeling
 # You'll need PHP with gd/imagemagick. Once I get node version working, you won't need PHP
 cd scripts
 # This generates www/textures.png and texture-offsets.js
-php textures.php
+python3 -m venv ./venv
+source venv/bin/activate
+pip3 install pillow
+python3 texture-atlases.py
 
+cd ..
 npm install
 
 # create folder for world chunks
@@ -97,21 +95,20 @@ cp config-example.js config.js
 # Also sample Caddy config for running websocket through same domain assets are served through
 vim config.js
 
-# Build and bundle the client code into a single file
-node node_modules/browserify/bin/cmd.js src/client.js -o www/bundle.js
-# dO the same for the web worker code
-node node_modules/browserify/bin/cmd.js src/client-worker.js -o www/client-worker.js
+# Build the app and web worker JS bundles
+# This forks 2 npm rollup processes
+./build.sh 
 
 # start server
-node src/server.js
+node src/server.mjs
 ```
 
-In terminal 2:
+In terminal 2, start a webserver:
 
 ```
 cd /path/to/voxeling
-# Start Caddy to serve the HTML, JavaScript, CSS and chunk files
-caddy -conf ./third-party/Caddyfile
+# Start Caddy 2 to serve the HTML, JavaScript, CSS and chunk files
+caddy run -config ./third-party/Caddyfile -adapter caddyfile
 ```
 
 Now, point your browser to http://127.0.0.1:9966. Read the introduction for controls and keybindings. Enjoy!

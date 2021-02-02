@@ -176,11 +176,16 @@ canvas {
 
 #textureContainer {
 	display: grid;
+	column-gap: 3px;
 	grid-template-columns: 90px 90px 90px 90px 90px 90px;
 }
 #textureContainer > div {
-	width: 90px;
+	border: 2px solid white;
 	height: 90px;
+	width: 90px;
+}
+#textureContainer > div.selected {
+	border: 2px solid red;
 }
 
 input, input:focus {

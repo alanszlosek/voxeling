@@ -362,7 +362,6 @@ var worker = {
     // Update our local cache and tell the server
     chunkVoxelIndexValue: function(changes, touching) {
         var self = this;
-        console.log(changes);
         sendMessage(self.connection, 'chunkVoxelIndexValue', changes);
         for (var chunkID in changes) {
             if (chunkID in chunkCache) {
@@ -444,7 +443,6 @@ var worker = {
 
 onmessage = function(e) {
     var message = e.data;
-    console.log(message);
     var type = message.shift();
 
     if (type in worker) {

@@ -83,7 +83,7 @@ class TextureAtlas {
             // http://www.realtimerendering.com/blog/gpus-prefer-premultiplication/
             gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
             // PNGs require this, right?
-            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+            //gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
             // Load texture atlas files
             for (let i = 0; i < self.textureOffsets.numAtlases; i++) {
@@ -97,9 +97,6 @@ class TextureAtlas {
                 };
                 image.crossOrigin = 'Anonymous';
                 image.src = '/textures' + i + '.png';
-                // TODO: just store int value of texture unit
-                self.byValue[0] = i;
-                self.byValue[0] = glTexture;
             }
 
             // Load player textures

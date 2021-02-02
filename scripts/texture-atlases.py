@@ -52,11 +52,14 @@ out = {
         #"1": 0.123 # percentageOffset within texture]
 
     },
+    # offsets for material picker UI
     "pixelOffsets": {},
     "textureToTextureUnit": {},
     "numAtlases": 0
 }
 i = 0
+pixelOffset = 0 # for the material picker UI
+materialPickerAtlas = Image.new('RGBA', (width, width * numTextures), )
 while i < numAtlases:
     # create new atlas
     out['numAtlases'] += 1
@@ -82,6 +85,12 @@ while i < numAtlases:
             if image.width != width:
                 print('resizing %d to %d' % (image.width, width))
                 image = image.resize( (width, width), resample=Image.NEAREST )
+            
+            # Copy to combined file that will be used for the material picker UI
+            materialPickerAtlas.paste(image, (0, pixelOffset))
+
+            # Now flip image and copy into the texture atlas file for GPU rendering
+            image = image.transpose(Image.FLIP_TOP_BOTTOM)
         
             k = 0
             while k < trianglesCanSpanRows + 2:
@@ -94,12 +103,13 @@ while i < numAtlases:
                 # TODO: rethink this again, when not tired
                 if k == 1:
                     out['offsets'][textureValue] = yOffset / atlasHeight
-                    out['pixelOffsets'][textureValue] = yOffset
+                    out['pixelOffsets'][textureValue] = pixelOffset
                 yOffset += width
                 k += 1
             #yOffset += 2
         
         j += 1
+        pixelOffset += width
     
     # save
     # do we really need to flip, if we need to flip again on the webgl side?
@@ -109,7 +119,7 @@ while i < numAtlases:
 
     i += 1
 
-
+materialPickerAtlas.save('../www/materials.png', quality=100.0)
 
 with open('../texture-offsets.js', 'w') as f:
     a = 'module.exports=%s' % json.dumps(out)

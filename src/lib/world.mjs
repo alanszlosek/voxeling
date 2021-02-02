@@ -21,6 +21,20 @@ class World extends Tickable {
         );
     }
 
+    changeBlocks(low, high, value) {
+        let chunkVoxelIndexValue = {};
+        let touching = {};
+        console.log('from ', low, high);
+        for (let x = low[0]; x < high[0]; x++) {
+            for (let y = low[1]; y < high[1]; y++) {
+                for (let z = low[2]; z < high[2]; z++) {
+                    this.game.voxelCache.setBlock(x, y, z, value, chunkVoxelIndexValue, touching);
+                }
+            }
+        }
+        this.game.clientWorkerHandle.send(['chunkVoxelIndexValue', chunkVoxelIndexValue, touching]);
+    }
+
     tick(ts) {
         // compare player position with chunk boundaries to trigger regionChange
         var thisRegion = this.game.coordinates.positionToChunk(this.game.player.position);

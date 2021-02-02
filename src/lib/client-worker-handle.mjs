@@ -146,6 +146,10 @@ class ClientWorkerHandle {
         });
     }
 
+    send(message) {
+        this.worker.postMessage(message);
+    }
+
     regionChange() {
         let game = this.game;
         console.log(game.config);

@@ -1,6 +1,5 @@
 // TODO: refactor this so we don't have to include config again
 import { default as config } from '../../config.mjs';
-import { EventEmitter } from 'eventemitter3';
 import randomName from 'sillyname';
 import { Tickable } from './entities/tickable.mjs';
 import { WebGL } from './webgl.mjs';
@@ -14,7 +13,7 @@ var codeMap = {
     // control
     17: 'alt',
     // shift
-    16: 'select',
+    16: 'shift',
     // W
     87: 'forward',
     // S
@@ -127,29 +126,29 @@ var states = {
             }
         },
         mousedown: function(event) {
-            if (event.which == 3 || controlStates.alt) {
-                controlStates.firealt = true;
-                this.emitter.emit('firealt.down');
-            } else if (event.which == 1) {
-                controlStates.fire = true;
-                this.emitter.emit('fire.down');
+            if (event.which == 1) {
+                // Is Shift key being held down during left click?
+                if (controlStates.alt) {
+                    controlStates.action2 = true;
+                } else {
+                    controlStates.action1 = true;
+                }
+            } else if (event.which == 3) {
+                controlStates.action2 = true;
             }
         }, 
         mouseup: function(event) {
-            if (event.which == 3 || controlStates.alt) {
-                controlStates.firealt = false;
-                this.emitter.emit('firealt.up');
-            } else if (event.which == 1) {
-                controlStates.fire = false;
-                this.emitter.emit('fire.up');
-            }
+            // Trying to cover edge cases here ...
+            // Shift might have been released before mouse, so reset all mouse related states on Up
+            controlStates.action1 = false;
+            controlStates.action2 = false;
         },
         mousemove: function(ev) {
             // do bitwise op to remove lower 8 bits or so to clamp to consistent intervals
             let mask = 128 + 64 + 32 + 16 + 8 + 4;
             let deltaY = -(ev.movementX / 200.0);
             let deltaX = -(ev.movementY / 200.0);
-            console.log(deltaY, deltaX);
+            //console.log(deltaY, deltaX);
 
             // rotation will be very fine, in hundredths of a degree ... how can i smooth that?
             gameGlobal.player.rotateY( deltaY );
@@ -189,7 +188,7 @@ var states = {
             if (code in codeMap) {
                 key = codeMap[code];
                 if (key in controlStates) {
-                    controlStates[key] = 1;
+                    controlStates[key] = true; // TODO: why not boolean?
                 }
                 return false;
             }
@@ -213,15 +212,10 @@ var states = {
                 gameGlobal.camera.nextView();
                 return;
             }
-            // Shift
-            if (code == 16) {
-                this.emitter.emit('shift');
-                return;
-            }
             if (code in codeMap) {
                 key = codeMap[code];
                 if (key in controlStates) {
-                    controlStates[key] = 0;
+                    controlStates[key] = false;
                 }
                 // try to prevent ctrl+W from bubbling up
                 return false;
@@ -289,28 +283,47 @@ var states = {
                 default:
                 break;
             }
+            /*
+            if (adjustment < 0) {
+                adjustment = perRow + adjustment;
+            }
+            */
             if (adjustment != 0) {
-                var matches = document.querySelectorAll('#textureContainer div');
+                var matches = document.querySelectorAll('#textureContainer > div');
                 var from = 0;
                 for (var i = 0; i < matches.length; i++) {
                     if (matches[i].className == 'selected') {
                         from = i;
-                    }
-                    matches[i].className = '';
+                        matches[i].className = '';
+                    }                    
                 }
-                matches[from + adjustment].className = 'selected';
-                gameGlobal.cursor.currentMaterial = Number(matches[from + adjustment].getAttribute('data-texturevalue'));
+                // TODO: need more logic here for moving before first row
+                // and beyond last row. tricky maths if last row not filled out.
+                from += adjustment;
+
+                /*
+                if (from < 0) {
+                    from = matches.length - from;
+                } else if (from > matches.length) {
+
+                }
+                */
+                matches[from].className = 'selected';
+                gameGlobal.cursor.currentMaterial = Number(
+                    matches[from].getAttribute('data-texturevalue')
+                );
+                console.log('material: ' + gameGlobal.cursor.currentMaterial);
             }
         },
         mousedown: function(event) {
-            var $div = $(event.target).closest('div');
-            var matches = document.querySelectorAll('#textureContainer div');
+            //var $div = $(event.target).closest('div');
+            var matches = document.querySelectorAll('#textureContainer > div');
             var from = 0;
             for (var i = 0; i < matches.length; i++) {
                 matches[i].className = '';
             }
-            $div.addClass('selected');
-            this.emitter.emit('currentMaterial', Number($div.data('texturevalue')));
+            //$div.addClass('selected');
+            //this.emitter.emit('currentMaterial', Number($div.data('texturevalue')));
         }
     },
     chat: {
@@ -333,7 +346,7 @@ var states = {
                 var el = document.getElementById('cmd');
                 if (document.activeElement === el) {
                     //unbind mouse would be nice
-                    this.emitter.emit('chat', el.value);
+                    //this.emitter.emit('chat', el.value);
                     el.value = '';
                     el.blur();
                     this.transition('playing');
@@ -357,7 +370,7 @@ var states = {
 };
 
 var controlStates = {
-    select: false,
+    shift: false,
     alt: false,
     forward: false,
     backward: false,
@@ -366,7 +379,9 @@ var controlStates = {
     jump: false,
     fly: false,
     fire: false,
-    firealt: false
+    firealt: false,
+    action1: false,
+    action2: false
 };
 
 var currentState = '';
@@ -412,7 +427,6 @@ class UserInterface extends Tickable {
         this.webgl = new WebGL(canvas);
 
         this.bindToElement = document.body;
-        this.emitter = new EventEmitter();
 
         this.boundStates = {};
 
@@ -441,7 +455,7 @@ class UserInterface extends Tickable {
 
     drawTextures() {
         let self = this;
-        let container = document.getElementById('textureContainer');
+        let container = this.materials = document.getElementById('textureContainer');
         let textures = this.game.config.voxels;
         let textureOffsets = this.game.textureOffsets;
         let pixelOffsets = textureOffsets.pixelOffsets;
@@ -453,14 +467,13 @@ class UserInterface extends Tickable {
         this.game.config.texturePicker.forEach(function(voxelValue, index) {
             // get texture value from top face of voxel cube
             let textureValue = self.game.config.voxels[voxelValue].textures[1];
-            console.log(textureValue);
-            let textureUnit = self.game.textureOffsets.textureToTextureUnit[ textureValue ];
             
             let offsetY = scale * pixelOffsets[ textureValue ];
+            let classNames = index == 0 ? 'selected' : '';
             let styles = {
-                'background-image': 'url("' + '/textures' + textureUnit + '.png")',
+                'background-image': 'url("' + '/materials.png")',
                 'background-position': '0px -' + offsetY + 'px',
-                'background-size': scaleTo,
+                'background-size': scaleTo
             };
             let style = '';
             for (let key in styles) {
@@ -470,7 +483,9 @@ class UserInterface extends Tickable {
             let div = tag(
                 'DIV',
                 {
-                    'style': style
+                    'data-texturevalue': voxelValue,
+                    'style': style,
+                    'class': classNames
                 },
                 []
             );
@@ -502,7 +517,7 @@ class UserInterface extends Tickable {
             if ('from' in current) {
                 current['from']();
             }
-            this.emitter.emit('from.' + currentState);
+            //this.emitter.emit('from.' + currentState);
         }
         if (newState in states) {
             currentState = newState;
@@ -521,7 +536,7 @@ class UserInterface extends Tickable {
             if ('to' in current) {
                 current['to']();
             }
-            this.emitter.emit('to.' + newState);
+            //this.emitter.emit('to.' + newState);
         }
     }
 
@@ -595,13 +610,11 @@ class UserInterface extends Tickable {
         if (buttonPressed(gamepad.buttons[5])) {
             // right shoulder
             if (!fired) {
-                this.emitter.emit('fire');
                 fired = true;
             }
         } else if (buttonPressed(gamepad.buttons[4])) {
             // right trigger
             if (!fired) {
-                this.emitter.emit('firealt');
                 fired = true;
             }
         } else {
@@ -610,7 +623,8 @@ class UserInterface extends Tickable {
     }
     
     on(name, callback) {
-        this.emitter.on(name, callback);
+        //this.emitter.on(name, callback);
+        console.log('UI: on handler called. why?');
     }
 }
 

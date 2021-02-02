@@ -12,7 +12,7 @@ import WebSocket from 'websocket';
 import zlib from 'zlib';
 
 let coordinates = new Coordinates(config.chunkSize);
-let encodedChunkCache = new HLRU(10);
+
 
 
 //var stats = require('./lib/voxel-stats');
@@ -72,6 +72,7 @@ class Server {
     constructor(config, chunkStore) {
         this.config = config;
         this.chunkStore = chunkStore;
+        this.encodedChunkCache = new HLRU(10);
         // SERVER SETUP
         // Create WebSocket and HTTP Servers separately so you can customize...
         // maybe you want WebSocket on a different port?
@@ -215,7 +216,8 @@ class Server {
 
 
             
-            connection.on('message', function(message) {
+            connection.on('message', function(frame) {
+                let message = frame.utf8Data;
                 // Decode message
                 // Handle errors and exceptions
                 var client = self.clients[id];
