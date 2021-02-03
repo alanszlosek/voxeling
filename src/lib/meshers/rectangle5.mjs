@@ -123,9 +123,6 @@ class RectangleMesher {
                     let index = x + indexY; // indexY builds upon indexZ in the y loop, so indexZ is already involved
 
                     let voxelValue = voxels[index];
-                    if (voxelValue in this.config.voxelRemap) {
-                        voxelValue = this.config.voxelRemap[voxelValue];
-                    }
 
                     if (voxelValue == 0) {
                         this.debug(sh + 'Empty voxel, moving on');
@@ -198,9 +195,6 @@ class RectangleMesher {
                                     tryColumn = false;
                                     break;
                                 }
-                                if (voxelValue2 in this.config.voxelRemap) {
-                                    voxelValue2 = this.config.voxelRemap[voxelValue2];
-                                }
                                 let voxelFaceValue2 = this.voxelsToTextures[voxelValue2].textures[ faceIndex ];
 
                                 this.debug(sh + 'Testing expansion to new column at: ' + [newEndColumn, endRow].join(','));
@@ -260,9 +254,6 @@ class RectangleMesher {
                                         this.debug(sh + 'Empty voxel, skipping row');
                                         tryRow = false;
                                         break;
-                                    }
-                                    if (voxelValue2 in this.config.voxelRemap) {
-                                        voxelValue2 = this.config.voxelRemap[voxelValue2];
                                     }
                                     this.debug('voxelValue2: ' + voxelValue2);
                                     this.debug(voxelValue2);
