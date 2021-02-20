@@ -4,7 +4,6 @@ import config from '../config.mjs';
 import configServer from '../config-server.mjs';
 import { Coordinates } from './lib/coordinates.mjs';
 import HLRU from 'hashlru';
-import EventEmitter from 'eventemitter3';
 import http from 'http';
 import mysql from 'mysql';
 import url from 'url';
