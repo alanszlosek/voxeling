@@ -455,9 +455,11 @@ var calculate = function(basePosition, voxels) {
             for (var x = 0; x < chunkSize; x++) {
                 var voxelValue = voxels[index + x];
 
+                /*
                 if (voxelValue in config.voxelRemap) {
                     voxelValue = config.voxelRemap[voxelValue];
                 }
+                */
 
                 if (voxelValue == 0) {
                     // Top, front, back, bottom
