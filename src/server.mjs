@@ -1,6 +1,7 @@
 import chunkGenerator from './lib/generators/server-terraced.mjs';
 import { MysqlChunkStore } from './lib/chunk-stores/mysql.mjs';
 import config from '../config.mjs';
+import configServer from '../config-server.mjs';
 import { Coordinates } from './lib/coordinates.mjs';
 import HLRU from 'hashlru';
 import EventEmitter from 'eventemitter3';
@@ -38,12 +39,12 @@ try {
 } catch(e){}
 if (useMysql) {
     */
-    if (!('mysql' in config)) {
-        throw new Error('Attempted to use mysql for chunk storage, but no mysql params found in config');
+    if (!('mysql' in configServer)) {
+        throw new Error('Attempted to use mysql for chunk storage, but no mysql params found in configServer');
     }
-    mysqlPool = mysql.createPool(config.mysql);
+    mysqlPool = mysql.createPool(configServer.mysql);
     var chunkStore = new MysqlChunkStore(
-        config.mysql,
+        configServer.mysql,
         new chunkGenerator(config.chunkSize)
     );
     /*

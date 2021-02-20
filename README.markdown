@@ -1,15 +1,19 @@
 voxeling
 ====
 
-Note: Rewrite in progress! Moving to ES Modules, and refactoring all the things. I've moved everything to a branch called "main". Check the "master" branch for the old code.
+## The Latest News
+
+Rewrite in progress! We've moved to ES Modules and are refactoring all the things. I've moved everything to a branch called "main". Check the "master" branch for the old code.
+
+As of 2021 I've hired a graphic designer to create new textures. Soon I will be able to phase out bdcraft (http://bdcraft.net/purebdcraft-minetest) and distribute my own textures so you can more-easily set up your own instances with less headache.
+
+## Introduction
 
 Inspired by [voxel-engine](https://github.com/maxogden/voxel-engine) and [voxel.js](http://voxeljs.com), this is a multiplayer sandbox (like Minecraft creative mode) implemented in WebGL with very few dependencies. Very much a work in progress.
 
-Demo: https://voxeling.greaterscope.com (Google Chrome and Firefox 46+)
+Demo of old, non-ES version: https://voxeling.greaterscope.com (Google Chrome and Firefox 46+)
 
 Project blog: https://blog.alanszlosek.com/tags/voxeling/
-
-As of 2021 I've hired a graphic designer to create new textures, so will be phasing out bdcraft shortly (http://bdcraft.net/purebdcraft-minetest).
 
 Player skins from:
 
@@ -33,6 +37,7 @@ Player skins from:
 
 ## Currently
 
+* Finishing port to ES modules
 * Optimizations, always and forever
 
 ## Perhaps in the Future 
@@ -60,18 +65,17 @@ See it in action in the demo (Google Chrome or Firefox): https://voxeling.greate
 Or follow the installation instructions below to run it locally.
 
 
-# Installation
+# Installation - Broken during port, YMMV
 
 In terminal 1:
 
 ```
 # git clone the repo into voxeling folder
 cd /path/to/voxeling
-# Download textures from http://bdcraft.net/purebdcraft-minetest (256x256 version)
+# Download textures from http://bdcraft.net/purebdcraft-minetest (256x256 version). I can't distribute these textures, but I've commisioned my own textures and should be switching to them some time in 2021.
 # Extract to www/testbdcraft
 
 # Generate combined texture file (cuts down on WebGL bindTexture calls)
-# You'll need PHP with gd/imagemagick. Once I get node version working, you won't need PHP
 cd scripts
 # This generates www/textures.png and texture-offsets.js
 python3 -m venv ./venv
@@ -85,15 +89,17 @@ npm install
 # create folder for world chunks
 mkdir -p chunks/your-world
 
-# copy the default config and customize
-cp config-example.js config.js
+# copy the default configs and customize
+cp config-example.mjs config.mjs
+cp config-server-example.mjs config-server.mjs
 # NOTES
 # Be sure to change websocketBindAddress to the address of the interface you want to listen on
 # The server config key tells the browser where to connect for a websocket connection.
 # Use the "wss://" protocol for secure websocket connection from the browser, "ws://" otherwise
 # TODO: put note about server vs httpServer params in config
 # Also sample Caddy config for running websocket through same domain assets are served through
-vim config.js
+vim config.mjs
+vim config-server.mjs
 
 # Build the app and web worker JS bundles
 # This forks 2 npm rollup processes
