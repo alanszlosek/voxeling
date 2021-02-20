@@ -1,7 +1,8 @@
 import { default as config } from '../config.mjs';
+import configServer from '../config-server.mjs';
 import chunkGenerator from '../src/lib/generators/server-terraced.mjs';
 import { Coordinates } from '../src/lib/coordinates.mjs';
-import { RectangleMesher } from '../src/lib/meshers/rectangle5.mjs';
+import { RectangleMesher } from '../src/lib/meshers/rectangle6.mjs';
 import mesher from '../src/lib/meshers/horizontal-merge2.mjs';
 import { MysqlChunkStore } from '../src/lib/chunk-stores/mysql.mjs';
 import textureOffsets from '../texture-offsets.js';
@@ -21,16 +22,32 @@ let rectangle = new RectangleMesher(config, config.voxels, textureOffsets, coord
 mesher.config(config, config.voxels, textureOffsets, coordinates, chunkCache);
 
 
-let mysqlPool = mysql.createPool(config.mysql);
+let mysqlPool = mysql.createPool(configServer.mysql);
 var chunkStore = new MysqlChunkStore(
-    config.mysql,
+    configServer.mysql,
     new chunkGenerator(config.chunkSize)
 );
 
 let tests = [
+    /*
     '0|-32|0',
+    '32|-32|-32',
     '32|-32|0',
-    '32|-32|32'
+    '32|-32|32',
+    '-32|-32|-32',
+    '-32|-32|0',
+    '-32|-32|32',
+    */
+
+   '0|64|0',
+   /*
+   '32|64|-32',
+   '32|64|0',
+   '32|64|32',
+   '-32|64|-32',
+   '-32|64|0',
+   '-32|64|32',
+   */
 ];
 let cb = function(error, chunk) {
     if (error) {
