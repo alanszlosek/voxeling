@@ -7,7 +7,7 @@ Rewrite in progress! We've moved to ES Modules and are refactoring all the thing
 
 As of 2021 I've hired a graphic designer to create new textures. Soon I will be able to phase out bdcraft (http://bdcraft.net/purebdcraft-minetest) and distribute my own textures so you can more-easily set up your own instances with less headache.
 
-If you want to see what I'm working on, I occasionally make at [Relaxing With Code](https://www.youtube.com/channel/UCtuuC26V9NnEcdSKpIP15hw) on YouTube. Specifically in the [Voxeling playlist](https://www.youtube.com/playlist?list=PLGonE3T1sorRgdHNBGhpjUojdChc5CSD0).
+If you want to see what I'm working on, I occasionally make videos at [Relaxing With Code](https://www.youtube.com/channel/UCtuuC26V9NnEcdSKpIP15hw) on YouTube. Specifically in the [Voxeling playlist](https://www.youtube.com/playlist?list=PLGonE3T1sorRgdHNBGhpjUojdChc5CSD0).
 
 ## Introduction
 
