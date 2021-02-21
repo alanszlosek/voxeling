@@ -14,7 +14,9 @@ var accelerations = {
     // To make jumping less disorienting, fall slower from height of jump
     partialGravity: -0.4 / tps,
     // 9.8 units/blocks per second, per tick
-    walk: 1.5 / tps,
+    walk: 1.0 / tps,
+    jog: 1.0 / tps,
+    run: 1.0 / tps,
     slowdown: 2 / tps,
     fly: 4 / tps
 };
@@ -22,7 +24,23 @@ var accelerations = {
 var velocities = {
     maxWalk: 9 / tps,
     jump: 20 / tps,
-    maxFly: 15 / tps
+    maxFly: 15 / tps,
+
+    // max velocities
+    walk: 7 / tps,
+    jog: 9 / tps,
+    run: 12 / tps
+
+};
+var maxVelocities = {
+    jump: 20 / tps,
+    maxFly: 15 / tps,
+
+    // max velocities
+    walk: 4 / tps,
+    jog: 8 / tps,
+    run: 12 / tps
+
 };
 var slowFall = false;
 
@@ -56,14 +74,14 @@ class Physics extends Tickable {
         // much less math, and if we have a pause, the character won't lurch forward
         if (this.controlState.forward == 1) {
             this.currentVelocity[2] += -accelerations.walk;
-            this.currentVelocity[2] = Math.max(this.currentVelocity[2], -velocities.maxWalk);
+            this.currentVelocity[2] = Math.max(this.currentVelocity[2], -maxVelocities.walk);
         } else if (this.controlState.forward > 0) {
-            this.currentVelocity[2] = -velocities.maxWalk * this.controlState.forward;
+            this.currentVelocity[2] = -maxVelocities.walk * this.controlState.forward;
         } else if (this.controlState.backward == 1) {
             this.currentVelocity[2] += accelerations.walk;
-            this.currentVelocity[2] = Math.min(this.currentVelocity[2], velocities.maxWalk);
+            this.currentVelocity[2] = Math.min(this.currentVelocity[2], maxVelocities.walk);
         } else if (this.controlState.backward > 0) {
-            this.currentVelocity[2] = velocities.maxWalk * this.controlState.backward;
+            this.currentVelocity[2] = maxVelocities.walk * this.controlState.backward;
         } else {
             // Slowdown
             if (this.currentVelocity[2] > 0) {
@@ -81,15 +99,15 @@ class Physics extends Tickable {
         if (this.controlState.left == 1) {
             // keyboard, accelerate gradually
             this.currentVelocity[0] += -accelerations.walk;
-            this.currentVelocity[0] = Math.max(this.currentVelocity[0], -velocities.maxWalk);
+            this.currentVelocity[0] = Math.max(this.currentVelocity[0], -maxVelocities.walk);
         } else if (this.controlState.left > 0) {
             // gamepad, no acceleration, use stick percentage
-            this.currentVelocity[0] = -velocities.maxWalk * this.controlState.left;
+            this.currentVelocity[0] = -maxVelocities.walk * this.controlState.left;
         } else if (this.controlState.right == 1) {
             this.currentVelocity[0] += accelerations.walk;
-            this.currentVelocity[0] = Math.min(this.currentVelocity[0], velocities.maxWalk);
+            this.currentVelocity[0] = Math.min(this.currentVelocity[0], maxVelocities.walk);
         } else if (this.controlState.right > 0) {
-            this.currentVelocity[0] = velocities.maxWalk * this.controlState.right;
+            this.currentVelocity[0] = maxVelocities.walk * this.controlState.right;
         } else {
             // Slowdown
             if (this.currentVelocity[0] > 0) {

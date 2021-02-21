@@ -16,7 +16,8 @@ class Player extends Movable {
         let texture = this.game.textureAtlas.byName['player'];
 
         var self = this;
-        this.eyeOffset = vec3.fromValues(0, 1.25, -0.3);
+        // TODO: this really should respond like a head tilt
+        this.eyeOffset = vec3.fromValues(0, 1.25, -0.4);
         this.eyePosition = vec3.create();
 
         var uvCoordinates = {
@@ -75,7 +76,7 @@ class Player extends Movable {
         var meshes=[];
         var shape;
         var armRotation = 0.6662;
-        var walkAnimationSpeed = 40;
+        var walkAnimationSpeed = 70;
 
 
         shape = Shapes.three.rectangle(0.33, 0.35, 0.33, uvCoordinates.head, 64);
