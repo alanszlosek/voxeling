@@ -387,8 +387,8 @@ var controlStates = {
     fly: false,
     fire: false,
     firealt: false,
-    action1: false,
-    action2: false
+    action1: false, // default: destroy block
+    action2: false // default: create block
 };
 
 var currentState = '';
