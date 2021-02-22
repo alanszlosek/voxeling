@@ -128,7 +128,7 @@ var states = {
         mousedown: function(event) {
             if (event.which == 1) {
                 // Is Shift key being held down during left click?
-                if (controlStates.alt) {
+                if (controlStates.shift) {
                     controlStates.action2 = true;
                 } else {
                     controlStates.action1 = true;
