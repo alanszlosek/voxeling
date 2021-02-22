@@ -124,16 +124,6 @@ game.userInterface.init()
     return game.sky.init();
     */
 
-
-/*
-}).then(function() {
-    var st = new Stats();
-    st.domElement.style.position = 'absolute';
-    st.domElement.style.bottom = '0px';
-    document.body.appendChild(st.domElement);
-    return Promise.resolve();
-*/
-
 }).then(function() {
     // render handlers
 
@@ -145,44 +135,3 @@ game.userInterface.init()
 }).catch(function(error) {
     console.log('Received error', error);
 });
-
-/*
-.then(function() {
-    return textureAtlas.init();
-
-}).then(function() {
-    // Ask UserInterface to use fetched textures?
-
-}).then(function() {
-    return camera.init();
-
-}).then(function() {
-    return player.init();
-
-}).then(function() {
-    return physics.init();
-
-}).then(function() {
-    // this should start fetching world chunks immediately
-    return clientWorker.init();
-
-}).then(function() {
-    return cursor.init();
-
-}).then(function() {
-    // init the lighting, sky, sun
-    return atmosphere.init();
-
-
-}).catch(function(error) {
-    console.log(error);
-});
-*/
-
-/*
-game.onRender(function() {
-    for (let tickable in tickables) {
-        tickable.tick();
-    }
-});
-*/
