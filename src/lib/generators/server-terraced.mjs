@@ -1,10 +1,7 @@
 import { Generator } from '../generator.mjs';
+import { getRandomInt } from '../util.mjs';
 
 let debug = false;
-
-function getRandomInt(min, max) {
-    return Math.floor(Math.random() * (max - min)) + min;
-}
 
 
 class ServerGeneratorTerraced extends Generator {

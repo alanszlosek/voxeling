@@ -432,6 +432,7 @@ class UserInterface extends Tickable {
         this.canvas = canvas;
 
         this.webgl = new WebGL(canvas);
+        this.game.gl = this.webgl.gl; // shortcut handle that we'll need in other renderable objects (player model, creatures, etc)
 
         this.bindToElement = document.body;
 

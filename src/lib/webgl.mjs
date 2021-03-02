@@ -76,6 +76,7 @@ class WebGL {
         this.gl = gl;
         this.renderCallback = function() {};
         this.shaders = {};
+        this.ts = 0;
 
         gl.enable(gl.DEPTH_TEST);
         // if our fragment has a depth value that is less than the one that is currently there, use our new one
@@ -114,19 +115,19 @@ class WebGL {
                     "discard;" +
 
                 //"float distance = length(v_position.xyz);" +
-                "vec3 lightDirection = normalize(u_directionalLightPosition - v_position.xyz);" +
-                "highp float directionalLightWeight = max(dot(v_normal, lightDirection), 0.0);" +
-                "vec3 lightWeight = u_ambientLightColor + (u_directionalLightColor * directionalLightWeight);" +
+                //"vec3 lightDirection = normalize(u_directionalLightPosition - v_position.xyz);" +
+                //"highp float directionalLightWeight = max(dot(v_normal, lightDirection), 0.0);" +
+                //"vec3 lightWeight = u_ambientLightColor + (u_directionalLightColor * directionalLightWeight);" +
 
                 // Apply light before we apply the haze?
-                "gl_FragColor.rgb = texelColor.rgb * lightWeight;" +
+                "gl_FragColor.rgb = texelColor.rgb;" + // * lightWeight;" +
 
                 "float depth = gl_FragCoord.z / gl_FragCoord.w;" +
                 // Start haze 1 chunk away, complete haze beyond 2.8 chunks away
                 // TODO: adjusting these doesn't seem to do anything
-                "float fogFactor = smoothstep( 32.0, u_hazeDistance, depth );" +
+                //"float fogFactor = smoothstep( 32.0, u_hazeDistance, depth );" +
 
-                "gl_FragColor.a = texelColor.a - fogFactor;" +
+                "gl_FragColor.a = texelColor.a;" + // - fogFactor;" +
             "}";
 
 
@@ -286,26 +287,21 @@ class WebGL {
     }
 
     render(ts) {
-        var self = this;
-        var gl = this.gl;
-
+        let self = this;
+        let gl = this.gl;
         let r = function(ts) {
             //this.gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-            //this.renderCallback(ts);
-
-            for (let i = 0; i < tickables.length; i++) {
-                tickables[i].tick(ts);
+            for (let id in tickables) {
+                tickables[id].tick(ts, ts - self.ts);
             }
-            for (let i = 0; i < renderables.length; i++) {
-                renderables[i].render(ts);
+            for (let id in renderables) {
+                renderables[id].render(gl, ts);
             }
+            self.ts = ts;
             requestAnimationFrame(r);
         };
         r();
-
-        // TODO: fix this
-        //this.render.bind(this));
     }
 }
 

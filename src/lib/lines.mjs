@@ -86,8 +86,7 @@ class Lines extends Renderable {
         gl.bufferData(gl.ARRAY_BUFFER, points, gl.STATIC_DRAW);
     }
 
-    render(ts) {
-        let gl = this.gl;
+    render(gl, ts) {
         let projection = this.projection;
         if (this.skipDraw || this.tuples == 0) {
             return;

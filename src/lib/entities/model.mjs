@@ -56,7 +56,7 @@ class Model extends Renderable {
 
             mesh.tuples = 36;
         }
-    };
+    }
 
     setTexture(texture) {
         this.texture = texture;
