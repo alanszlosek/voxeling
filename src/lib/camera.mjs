@@ -24,7 +24,7 @@ class Camera extends Movable {
         this.canvas = game.userInterface.webgl.canvas;
         this.follow = game.player;
 
-        this.firstPersonOffset = vec3.fromValues(game.player.eyeOffset[0], 1.0, game.player.eyeOffset[2]); // this will be properly set in init()
+        this.firstPersonOffset = vec3.fromValues(game.player.eyeOffset[0], 1.0, game.player.eyeOffset[2]);
         this.shoulderOffset = vec3.fromValues(0.7, 2.0, 3.0);
         this.thirdPersonOffset = vec3.fromValues(0.0, this.game.player.eyeOffset[1], 8.0);
         this.view = -1;
@@ -49,11 +49,13 @@ class Camera extends Movable {
         // Rotate eye offset into tempVector, which we'll then add to player position
         vec3.transformQuat(scratch.vec3, this.currentOffset, this.follow.getRotationQuat());
         scratch.vec3[1] += this.desiredOffset[1];
-        console.log(this.desiredOffset, this.currentOffset, scratch.vec3);
+        //console.log(this.desiredOffset, this.currentOffset, scratch.vec3);
 
         vec3.add(this.position, this.follow.getPosition(), scratch.vec3);
 
 
+        /*
+        // TODO: let's disable smart camera for now ... causing issues
         // TODO: test for collision with block
         let block = this.game.voxelCache.getBlock(this.position[0], this.position[1], this.position[2]);
         if (block > 0) {
@@ -70,6 +72,7 @@ class Camera extends Movable {
                 this.currentOffset[2] = this.desiredOffset[2];
             }
         }
+        */
 
 
         mat4.fromRotationTranslation(this.matrix, this.follow.getRotationQuat(), this.position);
@@ -99,7 +102,7 @@ class Camera extends Movable {
         }
         this.currentOffset = vec3.clone(this.desiredOffset);
         // clear y offset, since we'll do that later after rotation
-        this.currentOffset[1] = 0.0
+        //this.currentOffset[1] = 0.0
     }
 
     tick() {
