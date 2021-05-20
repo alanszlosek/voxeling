@@ -13,7 +13,7 @@ If you want to see what I'm working on, I occasionally make videos at [Relaxing 
 
 Inspired by [voxel-engine](https://github.com/maxogden/voxel-engine) and [voxel.js](http://voxeljs.com), this is a multiplayer sandbox (like Minecraft creative mode) implemented in WebGL with very few dependencies. Very much a work in progress.
 
-Demo of old, non-ES version: https://voxeling.greaterscope.com (Google Chrome and Firefox 46+)
+Demo of old, non-ES version: https://voxeling.greaterscope.com. Use Google Chrome (not Chromium) as it provides the smoothest experience, expecially on Linux.
 
 Project blog: https://blog.alanszlosek.com/tags/voxeling/
 
