@@ -1,18 +1,10 @@
 import { quat, vec3 } from 'gl-matrix';
 import { Lines } from './lines.mjs';
-import pool from './object-pool.mjs';
 import raycast from 'voxel-raycast';
 import scratch from './scratch.mjs';
 import Shapes from './shapes.mjs';
 import { Tickable } from './entities/tickable';
 
-
-
-// This needs cleanup, and encapsulation, but it works
-var voxelHit = pool.malloc('array', 3);
-var voxelNormal = pool.malloc('array', 3);
-var distance = 10;
-var direction = vec3.create();
 
 class Cursor extends Tickable {
     constructor(game) {
@@ -33,8 +25,6 @@ class Cursor extends Tickable {
         this.selectStart = new Int32Array(3);
 
         // If these two are Float32Arrays, it leads to casting, loses precision, and results in incorrect hit coords
-        this.f64VoxelHit = new Float64Array(3);
-        this.f64VoxelNormal = new Float64Array(3);
         this.low = vec3.create();
         this.high = vec3.create();
     }
@@ -48,29 +38,26 @@ class Cursor extends Tickable {
         this.voxelCache = game.voxelCache;
 
         this.lines = new Lines(this.game);
-        this.pointer = new Lines(this.game, [0, 255, 0, 1]);
         return Promise.resolve();
     }
 
     tick(ts) {
-        let lines = this.lines;
-        let distance = 10.0;
-        let f64VoxelHit = this.f64VoxelHit;
-        let i32VoxelHit = new Int32Array(3);
-        let linesLow = new Int32Array(3);
-        let linesHigh = new Int32Array(3);
+        let distance = 5.0;
+        let f64VoxelHit = scratch.f64vec3_0;
+        let i32VoxelHit = scratch.i32vec3_0;
+        let linesLow = scratch.i32vec3_1;
+        let linesHigh = scratch.i32vec3_2;
         let creating = false;
         let destroying = false;
 
-        let f64VoxelNormal = this.f64VoxelNormal;
+        let f64VoxelNormal = scratch.f64vec3_1;
 
         let currentVoxel = this.currentVoxel;
         let selectStart = this.selectStart;
-        let low = this.low;
-        let high = this.high;
         let userInterface = this.userInterface;
-        let baseDirection = vec3.create();
-        baseDirection[2] = -1.0;
+        let baseDirection = [0,0,-5.0];
+
+        // DAMN I CAN'T FIURE OUT WHY THIS DRIFTS WITH HEAD TILT
 
         // start with player eye position
         // add distance to default rotation vec
@@ -80,20 +67,14 @@ class Cursor extends Tickable {
 
         // TODO: now that we have the cursor actually living in the 3d world, we can show and hide it whenever we want
         // Logic for in-game cursor ... small green wire cube
+        // NOTE: thing working from quat here and working from direction on 95 is giving us mismatch
         vec3.transformQuat(scratch.vec3, baseDirection, this.player.rotationQuat);
-        vec3.add(low, scratch.vec3, this.player.eyePosition);
-        vec3.add(low, low, scratch.vec3);
-        vec3.sub(low, low, [0.005, 0.005, 0.005]);
-        vec3.add(high, low, [0.005, 0.005, 0.005]);
-        this.pointer.fill(Shapes.wire.cube(low, high));
-
+        
         // First param is expected to have getBlock()
-        let hit = raycast(this.voxelCache, this.player.eyePosition, this.player.direction, distance, f64VoxelHit, f64VoxelNormal);
+        let hit = raycast(this.voxelCache, this.player.eyePosition, scratch.vec3, distance, f64VoxelHit, f64VoxelNormal);
         if (hit > 0) {
             // If pressing shift, convert to normal of the hit
-
             // preserve precision of voxelHit, so copy out
-
             if (userInterface.state.shift || userInterface.state.action2 || this.previousAction2) {
                 // We use normals during creation
                 // If Shift, right mouse is down, OR action2 (create) is active, shift the hit to the normal.
@@ -138,8 +119,8 @@ class Cursor extends Tickable {
             linesHigh[0] = Math.max(selectStart[0] + 1, i32VoxelHit[0] + 1);
             linesHigh[1] = Math.max(selectStart[1] + 1, i32VoxelHit[1] + 1);
             linesHigh[2] = Math.max(selectStart[2] + 1, i32VoxelHit[2] + 1);
-            lines.fill(Shapes.wire.cube(linesLow, linesHigh));
-            lines.skip(false);
+            this.lines.fill(Shapes.wire.cube(linesLow, linesHigh));
+            this.lines.skip(false);
 
             // TODO: might have race conditions with cursor and block modification ...
             // Create seems to be selecting block next to normal
@@ -152,7 +133,7 @@ class Cursor extends Tickable {
 
         } else { // no voxel within cursor range, don't draw lines
             // clear
-            lines.skip(true);
+            this.lines.skip(true);
             
             // Only need to clear the first element
             currentVoxel[0] = null;
