@@ -1,6 +1,7 @@
 import { quat, vec3 } from 'gl-matrix';
 import { Tickable } from './entities/tickable';
 import raycast from 'voxel-raycast';
+import scratch from './scratch';
 
 var debug = false;
 // ticks per second
@@ -65,13 +66,18 @@ class Physics extends Tickable {
     }
 
     tick(ts) {
+        // Skip tick if game is not running yet
         if (!this.running) {
             return;
         }
         this.movable.isMoving = this.controlState.forward || this.controlState.backward;
 
+        // TODO: how can we handle jog and run/sprint speeds too?
+
         // don't tick based on delta milliseconds ... lets always assume our tick rate:
         // much less math, and if we have a pause, the character won't lurch forward
+
+        // CALCULATE VELOCITY
         if (this.controlState.forward == 1) {
             this.currentVelocity[2] += -accelerations.walk;
             this.currentVelocity[2] = Math.max(this.currentVelocity[2], -maxVelocities.walk);
@@ -122,6 +128,22 @@ class Physics extends Tickable {
                 }
             }
         }
+
+        /*
+
+        if (this.controlState.jump) {
+            this.currentVelocity[1] = 3 / tps;
+        } else if (this.controlState.shift) {
+            this.currentVelocity[1] = -(3 / tps);
+        } else {
+            this.currentVelocity[1] = 0;
+        }
+
+        if (this.controlState.spin) {
+            this.movable.yaw += 0.1;
+            this.movable.updateQuat();
+        }
+        */
         
         // flying and jumping should fall slowly
         if (this.controlState.jump && this.currentVelocity[1] == 0) {
@@ -142,6 +164,19 @@ class Physics extends Tickable {
                 this.currentVelocity[1] += accelerations.gravity;
             }
         }
+
+        // SKIPPING COLLISION DETECTION
+        // UPDATE POSITION
+        // rotate velocity according to where player is facing
+        /*
+        vec3.transformQuat(scratch.vec3_0, this.currentVelocity, this.movable.rotationQuatY);
+        // update player position via translation
+        this.movable.translate(scratch.vec3_0);
+        */
+
+
+        
+        // TODO: this should not update the player position
         this.handleCollision(this.currentVelocity);
     };
 
@@ -149,8 +184,6 @@ class Physics extends Tickable {
         var self = this;
         var currentPosition = this.movable.getPosition();
         var testPosition = vec3.create();
-        var direction = vec3.create();
-        var direction2 = vec3.create();
         var hit = vec3.create();
         var normals = vec3.create();
 
@@ -164,16 +197,14 @@ class Physics extends Tickable {
         };
 
         
-        quat.identity(this.rotationQuat);
-        quat.rotateY(this.rotationQuat, this.rotationQuat, self.movable.getYaw());
-        vec3.transformQuat(direction, movementVector, this.rotationQuat);
+        vec3.transformQuat(scratch.vec3_0, movementVector, this.movable.rotationQuatY);
 
 
         // Try to step up, but only if we're on the ground
         if (this.controlState.forward && this.previousVelocity[1] == 0.00) {
             vec3.copy(testPosition, currentPosition);
             testPosition[1] += 0.8;
-            var collision = raycast(self.game.voxelCache, testPosition, direction, 0.5, hit, normals);
+            var collision = raycast(self.game.voxelCache, testPosition, scratch.vec3_0, 0.5, hit, normals);
             
             testPosition[1] += 0.2;
 
@@ -185,23 +216,23 @@ class Physics extends Tickable {
                 currentPosition[1] += 1.2;
 
                 this.movable.updateBounds(currentPosition);
-                vec3.copy(direction2, direction);
+                vec3.copy(scratch.vec3_1, scratch.vec3_0);
 
                 // Did we have any significant collisions? If so, roll back the Y-axis change
-                if (this.haggle(this.movable.bounds.all, currentPosition, direction2)) {
+                if (this.haggle(this.movable.bounds.all, currentPosition, scratch.vec3_1)) {
                     currentPosition[1] -= 1.2;
                 } else {
-                    vec3.copy(this.previousVelocity, direction2);
-                    self.movable.translate(direction2);
+                    vec3.copy(this.previousVelocity, scratch.vec3_1);
+                    self.movable.translate(scratch.vec3_1);
                     return;
                 }
             }
         }
 
         this.movable.updateBounds(currentPosition);
-        this.haggle(this.movable.bounds.all, currentPosition, direction);
-        vec3.copy(this.previousVelocity, direction);
-        self.movable.translate(direction);
+        this.haggle(this.movable.bounds.all, currentPosition, scratch.vec3_0);
+        vec3.copy(this.previousVelocity, scratch.vec3_0);
+        self.movable.translate(scratch.vec3_0);
     };
 
     // Haggle for a stable, non-colliding position
