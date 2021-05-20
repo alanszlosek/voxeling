@@ -3,7 +3,7 @@ import math
 import re
 from PIL import Image
 
-# pip3install pillow
+# pip3 install pillow
 # python3 textures.py
 
 # read json file
