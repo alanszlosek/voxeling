@@ -22,7 +22,7 @@ Growable.prototype.need = function(size) {
             newSize *= 2;
         }
 
-        console.log('GROWABLE: Reallocating to ' + newSize)
+        //console.log('GROWABLE: Reallocating to ' + newSize)
         data = pool.malloc(this.type, newSize);
         data.set(this.data);
         pool.free(this.type, this.data);
