@@ -10,18 +10,7 @@ class Stats extends Tickable {
         this.min = 60;
         this.max = 0;
 
-        setInterval(
-            function() {
-                
-
-                self.history.push(self.frameCount);
-                self.frameCount = 0;
-
-                self.draw();
-                
-            },
-            1000
-        );
+       this.frameTimestamp = 0;
     }
     draw() {
         let elements = '';
@@ -43,9 +32,16 @@ class Stats extends Tickable {
 
         
     }
-    tick() {
+    tick(ts) {
         this.frameCount++;
-        
+
+        if (ts - this.frameTimestamp >= 1000.0) {
+            this.frameTimestamp = ts;
+            this.history.push(this.frameCount);
+            this.frameCount = 0;
+    
+            this.draw();   
+        }
     }
 }
 

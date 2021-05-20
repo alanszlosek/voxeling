@@ -10,15 +10,8 @@ class World extends Tickable {
         this.lastRegion = [100,100,100];
 
 
-        let coords = document.getElementById('coordinates');
-        setInterval(
-            function() {
-                let player = self.game.player;
-                let pos = player.getPosition().map(Math.floor);
-                coords.innerText = pos.join(', ');
-            },
-            2000
-        );
+        this.coordsElement = document.getElementById('coordinates');
+        this.coordsTimestamp = 0;
     }
 
     changeBlocks(low, high, value) {
@@ -44,6 +37,13 @@ class World extends Tickable {
             this.game.clientWorkerHandle.regionChange();
         }
         this.lastRegion = thisRegion;
+
+        // Update coordinates shown at top-right every second
+        if (ts - this.coordsTimestamp >= 1000.0) {
+            this.coordsTimestamp = ts;
+            let pos = this.game.player.getPosition().map(Math.floor);
+            this.coordsElement.innerText = pos.join(', ');
+        }
     }
 }
 

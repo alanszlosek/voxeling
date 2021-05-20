@@ -44,25 +44,8 @@ class Voxels extends Renderable {
         // set which of the 32 handles we want this bound to
         //this.gl.bindTexture(this.gl.TEXTURE_2D, this.textures.byValue[0]);
 
-        // Schedule prepareMeshBuffers()
-        setInterval(
-            function() {
-                if (self.nearPending) {
-                    self.prepareMeshBuffers(true);
-                    self.nearPending = false;
-                }
-            },
-            100
-        );
-        setInterval(
-            function() {
-                if (self.farPending) {
-                    self.prepareMeshBuffers(false);
-                    self.farPending = false;
-                }
-            },
-            1000
-        );
+       this.nearTimestamp = 0;
+       this.farTimestamp = 0;
     }
 
 
@@ -321,6 +304,25 @@ class Voxels extends Renderable {
         //timer.slog('Voxels.prepareMeshBuffers ' + blen, Date.now() - start); //, largestBuffer);
     }
 
+    tick(ts) {
+        if (ts - this.nearTimestamp >= 100.0) {
+            this.nearTimestamp = ts;
+            if (this.nearPending) {
+                this.prepareMeshBuffers(true);
+                this.nearPending = false;
+            }
+        }
+        if (ts - this.farTimestamp >= 1000.0) {
+            this.farTimestamp = ts;
+            if (this.farPending) {
+                console.log('preparing far buffers');
+                this.prepareMeshBuffers(false);
+                this.farPending = false;
+            }
+        }
+
+    }
+
 
     render(ts) {
         var start = Date.now();
@@ -350,6 +352,11 @@ class Voxels extends Renderable {
         //gl.bindTexture(gl.TEXTURE_2D, this.textures.byValue[0]);
         // bind the texture to this handle
         //gl.uniform1i(this.shader.uniforms.texture, 0);
+
+        // TODO: measure time within render body per second, so we can see how much render changes help
+        // TODO: refactor this to render once per texture atlas, isntead of per-texture
+        // TODO: need to flag textures in config that have "cutouts" or alpha, and move them to a dedicated texture atlas
+        // so we can disable face culling when rendering that atlas
 
         for (var textureValue in this.nearBuffersByTexture) {
             var bufferBundle = this.nearBuffersByTexture[ textureValue ];
