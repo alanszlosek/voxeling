@@ -25,7 +25,9 @@ var codeMap = {
     // space
     32: 'jump',
     // F
-    70: 'fly'
+    70: 'fly',
+    // Y
+    89: 'spin'
 };
 
 let gameGlobal;
@@ -145,17 +147,11 @@ var states = {
         },
         mousemove: function(ev) {
             // do bitwise op to remove lower 8 bits or so to clamp to consistent intervals
-            let mask = 128 + 64 + 32 + 16 + 8 + 4;
-            let deltaY = -(ev.movementX / 200.0);
-            let deltaX = -(ev.movementY / 200.0);
-            //console.log(deltaY, deltaX);
+            //let mask = 128 + 64 + 32 + 16 + 8 + 4;
 
-            // rotation will be very fine, in hundredths of a degree ... how can i smooth that?
-            gameGlobal.player.rotateY( deltaY );
-            // Don't pitch player, just the camera
-            gameGlobal.player.rotateX( deltaX );
-
-            // & mask
+            gameGlobal.player.yaw -= ev.movementX / 6;
+            gameGlobal.player.pitch -= ev.movementY / 6;
+            gameGlobal.player.updateQuat();
         },
         keydown: function(event) {
             if (debug) console.log(event);
@@ -191,6 +187,8 @@ var states = {
                     controlStates[key] = true; // TODO: why not boolean?
                 }
                 return false;
+            } else {
+                console.log('unexpect keypress: ' + code);
             }
         },
         keyup: function(event) {
@@ -388,12 +386,12 @@ var controlStates = {
     fire: false,
     firealt: false,
     action1: false, // default: destroy block
-    action2: false // default: create block
+    action2: false, // default: create block,
+    spin: false
 };
 
 var currentState = '';
 
-var gamepad;
 
 var tag = function(tagName, attributes, children) {
     var element = document.createElement(tagName);
@@ -437,6 +435,8 @@ class UserInterface extends Tickable {
         this.bindToElement = document.body;
 
         this.boundStates = {};
+
+        this.gamepad = navigator.getGamepads()[0];
 
         // Fix up states data structure with functions bound to this
         for (var state in states) {
@@ -549,7 +549,7 @@ class UserInterface extends Tickable {
     }
 
     tick(ts) {
-        var gamepad = navigator.getGamepads()[0];
+        let gamepad = this.gamepad;
         if (!gamepad) {
             return;
         }
