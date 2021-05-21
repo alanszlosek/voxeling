@@ -25,7 +25,7 @@ class Camera extends Movable {
         this.follow = game.player;
 
         this.firstPersonOffset = game.player.eyeOffset; //vec3.fromValues(game.player.eyeOffset[0], 1.0, game.player.eyeOffset[2]);
-        this.shoulderOffset = vec3.fromValues(0.7, 0.0, 3.0);
+        this.shoulderOffset = vec3.fromValues(0.0, 0.0, 3.0);
         this.thirdPersonOffset = vec3.fromValues(0.0, this.game.player.eyeOffset[1], 8.0);
         this.view = -1;
 
