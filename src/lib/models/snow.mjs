@@ -1,8 +1,4 @@
 import { mat4, vec3 } from 'gl-matrix';
-import { Lines } from '../lines.mjs';
-//import { Model } from '../model.mjs';
-//import { Movable } from '../entities/movable.mjs';
-//import { Node } from '../scene-graph';
 import { Renderable } from '../entities/renderable';
 import scratch from '../scratch';
 import Shapes from '../shapes.mjs';
@@ -74,10 +70,12 @@ class Snow extends Renderable {
     constructor(game) {
         super();
         this.game = game;
+        // 1200 starts to stutter
+        this.numSnowflakes = 600;
+        this.snowflakes = {};
     }
     init() {
-        this.numSnowflakes = 80;
-        this.snowflakes = {};
+        
         for (let i = 0; i < this.numSnowflakes; i++) {
             let sf = new Snowflake(this.game);
             this.snowflakes[ sf._tickableId ] = sf;
