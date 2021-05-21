@@ -15,23 +15,18 @@ var accelerations = {
     // To make jumping less disorienting, fall slower from height of jump
     partialGravity: -0.4 / tps,
     // 9.8 units/blocks per second, per tick
-    walk: 1.0 / tps,
-    jog: 1.0 / tps,
-    run: 1.0 / tps,
-    slowdown: 2 / tps,
+    walk: 0.8 / tps,
+    jog: 0.8 / tps,
+    run: 0.8 / tps,
+    slowdown: 0.4 / tps,
     fly: 4 / tps
 };
 
+// instantaneous velocities, like jumping
 var velocities = {
     maxWalk: 9 / tps,
     jump: 20 / tps,
-    maxFly: 15 / tps,
-
-    // max velocities
-    walk: 7 / tps,
-    jog: 9 / tps,
-    run: 12 / tps
-
+    maxFly: 15 / tps
 };
 var maxVelocities = {
     jump: 20 / tps,
@@ -39,8 +34,8 @@ var maxVelocities = {
 
     // max velocities
     walk: 4 / tps,
-    jog: 8 / tps,
-    run: 12 / tps
+    jog: 6 / tps,
+    run: 8 / tps
 
 };
 var slowFall = false;
@@ -77,17 +72,24 @@ class Physics extends Tickable {
         // don't tick based on delta milliseconds ... lets always assume our tick rate:
         // much less math, and if we have a pause, the character won't lurch forward
 
+        // if Shift is pressed, switch into run mode
+        let accel = this.controlState.shift ? accelerations.run : accelerations.walk;
+        let velo = this.controlState.shift ? maxVelocities.run : maxVelocities.walk;
+
         // CALCULATE VELOCITY
+        // TODO: refactor this somehow, while handling simultaneous keypresses gracefully
         if (this.controlState.forward == 1) {
-            this.currentVelocity[2] += -accelerations.walk;
-            this.currentVelocity[2] = Math.max(this.currentVelocity[2], -maxVelocities.walk);
+            // keyboard, accelerate gradually
+            this.currentVelocity[2] += -accel;
+            this.currentVelocity[2] = Math.max(this.currentVelocity[2], -velo);
         } else if (this.controlState.forward > 0) {
-            this.currentVelocity[2] = -maxVelocities.walk * this.controlState.forward;
+            // gamepad, no acceleration, use stick percentage
+            this.currentVelocity[2] = -velo * this.controlState.forward;
         } else if (this.controlState.backward == 1) {
-            this.currentVelocity[2] += accelerations.walk;
-            this.currentVelocity[2] = Math.min(this.currentVelocity[2], maxVelocities.walk);
+            this.currentVelocity[2] += accel;
+            this.currentVelocity[2] = Math.min(this.currentVelocity[2], velo);
         } else if (this.controlState.backward > 0) {
-            this.currentVelocity[2] = maxVelocities.walk * this.controlState.backward;
+            this.currentVelocity[2] = velo * this.controlState.backward;
         } else {
             // Slowdown
             if (this.currentVelocity[2] > 0) {
@@ -103,17 +105,15 @@ class Physics extends Tickable {
             }
         }
         if (this.controlState.left == 1) {
-            // keyboard, accelerate gradually
-            this.currentVelocity[0] += -accelerations.walk;
-            this.currentVelocity[0] = Math.max(this.currentVelocity[0], -maxVelocities.walk);
+            this.currentVelocity[0] += -accel;
+            this.currentVelocity[0] = Math.max(this.currentVelocity[0], -velo);
         } else if (this.controlState.left > 0) {
-            // gamepad, no acceleration, use stick percentage
-            this.currentVelocity[0] = -maxVelocities.walk * this.controlState.left;
+            this.currentVelocity[0] = -velo * this.controlState.left;
         } else if (this.controlState.right == 1) {
-            this.currentVelocity[0] += accelerations.walk;
-            this.currentVelocity[0] = Math.min(this.currentVelocity[0], maxVelocities.walk);
+            this.currentVelocity[0] += accel;
+            this.currentVelocity[0] = Math.min(this.currentVelocity[0], velo);
         } else if (this.controlState.right > 0) {
-            this.currentVelocity[0] = maxVelocities.walk * this.controlState.right;
+            this.currentVelocity[0] = velo * this.controlState.right;
         } else {
             // Slowdown
             if (this.currentVelocity[0] > 0) {
