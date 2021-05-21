@@ -263,12 +263,13 @@ class WebGL {
                 // Apply light before we apply the haze?
                 "gl_FragColor.rgb = texelColor.rgb * lightWeight;" +
 
-                "float depth = gl_FragCoord.z / gl_FragCoord.w;" +
+                //"float depth = gl_FragCoord.z / gl_FragCoord.w;" +
                 // Start haze 1 chunk away, complete haze beyond 2.8 chunks away
                 // TODO: adjusting these doesn't seem to do anything
-                "float fogFactor = smoothstep( 32.0, u_hazeDistance, depth );" +
-
-                "gl_FragColor.a = texelColor.a - fogFactor;" +
+                //"float fogFactor = smoothstep( 32.0, u_hazeDistance, depth );" +
+                //"gl_FragColor.a = texelColor.a - fogFactor;" +
+            
+                "gl_FragColor.a = texelColor.a;" +
             "}";
         this.shaders.projectionPosition = createShader(
             this.gl,
@@ -301,7 +302,7 @@ class WebGL {
             self.ts = ts;
             requestAnimationFrame(r);
         };
-        r();
+        requestAnimationFrame(r);
     }
 }
 
