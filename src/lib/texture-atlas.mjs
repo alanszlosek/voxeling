@@ -8,6 +8,14 @@ TODO
 - can look up this value in the textureAtlas
 */
 
+/*
+TODO
+
+
+Revamp this to log the texture unit number so we can pass that to shader
+*/
+
+
 class TextureAtlas {
     // load voxel textures and player/model textures
     constructor(game, textureMeta, players) {
@@ -56,9 +64,14 @@ class TextureAtlas {
                     resolve();
                 }
             };
-            var textureClosure = function(textureUnits, glTexture,  image) {
+            var textureClosure = function(textureUnits, glTexture,  image, flip) {
                 let textureUnit = textureUnits.shift();
                 return function() {
+                    if (flip) {
+                        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+                    } else {
+                        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+                    }
                     gl.activeTexture(textureUnit);
                     gl.bindTexture(gl.TEXTURE_2D, glTexture);
                     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
@@ -83,8 +96,28 @@ class TextureAtlas {
             // Pre-multiply so opacity works correctly
             // http://www.realtimerendering.com/blog/gpus-prefer-premultiplication/
             gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+
             // PNGs require this, right?
+            // Player textures need to be flipped, since they were created with that assumption in mind
             //gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+
+            // Load player textures first
+            for (var value in self.players) {
+                toLoad++;
+                var texture = self.players[value];
+                var glTexture = gl.createTexture();
+                var image = new Image();
+                // Need closure here, to wrap texture
+                // Flip player textures since they were created that way
+                image.onload = textureClosure(textureUnits, glTexture, image, true);
+                image.onerror = function(err) {
+                    console.log('Failed to load texture image: ' + err);
+                };
+                image.crossOrigin = 'Anonymous';
+                image.src = texture.src;
+                // just store gl texture unit here i think
+                self.byName[value] = glTexture;
+            }
 
             // Load texture atlas files
             for (let i = 0; i < self.textureOffsets.numAtlases; i++) {
@@ -92,7 +125,7 @@ class TextureAtlas {
                 var glTexture = gl.createTexture();
                 var image = new Image();
                 // Need closure here, to wrap texture
-                image.onload = textureClosure(textureUnits, glTexture, image);
+                image.onload = textureClosure(textureUnits, glTexture, image, false);
                 image.onerror = function(err) {
                     reject('Failed to load texture image: ' + image.src);
                 };
@@ -100,23 +133,7 @@ class TextureAtlas {
                 image.src = '/textures' + i + '.png';
             }
 
-            // Load player textures
-            for (var value in self.players) {
-                toLoad++;
-                var texture = self.players[value];
-                var glTexture = gl.createTexture();
-                var image = new Image();
-                // Need closure here, to wrap texture
-                image.onload = textureClosure(textureUnits, glTexture, image);
-                image.onerror = function(err) {
-                    console.log('Failed to load texture image: ' + err);
-                };
-                image.crossOrigin = 'Anonymous';
-                image.src = texture.src;
-                // just store gl texture unit here i think
-                self.byValue[value] = glTexture;
-                self.byName[ texture.name ] = glTexture;
-            }
+
         });
     }
 }

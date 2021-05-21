@@ -18,6 +18,7 @@ class Model extends Renderable {
         this.shader = shader;
         this.meshes = meshes;
         this.texture = texture;
+        this.textureUnit = 0;
         this.projection = projection;
         this.shaders = {};
         this.shaderAttributes = {};
@@ -61,6 +62,9 @@ class Model extends Renderable {
     setTexture(texture) {
         this.texture = texture;
     }
+    setTextureUnit(textureUnit) {
+        this.textureUnit = textureUnit;
+    }
 
     /*
     Buffer attributes will likely just be:
@@ -70,8 +74,7 @@ class Model extends Renderable {
     }
     */
 
-    render(ts) {
-        var gl = this.gl;
+    render(gl, ts) {
 
         // TODO: model seems to enable the wrong shader ... the world is dark
         // and for some reason voxels doesn't override it
@@ -82,9 +85,14 @@ class Model extends Renderable {
 
         var meshes = this.meshes;
 
+        // TODO: probably lots of room for optimization here
+
         //mat4.translate(model, model, [16, 1, 3]);
-        mat4.translate(model, scratch.identityMat4, this.movable.getPosition());
-        mat4.rotateY(model, model, this.movable.getYaw());
+        //mat4.translate(model, scratch.identityMat4, this.movable.getPosition());
+        //mat4.rotateY(model, model, this.movable.getYaw());
+
+        // TODO: test whether this really does translate first, then rotate at that translation position
+        mat4.fromRotationTranslation(model, this.movable.rotationQuatY, this.movable.getPosition());
 
         // rotate light source
         quat.rotateY(tempQuat, scratch.identityQuat, this.movable.getYaw());
@@ -95,15 +103,16 @@ class Model extends Renderable {
         //gl.uniformMatrix4fv(this.shaderUniforms.player, false, model);
         //gl.uniform4fv(this.shaderUniforms.color, [ 0, 255, 255, 1 ]);
 
-        //gl.activeTexture(gl.TEXTURE1);
+        //gl.activeTexture(gl.TEXTURE0);
         //gl.bindTexture(gl.TEXTURE_2D, this.texture);
         // bind the texture to this handle
-        gl.uniform1i(this.shader.uniforms.texture, 1);
+        gl.uniform1i(this.shader.uniforms.texture, this.textureUnit);
+        gl.uniform1f(this.shader.uniforms.textureOffset, 0.00);
 
         for (var i = 0; i < meshes.length; i++) {
             var mesh = meshes[i];
 
-            mesh.render(ts);
+            mesh.render(gl, ts);
             // Walk animation: http://math.stackexchange.com/questions/652102/rotate-a-point-around-another-point-by-an-angle
             // positiveTranslatedMatrix * rotationMatrix * negativeTranslatedMatrix
             mat4.translate(rotation1, scratch.identityMat4, mesh.rotateAround);

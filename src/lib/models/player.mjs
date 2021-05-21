@@ -17,7 +17,7 @@ class Player extends MovableCollidable {
 
         var self = this;
         // TODO: this really should respond like a head tilt
-        this.eyeOffset = vec3.fromValues(0, 1.25, -0.4);
+        this.eyeOffset = vec3.fromValues(0, 1.25, -0.5);
         this.eyePosition = vec3.create();
 
         var uvCoordinates = {
@@ -93,7 +93,7 @@ class Player extends MovableCollidable {
 
         shape = Shapes.three.rectangle(0.16, 0.5, 0.16, uvCoordinates.leftArm, 64);
         shape.part = 2;
-        shape.render = function(ts) {
+        shape.render = function(gl, ts) {
             if (self.isMoving) {
                 this.rotation[0] = Math.cos(0.6662 * (ts/walkAnimationSpeed));
             } else {
@@ -107,7 +107,7 @@ class Player extends MovableCollidable {
 
         shape = Shapes.three.rectangle(0.16, 0.5, 0.16, uvCoordinates.rightArm, 64);
         shape.part = 2;
-        shape.render = function(ts) {
+        shape.render = function(gl, ts) {
             if (self.isMoving) {
                 this.rotation[0] = -Math.cos(0.6662 * (ts/walkAnimationSpeed));
             } else {
@@ -122,7 +122,7 @@ class Player extends MovableCollidable {
 
         shape = Shapes.three.rectangle(0.16, 0.5, 0.16, uvCoordinates.leftLeg, 64);
         shape.part = 3;
-        shape.render = function(ts) {
+        shape.render = function(gl, ts) {
             if (self.isMoving) {
                 this.rotation[0] = -Math.cos(0.6662 * (ts/walkAnimationSpeed));
             } else {
@@ -136,7 +136,7 @@ class Player extends MovableCollidable {
 
         shape = Shapes.three.rectangle(0.16, 0.5, 0.16, uvCoordinates.rightLeg, 64);
         shape.part = 3;
-        shape.render = function(ts) {
+        shape.render = function(gl, ts) {
             if (self.isMoving) {
                 this.rotation[0] = Math.cos(0.6662 * (ts/walkAnimationSpeed));
             } else {
@@ -175,13 +175,17 @@ class Player extends MovableCollidable {
     }
 
     setTexture(texture) {
-        this.model.setTexture(texture);
+        let textures = {
+            'player': 0,
+            'substack': 1,
+            'viking': 2
+        }
+        this.model.setTextureUnit( textures[texture] );
     }
 
     tick() {
-        quat.rotateY(scratch.quat, scratch.identityQuat, this.getYaw());
-        vec3.transformQuat(scratch.vec3, this.eyeOffset, scratch.quat);
-        vec3.add(this.eyePosition, scratch.vec3, this.position);
+        vec3.transformQuat(this.eyePosition, this.eyeOffset, this.rotationQuatY);
+        vec3.add(this.eyePosition, this.eyePosition, this.position);
     }
 }
 

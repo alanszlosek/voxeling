@@ -91,7 +91,7 @@ var states = {
                     gameGlobal.clientWorkerHandle.regionChange();
                     break;
                 case 'avatar':
-                    gameGlobal.player.setTexture( textures.byName[avatar] );
+                    gameGlobal.player.setTexture( event.target.value );
                     break;
             }
         }
@@ -421,9 +421,11 @@ class UserInterface extends Tickable {
 
         gameGlobal = this.game = game;
         this.state = controlStates;
+        this.gamepad = null;
     }
 
     init() {
+        let self = this;
         let canvas = document.getElementById('herewego');
         canvas.width = canvas.clientWidth;
         canvas.height = canvas.clientHeight;
@@ -435,8 +437,6 @@ class UserInterface extends Tickable {
         this.bindToElement = document.body;
 
         this.boundStates = {};
-
-        this.gamepad = navigator.getGamepads()[0];
 
         // Fix up states data structure with functions bound to this
         for (var state in states) {
@@ -450,6 +450,25 @@ class UserInterface extends Tickable {
             'pointerlockerror',
             function(error) {
                 console.log('Pointer Lock Error', error);
+            },
+            false
+        );
+        window.addEventListener(
+            'gamepadconnected',
+            function(error) {
+                let gamepads = navigator.getGamepads();
+                if (gamepads[0]) {
+                    self.gamepad = gamepads[0];
+                    console.log('Gamepad connected');
+                }
+            },
+            false
+        );
+        window.addEventListener(
+            'gamepaddisconnected',
+            function(error) {
+                console.log('Gamepad disconnected');
+                self.gamepad = null;
             },
             false
         );
@@ -550,9 +569,10 @@ class UserInterface extends Tickable {
 
     tick(ts) {
         let gamepad = this.gamepad;
-        if (!gamepad) {
+        if (gamepad == null) {
             return;
         }
+        let controlStates = this.state;
     
         // HANDLE MOVEMENT
         var threshold = 0.15;
@@ -601,6 +621,7 @@ class UserInterface extends Tickable {
         }
     
         if (buttonPressed(gamepad.buttons[0]) || buttonPressed(gamepad.buttons[7])) {
+            console.log('jump');
             controlStates.jump = true;
         } else {
             controlStates.jump = false;

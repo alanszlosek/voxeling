@@ -75,7 +75,8 @@ while i < numAtlases:
         if len(textureValues) == 0:
             break;
         textureValue = textureValues.pop()
-        out['textureToTextureUnit'][ textureValue ] = i # so we know which WebGL texture unit to use within the shader
+        # for now, we reserve 0-2 for character textures, so don't use those
+        out['textureToTextureUnit'][ textureValue ] = i + 3 # so we know which WebGL texture unit to use within the shader
         # if no more, bail and save image
 
         path = config['textures'][textureValue]
