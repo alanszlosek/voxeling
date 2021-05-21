@@ -136,6 +136,7 @@ class Server {
                 // Bail if someone requested a chunk outside our world radius
                 if (!self.isChunkInBounds(chunkId)) {
                     console.log('Chunk out of bounds: ' + chunkId);
+                    response.writeHead(404, 'Not Found');
                     response.end();
                     return;
                 }
@@ -411,6 +412,9 @@ class Server {
         var position = chunkID.split('|').map(function(value) {
             return Number(value);
         });
+        if (position.length != 3) {
+            return false;
+        }
         if (position[0] < self.lastWorldChunks[0] || position[1] < self.lastWorldChunks[1] || position[2] < self.lastWorldChunks[2] || position[0] > self.lastWorldChunks[3] || position[1] > self.lastWorldChunks[4] || position[2] > self.lastWorldChunks[5]) {
             return false;
         }
