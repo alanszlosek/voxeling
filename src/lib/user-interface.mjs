@@ -453,12 +453,10 @@ class UserInterface extends Tickable {
             },
             false
         );
+        /*
         window.addEventListener(
             'gamepadconnected',
             function(error) {
-                let gamepads = navigator.getGamepads();
-                if (gamepads[0]) {
-                    self.gamepad = gamepads[0];
                     console.log('Gamepad connected');
                 }
             },
@@ -472,6 +470,7 @@ class UserInterface extends Tickable {
             },
             false
         );
+        */
         this.drawTextures();
 
         this.transition('start');
@@ -568,7 +567,7 @@ class UserInterface extends Tickable {
     }
 
     tick(ts) {
-        let gamepad = this.gamepad;
+        let gamepad = navigator.getGamepads()[0];
         if (gamepad == null) {
             return;
         }
@@ -598,26 +597,24 @@ class UserInterface extends Tickable {
     
         // HANDLE LOOKING
         threshold = 0.15;
-        var speed = 4;
+        var speed = 1.0;
         var lookHorizontal = gamepad.axes[2];
         var lookVertical = gamepad.axes[3];
         var deltaX = 0;
         var deltaY = 0;
     
-        if (lookHorizontal > threshold) {
-            deltaX = Math.floor(speed * lookHorizontal);
-        } else if (lookHorizontal < -threshold) {
-            deltaX = Math.floor(speed * lookHorizontal);
+        if (lookHorizontal > threshold || lookHorizontal < -threshold) {
+            deltaX = speed * lookHorizontal;
         }
     
-        if (lookVertical > threshold) {
-            deltaY = Math.floor(speed * lookVertical);
-        } else if (gamepad.axes[3] < -threshold) {
-            deltaY = Math.floor(speed * lookVertical);
+        if (lookVertical > threshold || lookVertical < -threshold) {
+            deltaY = speed * lookVertical;
         }
         if (deltaX || deltaY) {
-            gameGlobal.player.rotateY(-deltaX / 200);
-            gameGlobal.player.rotateX(-deltaY /200);
+            console.log(deltaX);
+            gameGlobal.player.yaw -= deltaX;
+            gameGlobal.player.pitch -= deltaY;
+            gameGlobal.player.updateQuat();
         }
     
         if (buttonPressed(gamepad.buttons[0]) || buttonPressed(gamepad.buttons[7])) {
@@ -630,6 +627,11 @@ class UserInterface extends Tickable {
             controlStates.fly = true;
         } else {
             controlStates.fly = false;
+        }
+        if (buttonPressed(gamepad.buttons[2]) || buttonPressed(gamepad.buttons[5])) {
+            controlStates.shift = true;
+        } else {
+            controlStates.shift = false;
         }
     
         // 4 - left shoulder
