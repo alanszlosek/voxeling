@@ -208,6 +208,7 @@ class Server {
                 connection: connection,
                 avatar: 'player',
                 position: null,
+                rotation: null,
                 yaw: 0,
                 pitch: 0,
 
@@ -256,12 +257,13 @@ class Server {
                         break;
                     case 'myPosition':
                         // client sends new position, rotation
-                        //connection.on('myPosition', function(position, yaw, pitch, avatar) {
-                        self.log('Got position');
                         client.position = payload[0];
+                        client.rotationQuat = payload[1];
+                        /*
                         client.yaw = payload[1];
                         client.pitch = payload[2];
                         client.avatar = payload[3];
+                        */
                         break;
 
                     // Client sent us voxel changes for one or more chunks
@@ -337,7 +339,7 @@ class Server {
 
         setInterval(function() {
             self.sendPlayers();
-        }, 1000 / 3);
+        }, 1000 / 10);
     }
 
     log(message) {
@@ -370,31 +372,19 @@ class Server {
     // broadcast position, rotation updates for each player
     sendPlayers() {
         var self = this;
-        var clientIds = Object.keys(self.clients);
-        if (clientIds.length === 0) {
-            return;
-        }
-        //self.log('Sending updates for ' + clientIds.length + ' clients')
         var players = {};
 
-        clientIds.map(function(id) {
+        for (let id in this.clients) {
             var client = self.clients[id];
             if (!client.position) {
                 return;
             }
-            // TODO: Ignore client if they're really stale
             players[id] = {
-                positions: [
-                    client.position[0],
-                    client.position[1],
-                    client.position[2],
-                    client.pitch,
-                    client.yaw,
-                    0
-                ],
+                position: client.position,
+                rotationQuat: client.rotationQuat,
                 avatar: client.avatar
             };
-        });
+        }
 
         self.broadcast(null, 'players', players);
     }

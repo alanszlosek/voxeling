@@ -419,11 +419,25 @@ var worker = {
         //pool.free('uint8', chunk.voxels);
     },
 
-    playerPosition: function(position, yaw, pitch, avatar) {
+    myPosition: function(position, rotationQuat) {
         if (!worker.connected) {
             return;
         }
-        sendMessage(worker.connection, 'myPosition', [position, yaw, pitch, avatar]);
+        
+        // convert Float32Array to normal so comes out as array in JSON instead of object
+        let p = [
+            position[0],
+            position[1],
+            position[2]
+        ];
+        let r = [
+            rotationQuat[0],
+            rotationQuat[1],
+            rotationQuat[2],
+            rotationQuat[3]
+        ];
+
+        sendMessage(worker.connection, 'myPosition', [p, r]);
     },
 
     chunkOutOfBounds: function(position) {
@@ -461,9 +475,11 @@ setInterval(
     1000 / 20
 );
 
+/*
 setInterval(
     function() {
         timer.print();
     },
     10000
 );
+*/

@@ -144,6 +144,16 @@ class Model extends Renderable {
 
         }
     }
+
+    destroy() {
+        for (var i = 0; i < meshes.length; i++) {
+            var mesh = meshes[i];
+            this.gl.deleteBuffer(mesh.buffers.vertices);
+            this.gl.deleteBuffer(mesh.buffers.normal);
+            this.gl.deleteBuffer(mesh.buffers.texcoord);
+        }
+
+    }
 }
 
 export { Model };

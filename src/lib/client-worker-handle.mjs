@@ -87,56 +87,10 @@ class ClientWorkerHandle {
         
                     // Got batch of player position updates
                     case 'players':
-                        var players = message[1];
-                        delete players[self.id];
-
-                        // use lerping instead
-                        var ticksPerHalfSecond = 30;
-                        var calculateAdjustments = function(output, current, wanted) {
-                            for (var i = 0; i < output.length; i++) {
-                                output[i] = (wanted[i] - current[i]) / ticksPerHalfSecond;
-                            }
-                        };
-
-                        for (var id in players) {
-                            var updatedPlayerInfo = players[id];
-                            let positions = updatedPlayerInfo.positions;
-                            var player;
-                            if (!('positions' in updatedPlayerInfo)) {
-                                continue;
-                            }
-                            if (id in self.game.players) {
-                                player = players[id];
-                            } else {
-                                player = players[id] = {
-                                    latest: updatedPlayerInfo.positions,
-                                    current: updatedPlayerInfo.positions,
-                                    adjustments: [0, 0, 0, 0, 0, 0],
-
-                                    model: new Player(self.game)
-                                };
-                            }
-
-                            player.model.setTranslation(
-                                updatedPlayerInfo.positions[0],
-                                updatedPlayerInfo.positions[1],
-                                updatedPlayerInfo.positions[2]
-                            );
-                            player.model.setRotation(
-                                updatedPlayerInfo.positions[3],
-                                updatedPlayerInfo.positions[4],
-                                updatedPlayerInfo.positions[5]
-                            );
-
-                            player.model.setTexture(self.game.textureAtlas.byName[updatedPlayerInfo.avatar] );
-                        }
-                        // Compare players to others, remove old players
-                        for (let id in self.game.player) {
-                            if (!(id in players)) {
-                                delete self.game.players[id];
-                            }
-                        }
-
+                        let players = message[1];
+                        // remove ourselves from the player updates list
+                        delete players[ self.id ];
+                        self.game.multiplayer.show(players);
                         break;
                     default:
                         console.log('Client received unexpected message type from WebWorker: ' + message[0]);
@@ -155,5 +109,6 @@ class ClientWorkerHandle {
         console.log(game.config);
         this.worker.postMessage(['regionChange', game.player.getPosition(), game.config.drawDistance]);
     }
+
 }
 export { ClientWorkerHandle };

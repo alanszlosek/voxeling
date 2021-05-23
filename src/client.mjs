@@ -10,7 +10,9 @@ import { Camera } from './lib/camera'
 import { Coordinates } from './lib/coordinates';
 import { ClientWorkerHandle } from './lib/client-worker-handle';
 import { Cursor } from './lib/cursor';
-import { Player } from './lib/models/player'
+import { Multiplayer } from './lib/multiplayer'
+import { Physics } from './lib/physics.mjs';
+import { Player } from './lib/models/player';
 import { Sky } from './lib/models/sky';
 import { Snow } from './lib/models/snow.mjs';
 import Stats from './lib/stats.mjs';
@@ -18,7 +20,6 @@ import { TextureAtlas } from './lib/texture-atlas';
 import { UserInterface } from './lib/user-interface';
 import { VoxelCache } from './lib/voxel-cache';
 import { Voxels } from './lib/voxels';
-import { Physics } from './lib/physics.mjs';
 import { World } from './lib/world.mjs';
 
 
@@ -42,6 +43,7 @@ let game = {
 game.camera = new Camera(game);
 game.clientWorkerHandle = new ClientWorkerHandle(game);
 game.cursor = new Cursor(game);
+game.multiplayer = new Multiplayer(game);
 game.physics = new Physics(game);
 game.player = new Player(game);
 game.sky = new Sky(game);

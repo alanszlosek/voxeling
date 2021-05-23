@@ -10,7 +10,7 @@ class Player extends MovableCollidable {
         this.game = game;
     }
 
-    init() {
+    setup() {
         let gl = this.game.userInterface.webgl.gl;
         let shader = this.game.userInterface.webgl.shaders.projectionViewPosition; //2;
         let texture = this.game.textureAtlas.byName['player'];
@@ -151,7 +151,11 @@ class Player extends MovableCollidable {
         this.model = new Model(gl, shader, meshes, texture, this, this.game.camera.inverse, this);
 
         this.translate(this.game.config.initialPosition);
+    }
 
+    init() {
+        // TODO: do I really need to delay setup on startup?
+        this.setup();
         return Promise.resolve();
     }
 
@@ -186,6 +190,11 @@ class Player extends MovableCollidable {
     tick() {
         vec3.transformQuat(this.eyePosition, this.eyeOffset, this.rotationQuatY);
         vec3.add(this.eyePosition, this.eyePosition, this.position);
+    }
+
+    remove() {
+        this.destroy();
+        this.model.destroy();
     }
 }
 
