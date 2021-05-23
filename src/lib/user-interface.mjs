@@ -27,7 +27,7 @@ var codeMap = {
     // F
     70: 'fly',
     // Y
-    89: 'spin'
+    89: 'spin',
 };
 
 let gameGlobal;
@@ -160,9 +160,9 @@ var states = {
                 this.transition('materials');
                 return;
             }
-            // M
-            if (event.which == 77) {
-                this.transition('map');
+            // N
+            if (event.which == 78) {
+                this.game.snow.toggle();
                 return;
             }
             // C - toggle cursor?
@@ -597,7 +597,7 @@ class UserInterface extends Tickable {
     
         // HANDLE LOOKING
         threshold = 0.15;
-        var speed = 1.0;
+        var speed = 1.1;
         var lookHorizontal = gamepad.axes[2];
         var lookVertical = gamepad.axes[3];
         var deltaX = 0;

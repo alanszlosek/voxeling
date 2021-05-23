@@ -31,6 +31,7 @@ class Snowflake extends Tickable {
     constructor(game) {
         super();
         this.game = game;
+        this.enabled = false;
        
         this.respawn();
     }
@@ -49,6 +50,9 @@ class Snowflake extends Tickable {
     }
 
     tick(ts, delta) {
+        if (!this.enabled) {
+            return;
+        }
         this.position[1] -= this.fallSpeed;
 
         // check for collision
@@ -70,12 +74,12 @@ class Snow extends Renderable {
     constructor(game) {
         super();
         this.game = game;
-        // 1200 starts to stutter
-        this.numSnowflakes = 600;
+        // 1200 starts to stutter on GTX960
+        this.numSnowflakes = 300;
         this.snowflakes = {};
+        this.enabled = false;
     }
     init() {
-        
         for (let i = 0; i < this.numSnowflakes; i++) {
             let sf = new Snowflake(this.game);
             this.snowflakes[ sf._tickableId ] = sf;
@@ -104,9 +108,20 @@ class Snow extends Renderable {
         return Promise.resolve();
     }
 
+    toggle() {
+        this.enabled = this.enabled ? false : true;
+        for (let id in this.snowflakes) {
+            let sf = this.snowflakes[id];
+            sf.enabled = this.enabled;
+        }
+    }
+
 
 
     render(gl, ts, delta) {
+        if (!this.enabled) {
+            return;
+        }
         let projectionMatrix = this.game.camera.inverse;
         let shader = this.game.userInterface.webgl.shaders.projectionViewPosition;
 
