@@ -151,7 +151,7 @@ var states = {
 
             gameGlobal.player.yaw -= ev.movementX / 6;
             gameGlobal.player.pitch -= ev.movementY / 6;
-            gameGlobal.player.updateQuat();
+            //gameGlobal.player.updateQuat();
         },
         keydown: function(event) {
             if (debug) console.log(event);

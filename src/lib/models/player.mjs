@@ -188,6 +188,7 @@ class Player extends MovableCollidable {
     }
 
     tick() {
+        this.updateQuat();
         vec3.transformQuat(this.eyePosition, this.eyeOffset, this.rotationQuatY);
         vec3.add(this.eyePosition, this.eyePosition, this.position);
     }
