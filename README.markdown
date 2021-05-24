@@ -13,7 +13,7 @@ If you want to see what I'm working on, I occasionally make videos at [Relaxing 
 
 Inspired by [voxel-engine](https://github.com/maxogden/voxel-engine) and [voxel.js](http://voxeljs.com), this is a multiplayer sandbox (like Minecraft creative mode) implemented in WebGL with very few dependencies. Very much a work in progress.
 
-Demo of old, non-ES version: https://voxeling.greaterscope.com. Use Google Chrome (not Chromium) as it provides the smoothest experience, expecially on Linux.
+Demo: https://voxeling.greaterscope.com. Use Google Chrome (not Chromium) as it provides the smoothest experience, expecially on Linux.
 
 Project blog: https://blog.alanszlosek.com/tags/voxeling/
 
@@ -28,9 +28,9 @@ Player skins from:
 * Multiplayer, with maxogden, substack and viking skins
 * Block creation and destruction (batch operations via click-and-drag)
 * Jumping and flying
-* First-person, over-shoulder, third person camera views (these need some love, though)
+* First-person, third person camera views
 * Building materials and material picker dialog
-* Gamepad support (80% complete)
+* Gamepad support (90% complete)
 * Adjustable draw distance (change it according to your GPU speed and memory)
 * World state is saved to files or mysql (install mysql npm module)
 
@@ -50,12 +50,11 @@ Player skins from:
 
 * Client and Server (ported bits from my voxel-client and voxel-server forks)
 * Simple physics engine for player movements
-* My own "horizonal merge" meshing algorithm
+* My own "rectangle merge" meshing algorithm
 * Sample world generators
 * Websocket connection for chat messages, player positions, world changes
 * Chunk data is fetched via AJAX and gzipped
 * Object pool to reduce memory allocations and garbage-collection pauses
-* voxel-highlight replacement
 * Uses hashlru for minimizing trips to the file-system or database for frequently requested chunks
 * Relatively flat architecture means it's easy to get a WebGL handle and the inverse camera matrix for drawing
 * All IO and chunk meshing is done in a web worker, which keeps the framerate very high
