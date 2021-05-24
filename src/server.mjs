@@ -208,7 +208,6 @@ class Server {
                 connection: connection,
                 avatar: 'player',
                 position: null,
-                rotation: null,
                 yaw: 0,
                 pitch: 0,
 
@@ -258,12 +257,9 @@ class Server {
                     case 'myPosition':
                         // client sends new position, rotation
                         client.position = payload[0];
-                        client.rotationQuat = payload[1];
-                        /*
                         client.yaw = payload[1];
                         client.pitch = payload[2];
                         client.avatar = payload[3];
-                        */
                         break;
 
                     // Client sent us voxel changes for one or more chunks
@@ -381,7 +377,8 @@ class Server {
             }
             players[id] = {
                 position: client.position,
-                rotationQuat: client.rotationQuat,
+                yaw: client.yaw,
+                pitch: client.pitch,
                 avatar: client.avatar
             };
         }
@@ -412,6 +409,7 @@ class Server {
     }
 
     sendMessage(websocket, name, payload) {
+        //console.log(JSON.stringify([name, payload]));
         websocket.send( JSON.stringify([name, payload]) );
     }
 }

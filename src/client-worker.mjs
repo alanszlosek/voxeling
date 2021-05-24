@@ -419,7 +419,7 @@ var worker = {
         //pool.free('uint8', chunk.voxels);
     },
 
-    myPosition: function(position, rotationQuat) {
+    myPosition: function(position, yaw, pitch, avatar) {
         if (!worker.connected) {
             return;
         }
@@ -430,14 +430,8 @@ var worker = {
             position[1],
             position[2]
         ];
-        let r = [
-            rotationQuat[0],
-            rotationQuat[1],
-            rotationQuat[2],
-            rotationQuat[3]
-        ];
 
-        sendMessage(worker.connection, 'myPosition', [p, r]);
+        sendMessage(worker.connection, 'myPosition', [p, yaw, pitch, avatar]);
     },
 
     chunkOutOfBounds: function(position) {

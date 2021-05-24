@@ -19,28 +19,35 @@ class Multiplayer extends Tickable {
                 // Remove this player
                 // TODO: not sure which parent class has the method to remove from Tickable+Renderable lists
                 player.destroy();
+                delete this.players[id];
             }
         }
         for (let id in players) {
+            let player;
+            let newPlayer = players[id];
             if (id in this.players) {
-
-                this.players[id].setTexture('player');
+                player = this.players[id];
+                player.setTexture(newPlayer.avatar);
 
             } else {
-                this.players[id] = new Player(this.game);
-                this.players[id].setup();
+                player = this.players[id] = new Player(this.game);
+                player.setup();
             }
-            quat.copy(this.players[id].rotationQuat, players[id].rotationQuat);
-            vec3.copy(this.players[id].position, players[id].position);
+            player.yaw = newPlayer.yaw;
+            player.pitch = newPlayer.pitch;
+            vec3.copy(player.position, newPlayer.position);
         }
     }
     tick(ts) {
         if (ts > this.cutoff) {
-            this.cutoff = ts + 100;
+            // 10 times a second
+            this.cutoff = ts + 99;
             this.game.clientWorkerHandle.send([
                 'myPosition',
                 this.game.player.position,
-                this.game.player.rotationQuat
+                this.game.player.yaw,
+                this.game.player.pitch,
+                this.game.player.avatar
             ]);
         }
 

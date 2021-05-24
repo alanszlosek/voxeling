@@ -1,4 +1,4 @@
-import { Tickable } from './tickable';
+import { Tickable, tickables } from './tickable';
 
 var renderables = {};
 
@@ -100,4 +100,4 @@ class Renderable extends Tickable {
     }
 }
 
-export { Renderable, renderables }
+export { Renderable, renderables, tickables }

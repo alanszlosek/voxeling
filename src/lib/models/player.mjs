@@ -14,6 +14,7 @@ class Player extends MovableCollidable {
         let gl = this.game.userInterface.webgl.gl;
         let shader = this.game.userInterface.webgl.shaders.projectionViewPosition; //2;
         let texture = this.game.textureAtlas.byName['player'];
+        let avatar = 'player';
 
         var self = this;
         // TODO: this really should respond like a head tilt
@@ -185,6 +186,7 @@ class Player extends MovableCollidable {
             'viking': 2
         }
         this.model.setTextureUnit( textures[texture] );
+        this.avatar = texture;
     }
 
     tick() {
@@ -193,8 +195,7 @@ class Player extends MovableCollidable {
         vec3.add(this.eyePosition, this.eyePosition, this.position);
     }
 
-    remove() {
-        this.destroy();
+    destroy() {
         this.model.destroy();
     }
 }

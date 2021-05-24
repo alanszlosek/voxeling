@@ -1,5 +1,5 @@
 import { mat4, quat, vec3 } from 'gl-matrix';
-import { Renderable } from './renderable';
+import { Renderable, renderables, tickables } from './renderable';
 import scratch from '../scratch';
 
 // TODO: fix these
@@ -146,12 +146,15 @@ class Model extends Renderable {
     }
 
     destroy() {
-        for (var i = 0; i < meshes.length; i++) {
-            var mesh = meshes[i];
+        for (var i = 0; i < this.meshes.length; i++) {
+            var mesh = this.meshes[i];
             this.gl.deleteBuffer(mesh.buffers.vertices);
             this.gl.deleteBuffer(mesh.buffers.normal);
             this.gl.deleteBuffer(mesh.buffers.texcoord);
         }
+        delete renderables[ this._tickableId ];
+        delete tickables[ this._tickableId ];
+
 
     }
 }
