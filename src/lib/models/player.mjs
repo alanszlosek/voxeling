@@ -82,6 +82,10 @@ class Player extends MovableCollidable {
 
         shape = Shapes.three.rectangle(0.33, 0.35, 0.33, uvCoordinates.head, 64);
         shape.part = 0;
+        shape.pitch = 0;
+        shape.render = function(gl, ts) {
+            this.rotation[0] = self.pitch / 57.29; // radian is 57.29 degrees
+        };
         mat4.translate(shape.view, shape.view, [0, 1.12, 0]);
         meshes.push(shape);
 
