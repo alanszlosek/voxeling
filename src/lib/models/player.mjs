@@ -8,6 +8,7 @@ class Player extends MovableCollidable {
     constructor(game) {
         super();
         this.game = game;
+        this.currentVelocityLength = 0;
     }
 
     setup() {
@@ -78,7 +79,7 @@ class Player extends MovableCollidable {
         var shape;
         var armRotation = 0.6662;
         var walkAnimationSpeed = 70;
-
+        let scale = 7.4;
 
         shape = Shapes.three.rectangle(0.33, 0.35, 0.33, uvCoordinates.head, 64);
         shape.part = 0;
@@ -100,7 +101,11 @@ class Player extends MovableCollidable {
         shape.part = 2;
         shape.render = function(gl, ts) {
             if (self.isMoving) {
-                this.rotation[0] = Math.cos(0.6662 * (ts/walkAnimationSpeed));
+                console.log(ts/90, self.game.player.currentVelocityLength);
+                //this.rotation[0] = Math.cos(0.6662 * (ts/90) * self.game.player.currentVelocityLength);
+
+                // TODO: this is not quite right ... jumps when speed changes. need lerping or something
+                this.rotation[0] = Math.cos((ts/scale) * self.game.player.currentVelocityLength);
             } else {
                 this.rotation[0] = 0;
             }
@@ -114,7 +119,8 @@ class Player extends MovableCollidable {
         shape.part = 2;
         shape.render = function(gl, ts) {
             if (self.isMoving) {
-                this.rotation[0] = -Math.cos(0.6662 * (ts/walkAnimationSpeed));
+                //this.rotation[0] = -Math.cos(0.6662 * (ts/walkAnimationSpeed));
+                this.rotation[0] = -Math.cos((ts/scale) * self.game.player.currentVelocityLength);
             } else {
                 this.rotation[0] = 0;
             }
@@ -129,7 +135,8 @@ class Player extends MovableCollidable {
         shape.part = 3;
         shape.render = function(gl, ts) {
             if (self.isMoving) {
-                this.rotation[0] = -Math.cos(0.6662 * (ts/walkAnimationSpeed));
+                //this.rotation[0] = -Math.cos(0.6662 * (ts/walkAnimationSpeed));
+                this.rotation[0] = -Math.cos((ts/scale) * self.game.player.currentVelocityLength);
             } else {
                 this.rotation[0] = 0;
             }
@@ -143,7 +150,8 @@ class Player extends MovableCollidable {
         shape.part = 3;
         shape.render = function(gl, ts) {
             if (self.isMoving) {
-                this.rotation[0] = Math.cos(0.6662 * (ts/walkAnimationSpeed));
+                //this.rotation[0] = Math.cos(0.6662 * (ts/walkAnimationSpeed));
+                this.rotation[0] = Math.cos((ts/scale) * self.game.player.currentVelocityLength);
             } else {
                 this.rotation[0] = 0;
             }
@@ -184,13 +192,15 @@ class Player extends MovableCollidable {
     }
 
     setTexture(texture) {
-        let textures = {
-            'player': 0,
-            'substack': 1,
-            'viking': 2
+        if (this.avatar != texture) {
+            let textures = {
+                'player': 0,
+                'substack': 1,
+                'viking': 2
+            }
+            this.model.setTextureUnit( textures[texture] );
+            this.avatar = texture;
         }
-        this.model.setTextureUnit( textures[texture] );
-        this.avatar = texture;
     }
 
     tick() {

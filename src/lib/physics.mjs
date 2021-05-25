@@ -47,6 +47,7 @@ class Physics extends Tickable {
         this.game = game;
         this.running = false;
         this.currentVelocity = vec3.create();
+        this.currentVelocityLength = 0;
         this.rotatedMovementVector = vec3.create();
         this.rotationQuat = quat.create();
         this.previousVelocity = vec3.create();
@@ -164,6 +165,10 @@ class Physics extends Tickable {
                 this.currentVelocity[1] += accelerations.gravity;
             }
         }
+        scratch.vec3[0] = this.currentVelocity[0];
+        scratch.vec3[1] = 0; // jumping and flying are too fast
+        scratch.vec3[2] = this.currentVelocity[2];
+        this.movable.currentVelocityLength = vec3.length(scratch.vec3);
 
         // SKIPPING COLLISION DETECTION
         // UPDATE POSITION
