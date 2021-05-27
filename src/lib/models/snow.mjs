@@ -1,11 +1,11 @@
-import { mat4, vec3 } from 'gl-matrix';
+import { mat4, vec3, quat } from 'gl-matrix';
 import { Renderable } from '../entities/renderable';
 import scratch from '../scratch';
 import Shapes from '../shapes.mjs';
 import { Tickable } from '../entities/tickable';
 
 
-import { getRandomInt } from '../util.mjs';
+import { getRandomInt, getRandomArbitrary } from '../util.mjs';
 
 /*
 High level
@@ -39,6 +39,8 @@ class Snowflake extends Tickable {
     respawn() {
         let position = this.game.player.getPosition();
         
+        let scaleValue = getRandomInt(1, 20) / 100;
+        this.scale = vec3.fromValues(scaleValue, scaleValue, scaleValue);
         this.fallSpeed = 0.06; // some range up to 0.1
         let spread = 32;
         this.position = vec3.fromValues(
@@ -87,22 +89,40 @@ class Snow extends Renderable {
 
         // Prepare shared mesh and buffers
         // which texture unit / atlas is the white wool in?
-        let textureValue = 5;
+        let textureValue = 5; // white wool
         this.textureUnit = this.game.textureOffsets['textureToTextureUnit'][ textureValue ]
         let textureV = this.game.textureOffsets['offsets'][ textureValue ];
         let height = this.game.textureOffsets['textureRowHeight'];
         // lower left, upper right in texture map
         let uv = [0, textureV, 1, textureV + height];
 
-        let d = 0.1; //Math.random();
-        this.mesh = Shapes.three.rectangle3(d, d, d, uv);
+        let d = 1;
+
+        // main
+        let meshes = [
+            // main body of snowflake
+            Shapes.two.rectangleDimensionsTexcoordsPosition(d, d, uv),
+            // smaller pieces to left
+            Shapes.two.rectangleDimensionsTexcoordsPosition(0.5, 0.5, uv, [-0.75, 0.75, 0]),
+            Shapes.two.rectangleDimensionsTexcoordsPosition(0.5, 0.5, uv, [-1, 0, 0]),
+            Shapes.two.rectangleDimensionsTexcoordsPosition(0.5, 0.5, uv, [-0.75, -0.75, 0]),
+            // smaller pieces to right
+            Shapes.two.rectangleDimensionsTexcoordsPosition(0.5, 0.5, uv, [0.75, 0.75, 0]),
+            Shapes.two.rectangleDimensionsTexcoordsPosition(0.5, 0.5, uv, [1, 0, 0]),
+            Shapes.two.rectangleDimensionsTexcoordsPosition(0.5, 0.5, uv, [0.75, -0.75, 0]),
+
+            Shapes.two.rectangleDimensionsTexcoordsPosition(0.5, 0.5, uv, [0, 1.0, 0]),
+            Shapes.two.rectangleDimensionsTexcoordsPosition(0.5, 0.5, uv, [0, -1.0, 0]),
+
+        ];
+
         // Would love to specify offsets and have that show up in mesh coords that are returned
         // Also would love to be able to get a tuple of 4 coord bounds of texture, by name
         // gives us: vertices, texcoords, normals
         // TODO: could have rectangle3 append into existing arrays
         this.buffersPerTextureUnit = {};
 
-        this.buffersPerTextureUnit[ this.textureUnit ] = this.meshesToBuffers(this.game.gl, this.mesh);
+        this.buffersPerTextureUnit[ this.textureUnit ] = this.meshesToBuffers(this.game.gl, meshes);
         console.log(this.buffersPerTextureUnit);
 
         return Promise.resolve();
@@ -125,14 +145,20 @@ class Snow extends Renderable {
         let projectionMatrix = this.game.camera.inverse;
         let shader = this.game.userInterface.webgl.shaders.projectionViewPosition;
 
-        // for each one
+        // Render the same snowflake mesh for each snowflake, using a different view matrix
         for (let _tickableId in this.snowflakes) {
             let sf = this.snowflakes[ _tickableId ];
             // update rotation
             // update matrix to use for rendering
             //mat4.fromRotation(scratch.mat4, scratch.identityMat4, 0.5, [0, 1, 0]);
-            mat4.translate(scratch.mat4, scratch.identityMat4, sf.position);
-            mat4.rotateY(scratch.mat4_0, scratch.mat4, ts / 1000);
+            
+            // mat4.translate(scratch.mat4, scratch.identityMat4, sf.position);
+            // mat4.translate(scratch.mat4, scratch.identityMat4, sf.position);
+            // mat4.rotateZ(scratch.mat4_0, scratch.mat4, ts / 1000);
+
+            quat.rotateZ(scratch.quat, scratch.identityQuat, ts / 1000);
+
+            mat4.fromRotationTranslationScale(scratch.mat4_0, scratch.quat, sf.position, sf.scale);
 
             // renderBuffers(ts, gl, shader, projectionMatrix, viewMatrix, atlasToBuffers) {
             this.renderBuffers(ts, gl, shader, projectionMatrix, scratch.mat4_0, this.buffersPerTextureUnit);

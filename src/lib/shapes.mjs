@@ -138,6 +138,79 @@ let shapes = {
                 texcoord: null
             };
         },
+        rectangleDimensionsTexcoordsPosition: function(width, height, uv, position) {
+            var w = width / 2;
+            var h = height / 2;
+            let centerPosition = position || [0,0,0];
+
+            // define planes
+            let x1 = centerPosition[0] - w;
+            let x2 = centerPosition[0] + w;
+            let y1 = centerPosition[1] - h;
+            let y2 = centerPosition[1] + h;
+            let z1 = centerPosition[2];
+            let z2 = centerPosition[2];
+
+            var points = [
+                // Back face
+                x2, y1, z1,
+                x1, y1, z1,
+                x1, y2, z1,
+                x2, y1, z1,
+                x1, y2, z1,
+                x2, y2, z1,
+                /*
+                // Front face
+                x1, y1, z2,
+                x2, y1, z2,
+                x2, y2, z2,
+                x1, y1, z2,
+                x2, y2, z2,
+                x1, y2, z2,
+                */
+            ];
+
+
+            let u1 = uv[0];
+            let u2 = uv[2];
+            let v1 = uv[1];
+            let v2 = uv[3];
+            var texcoord = new Float32Array(12);
+            texcoord.set([u1,v1, u2,v1, u2,v2, u1,v1, u2,v2, u1,v2], 0);
+            /*
+            // Now duplicate for 5 other faces
+            texcoord.copyWithin(12, 0, 12);
+            texcoord.copyWithin(24, 0, 12);
+            texcoord.copyWithin(36, 0, 12);
+            texcoord.copyWithin(48, 0, 12);
+            texcoord.copyWithin(60, 0, 12);
+            */
+
+            var normals = [
+                // back
+                0.0,  0.0, -1.0,
+                0.0,  0.0, -1.0,
+                0.0,  0.0, -1.0,
+                0.0,  0.0, -1.0,
+                0.0,  0.0, -1.0,
+                0.0,  0.0, -1.0,
+                /*
+                // front
+                0.0,  0.0,  1.0,
+                0.0,  0.0,  1.0,
+                0.0,  0.0,  1.0,
+                0.0,  0.0,  1.0,
+                0.0,  0.0,  1.0,
+                0.0,  0.0,  1.0,
+                */
+            ];
+
+            return {
+                vertices: new Float32Array(points),
+                texcoords: texcoord,
+                normals: new Float32Array(normals)
+            };
+        },
         unitTriangle: function() {
             var points = [
                 // Back face

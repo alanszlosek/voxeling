@@ -26,7 +26,7 @@ class Renderable extends Tickable {
         . . .
     }
     */
-    meshesToBuffers(gl, mesh) {
+    meshesToBuffers(gl, meshes) {
         let buffers = {
             vertices: gl.createBuffer(),
             //indices: gl.createBuffer(),
@@ -35,20 +35,44 @@ class Renderable extends Tickable {
             tuples: 0
         };
 
+        let sz1 = 0;
+        let sz2 = 0;
+        let sz3 = 0;
+
+        for (var i = 0; i < meshes.length; i++) {
+            var mesh = meshes[i];
+            sz1 += mesh.vertices.length;
+            sz2 += mesh.normals.length;
+            sz3 += mesh.texcoords.length;
+        }
+        
+
+        let vertices = new Float32Array(sz1);
+        let normals = new Float32Array(sz2);
+        let texcoords = new Float32Array(sz3);
+        sz1 = sz2 = sz3 = 0;
+        for (var i = 0; i < meshes.length; i++) {
+            var mesh = meshes[i];
+            vertices.set(mesh.vertices, sz1);
+            normals.set(mesh.normals, sz2);
+            texcoords.set(mesh.texcoords, sz3);
+            sz1 += mesh.vertices.length;
+            sz2 += mesh.normals.length;
+            sz3 += mesh.texcoords.length;
+        }
+
+
         // Fill with points that we'll translate per player
         gl.bindBuffer(gl.ARRAY_BUFFER, buffers.vertices);
-        gl.bufferData(gl.ARRAY_BUFFER, mesh.vertices, gl.STATIC_DRAW);
-
-        //gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh.buffers.indices);
-        //gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, mesh.indices, gl.STATIC_DRAW);
+        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
 
         gl.bindBuffer(gl.ARRAY_BUFFER, buffers.normals);
-        gl.bufferData(gl.ARRAY_BUFFER, mesh.normals, gl.STATIC_DRAW);
+        gl.bufferData(gl.ARRAY_BUFFER, normals, gl.STATIC_DRAW);
 
         gl.bindBuffer(gl.ARRAY_BUFFER, buffers.texcoords);
-        gl.bufferData(gl.ARRAY_BUFFER, mesh.texcoords, gl.STATIC_DRAW);
+        gl.bufferData(gl.ARRAY_BUFFER, texcoords, gl.STATIC_DRAW);
 
-        buffers.tuples = mesh.vertices.length / 3;
+        buffers.tuples = vertices.length / 3;
 
         return buffers;
     }
