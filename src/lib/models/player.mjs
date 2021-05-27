@@ -101,9 +101,6 @@ class Player extends MovableCollidable {
         shape.part = 2;
         shape.render = function(gl, ts) {
             if (self.isMoving) {
-                console.log(ts/90, self.game.player.currentVelocityLength);
-                //this.rotation[0] = Math.cos(0.6662 * (ts/90) * self.game.player.currentVelocityLength);
-
                 // TODO: this is not quite right ... jumps when speed changes. need lerping or something
                 this.rotation[0] = Math.cos((ts/scale) * self.game.player.currentVelocityLength);
             } else {
