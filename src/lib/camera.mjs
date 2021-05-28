@@ -8,15 +8,24 @@ class Camera extends Movable {
         super();
 
         this.game = game;
-        
-        this.matrix = mat4.create();
-        this.inverse = mat4.create();
+
+        // the camera manages some matrices used to render our scene
+        // more info: https://jsantell.com/model-view-projection/
+        // projection is used to transform points to clip/screen space, in perspective fashion
+        this.projectionMatrix = mat4.create();
+        // this contains the camera's position in coordinate space
+        // you can think of it as the camera's model matrix
+        this.modelMatrix = mat4.create();
+        // this is an inverse of the model matrix
+        // it transforms vertices from world space to camera/view space
+        this.viewMatrix = mat4.create();
+        // just a helper handle to make it clear view is the inverse
+        this.inverseMatrix = this.viewMatrix;
 
         this.verticalFieldOfView = Math.PI / 4;
         this.ratio;
         // 32 * 20 = 640 ... 20 chunks away
         this.farDistance = 640;
-        this.projection = mat4.create();
     }
 
     init() {
@@ -27,7 +36,7 @@ class Camera extends Movable {
         this.firstPersonOffset = game.player.eyeOffset; //vec3.fromValues(game.player.eyeOffset[0], 1.0, game.player.eyeOffset[2]);
         this.shoulderOffset = vec3.fromValues(0.0, 0.0, 3.0);
         this.thirdPersonOffset = vec3.fromValues(0.0, this.game.player.eyeOffset[1], 8.0);
-        this.view = -1;
+        this.mode = -1;
 
         this.nextView();
         this.canvasResized();
@@ -41,14 +50,14 @@ class Camera extends Movable {
         
         // Adjusts coordinates for the screen's aspect ration
         // Not sure to set near and far to ... seems arbitrary. Surely those values should match the frustum
-        mat4.perspective(this.projection, this.verticalFieldOfView, this.ratio, 0.1, this.farDistance);
+        mat4.perspective(this.projectionMatrix, this.verticalFieldOfView, this.ratio, 0.1, this.farDistance);
     }
 
     updateProjection() {
         let delta = 0.25;
 
         // SET CAMERA POSITION
-        switch (this.view) {
+        switch (this.mode) {
             case 0:
                 // Rotate eye offset into tempVector, which we'll then add to player position
                 this.desiredOffset = this.firstPersonOffset;
@@ -90,20 +99,19 @@ class Camera extends Movable {
         */
 
         // CREATE INVERSE MATRIX FOR RENDERING THE WORLD AROUND THE CAMERA
-        mat4.fromRotationTranslation(this.matrix, this.follow.rotationQuat, this.position); //getRotationQuat(), this.position);
-        mat4.invert(this.inverse, this.matrix);
-        mat4.multiply(this.inverse, this.projection, this.inverse);
-
-        return this.inverse;
+        mat4.fromRotationTranslation(this.modelMatrix, this.follow.rotationQuat, this.position); //getRotationQuat(), this.position);
+        mat4.invert(this.viewMatrix, this.modelMatrix);
+        // nope, let's do this in the shader ... gives us more shader flexibility
+        //mat4.multiply(this.inverse, this.projection, this.inverse);
     }
 
     nextView() {
-        this.view++;
+        this.mode++;
         // just 2 views for now
-        if (this.view > 1) {
-            this.view = 0;
+        if (this.mode > 1) {
+            this.mode = 0;
         }
-        switch (this.view) {
+        switch (this.mode) {
             case 0:
                 this.desiredOffset = this.firstPersonOffset;
                 break;

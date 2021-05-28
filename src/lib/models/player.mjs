@@ -158,7 +158,7 @@ class Player extends MovableCollidable {
         mat4.translate(shape.view, shape.view, [0.09, 0.2, 0]);
         meshes.push(shape);
 
-        this.model = new Model(gl, shader, meshes, texture, this, this.game.camera.inverse, this);
+        this.model = new Model(this.game, gl, shader, meshes, texture, this, this);
 
         this.translate(this.game.config.initialPosition);
     }

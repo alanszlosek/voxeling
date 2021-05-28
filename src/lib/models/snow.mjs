@@ -142,8 +142,23 @@ class Snow extends Renderable {
         if (!this.enabled) {
             return;
         }
-        let projectionMatrix = this.game.camera.inverse;
         let shader = this.game.userInterface.webgl.shaders.projectionViewPosition;
+        let cameraPosition = scratch.vec4;
+
+        cameraPosition[0] = this.game.camera.position[0];
+        cameraPosition[1] = this.game.camera.position[1];
+        cameraPosition[2] = this.game.camera.position[2];
+        cameraPosition[0] = 0;
+        cameraPosition[1] = 0;
+        cameraPosition[2] = 0;
+        cameraPosition[3] = 0;
+
+        gl.useProgram(shader.program);
+        gl.uniformMatrix4fv(shader.uniforms.projection, false, this.game.camera.projectionMatrix);
+        gl.uniformMatrix4fv(shader.uniforms.view, false, this.game.camera.viewMatrix);
+        gl.uniform4fv(shader.uniforms.cameraposition, cameraPosition);
+
+
 
         // Render the same snowflake mesh for each snowflake, using a different view matrix
         for (let _tickableId in this.snowflakes) {
@@ -161,7 +176,30 @@ class Snow extends Renderable {
             mat4.fromRotationTranslationScale(scratch.mat4_0, scratch.quat, sf.position, sf.scale);
 
             // renderBuffers(ts, gl, shader, projectionMatrix, viewMatrix, atlasToBuffers) {
-            this.renderBuffers(ts, gl, shader, projectionMatrix, scratch.mat4_0, this.buffersPerTextureUnit);
+            //this.renderBuffers(ts, gl, shader, projectionMatrix, scratch.mat4_0, this.buffersPerTextureUnit);
+
+
+            for (let textureUnit in this.buffersPerTextureUnit) {
+                let buffers = this.buffersPerTextureUnit[textureUnit];
+
+                // bind the texture to this handle
+                gl.uniform1i(shader.uniforms.texture, textureUnit);
+
+                gl.bindBuffer(gl.ARRAY_BUFFER, buffers.vertices);
+                gl.enableVertexAttribArray(shader.attributes.position);
+                gl.vertexAttribPointer(shader.attributes.position, 3, gl.FLOAT, false, 0, 0);
+
+                gl.bindBuffer(gl.ARRAY_BUFFER, buffers.normals);
+                gl.enableVertexAttribArray(shader.attributes.normal);
+                gl.vertexAttribPointer(shader.attributes.normal, 3, gl.FLOAT, false, 0, 0);
+
+                gl.bindBuffer(gl.ARRAY_BUFFER, buffers.texcoords);
+                gl.enableVertexAttribArray(shader.attributes.texcoord);
+                gl.vertexAttribPointer(shader.attributes.texcoord, 2, gl.FLOAT, false, 0, 0);
+
+                //console.log('model.js drawing tuples: ' + mesh.tuples);
+                gl.drawArrays(gl.TRIANGLES, 0, buffers.tuples);
+            }
         }
     }
 }

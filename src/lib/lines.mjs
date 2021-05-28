@@ -5,8 +5,9 @@ LineBuffer to hold all the lines we want to draw
 */
 var vertexShaderCode =
 	"uniform mat4 u_projection;" +
+    "uniform mat4 u_view;" +
 	"attribute vec4 a_position;" +
-	"void main() { gl_Position = (u_projection * a_position); }";
+	"void main() { gl_Position = (u_projection * u_view * a_position); }";
 var fragmentShaderCode = 
 	"precision mediump float;" +
 	"uniform vec4 u_color;" +
@@ -16,7 +17,7 @@ class Lines extends Renderable {
     constructor(game, color) {
         super();
         let gl = this.gl = game.userInterface.webgl.gl;
-        this.projection = game.camera.inverse;
+        this.game = game;
         this.glBuffer;
         this.tuples = 0;
         this.shaders = {};
@@ -54,6 +55,7 @@ class Lines extends Renderable {
 
         this.shaderAttributes.position = gl.getAttribLocation(shaderProgram, "a_position");
         this.shaderUniforms.projection = gl.getUniformLocation(shaderProgram, "u_projection");
+        this.shaderUniforms.view = gl.getUniformLocation(shaderProgram, "u_view");
         this.shaderUniforms.color = gl.getUniformLocation(shaderProgram, "u_color");
 
         if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
@@ -87,14 +89,14 @@ class Lines extends Renderable {
     }
 
     render(gl, ts) {
-        let projection = this.projection;
         if (this.skipDraw || this.tuples == 0) {
             return;
         }
         gl.useProgram(this.shaderProgram);
         gl.lineWidth(3);
 
-        gl.uniformMatrix4fv(this.shaderUniforms.projection, false, projection);
+        gl.uniformMatrix4fv(this.shaderUniforms.projection, false, this.game.camera.projectionMatrix);
+        gl.uniformMatrix4fv(this.shaderUniforms.view, false, this.game.camera.viewMatrix);
 
         gl.bindBuffer(gl.ARRAY_BUFFER, this.glBuffer);
         gl.enableVertexAttribArray(this.shaderAttributes.position);

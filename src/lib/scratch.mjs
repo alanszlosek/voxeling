@@ -30,6 +30,8 @@ let scratch = {
     i32vec3_0: new Int32Array(3),
     i32vec3_1: new Int32Array(3),
     i32vec3_2: new Int32Array(3),
+
+    vec4: glm.vec4.create()
 };
 
 export default scratch;

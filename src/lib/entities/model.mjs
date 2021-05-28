@@ -12,14 +12,14 @@ var rotation1 = scratch.mat4_0;
 var rotation2 = scratch.mat4_1;
 
 class Model extends Renderable {
-    constructor(gl, shader, meshes, texture, movable, projection) {
-        super()
+    constructor(game, gl, shader, meshes, texture, movable) {
+        super();
+        this.game = game;
         this.gl = gl;
         this.shader = shader;
         this.meshes = meshes;
         this.texture = texture;
         this.textureUnit = 0;
-        this.projection = projection;
         this.shaders = {};
         this.shaderAttributes = {};
         this.shaderUniforms = {};
@@ -99,7 +99,8 @@ class Model extends Renderable {
         //vec3.transformQuat(tempVector, directionalLightVector, tempQuat);
         //gl.uniform3fv(this.shader.uniforms.directionalLightVector, tempVector);
 
-        gl.uniformMatrix4fv(this.shader.uniforms.projection, false, this.projection);
+        gl.uniformMatrix4fv(this.shader.uniforms.projection, false, this.game.camera.projectionMatrix);
+        gl.uniformMatrix4fv(this.shader.uniforms.view, false, this.game.camera.viewMatrix);
         //gl.uniformMatrix4fv(this.shaderUniforms.player, false, model);
         //gl.uniform4fv(this.shaderUniforms.color, [ 0, 255, 255, 1 ]);
 

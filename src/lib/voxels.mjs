@@ -36,7 +36,6 @@ class Voxels extends Renderable {
         let game = this.game;
         this.gl = game.userInterface.webgl.gl;
         this.shader = game.userInterface.webgl.shaders.projectionPosition;
-        this.projection = game.camera.inverse;
         this.ambientLight = game.sky.ambientLightColor;
         this.directionalLight = game.sky.directionalLight;
 
@@ -327,16 +326,18 @@ class Voxels extends Renderable {
     render(ts) {
         var start = Date.now();
         var gl = this.gl;
-        let projection = this.projection;
         let ambientLight = this.ambientLight;
         let directionalLight = this.directionalLight;
 
-        gl.useProgram(this.shader.program);
-        gl.uniformMatrix4fv(this.shader.uniforms.projection, false, projection);
-        gl.uniform3fv(this.shader.uniforms.ambientLightColor, ambientLight);
-        gl.uniform3fv(this.shader.uniforms.directionalLightColor, directionalLight.color);
-        gl.uniform3fv(this.shader.uniforms.directionalLightPosition, directionalLight.position);
-        gl.uniform1f(this.shader.uniforms.hazeDistance, this.hazeDistance);
+        let shader = this.game.userInterface.webgl.shaders.projectionPosition
+
+        gl.useProgram(shader.program);
+        gl.uniformMatrix4fv(shader.uniforms.projection, false, this.game.camera.projectionMatrix);
+        gl.uniformMatrix4fv(shader.uniforms.view, false, this.game.camera.viewMatrix);
+        gl.uniform3fv(shader.uniforms.ambientLightColor, ambientLight);
+        gl.uniform3fv(shader.uniforms.directionalLightColor, directionalLight.color);
+        gl.uniform3fv(shader.uniforms.directionalLightPosition, directionalLight.position);
+        gl.uniform1f(shader.uniforms.hazeDistance, this.hazeDistance);
 
         // TODO: i don't think we need to activate each render
         //gl.activeTexture(gl.TEXTURE0);
@@ -345,13 +346,13 @@ class Voxels extends Renderable {
         // Voxel textures are loaded and bound to gl.TEXTURE0
 
         // need to smartly set this based on which atlas a texture is part of
-        gl.uniform1i(this.shader.uniforms.texture, 0);
+        //gl.uniform1i(shader.uniforms.texture, 0);
         
 
         // set which of the 32 handles we want this bound to
         //gl.bindTexture(gl.TEXTURE_2D, this.textures.byValue[0]);
         // bind the texture to this handle
-        //gl.uniform1i(this.shader.uniforms.texture, 0);
+        //gl.uniform1i(shader.uniforms.texture, 0);
 
         // TODO: measure time within render body per second, so we can see how much render changes help
         // TODO: refactor this to render once per texture atlas, isntead of per-texture
@@ -366,17 +367,17 @@ class Voxels extends Renderable {
 
             if (textureValue == 6) {
                 // poor man's water animation
-                //gl.uniform1f(this.shader.uniforms.textureOffset, ts / 10000);
+                //gl.uniform1f(shader.uniforms.textureOffset, ts / 10000);
 
             } else if (textureValue < 100) {
                 // Don't do face culling when drawing textures with opacity
                 gl.enable(gl.CULL_FACE);
-                gl.uniform1f(this.shader.uniforms.textureOffset, 0.00);
+                gl.uniform1f(shader.uniforms.textureOffset, 0.00);
                 
             } else {
                 gl.disable(gl.CULL_FACE);
-                gl.uniform1f(this.shader.uniforms.textureOffset, 0.00);
-                //gl.uniform1f(this.shaderUniforms.textureOffset, ts / 10000);
+                gl.uniform1f(shader.uniforms.textureOffset, 0.00);
+                //gl.uniform1f(shaderUniforms.textureOffset, ts / 10000);
             }
             // do the texture stuff ourselves ... too convoluted otherwise
             //gl.activeTexture(gl.TEXTURE0);
@@ -385,19 +386,19 @@ class Voxels extends Renderable {
             //gl.bindTexture(gl.TEXTURE_2D, this.textures.byValue[textureValue].glTexture);
 
             // bind the texture to this handle
-            gl.uniform1i(this.shader.uniforms.texture, bufferBundle.textureUnit);
+            gl.uniform1i(shader.uniforms.texture, bufferBundle.textureUnit);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, bufferBundle.position);
-            gl.enableVertexAttribArray(this.shader.attributes.position);
-            gl.vertexAttribPointer(this.shader.attributes.position, 3, gl.FLOAT, false, 0, 0);
+            gl.enableVertexAttribArray(shader.attributes.position);
+            gl.vertexAttribPointer(shader.attributes.position, 3, gl.FLOAT, false, 0, 0);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, bufferBundle.texcoord);
-            gl.enableVertexAttribArray(this.shader.attributes.texcoord);
-            gl.vertexAttribPointer(this.shader.attributes.texcoord, 2, gl.FLOAT, false, 0, 0);
+            gl.enableVertexAttribArray(shader.attributes.texcoord);
+            gl.vertexAttribPointer(shader.attributes.texcoord, 2, gl.FLOAT, false, 0, 0);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, bufferBundle.normal);
-            gl.enableVertexAttribArray(this.shader.attributes.normal);
-            gl.vertexAttribPointer(this.shader.attributes.normal, 3, gl.FLOAT, false, 0, 0);
+            gl.enableVertexAttribArray(shader.attributes.normal);
+            gl.vertexAttribPointer(shader.attributes.normal, 3, gl.FLOAT, false, 0, 0);
 
             //console.log('voxels.mjs drawing tuples1: ' + bufferBundle.tuples);
             gl.drawArrays(gl.TRIANGLES, 0, bufferBundle.tuples);
@@ -411,17 +412,17 @@ class Voxels extends Renderable {
 
             if (textureValue == 6) {
                 // poor man's water animation
-                //gl.uniform1f(this.shader.uniforms.textureOffset, ts / 10000);
+                //gl.uniform1f(shader.uniforms.textureOffset, ts / 10000);
 
             } else if (textureValue < 100) {
                 // Don't do face culling when drawing textures with opacity
                 gl.enable(gl.CULL_FACE);
-                gl.uniform1f(this.shader.uniforms.textureOffset, 0.00);
+                gl.uniform1f(shader.uniforms.textureOffset, 0.00);
                 
             } else {
                 gl.disable(gl.CULL_FACE);
-                gl.uniform1f(this.shader.uniforms.textureOffset, 0.00);
-                //gl.uniform1f(this.shaderUniforms.textureOffset, ts / 10000);
+                gl.uniform1f(shader.uniforms.textureOffset, 0.00);
+                //gl.uniform1f(shaderUniforms.textureOffset, ts / 10000);
             }
             // do the texture stuff ourselves ... too convoluted otherwise
             //gl.activeTexture(gl.TEXTURE0);
@@ -430,20 +431,20 @@ class Voxels extends Renderable {
             //gl.bindTexture(gl.TEXTURE_2D, this.textures.byValue[textureValue].glTexture);
 
             // bind the texture to this handle
-            //gl.uniform1i(this.shader.uniforms.texture, 0);
-            gl.uniform1i(this.shader.uniforms.texture, bufferBundle.textureUnit);
+            //gl.uniform1i(shader.uniforms.texture, 0);
+            gl.uniform1i(shader.uniforms.texture, bufferBundle.textureUnit);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, bufferBundle.position);
-            gl.enableVertexAttribArray(this.shader.attributes.position);
-            gl.vertexAttribPointer(this.shader.attributes.position, 3, gl.FLOAT, false, 0, 0);
+            gl.enableVertexAttribArray(shader.attributes.position);
+            gl.vertexAttribPointer(shader.attributes.position, 3, gl.FLOAT, false, 0, 0);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, bufferBundle.texcoord);
-            gl.enableVertexAttribArray(this.shader.attributes.texcoord);
-            gl.vertexAttribPointer(this.shader.attributes.texcoord, 2, gl.FLOAT, false, 0, 0);
+            gl.enableVertexAttribArray(shader.attributes.texcoord);
+            gl.vertexAttribPointer(shader.attributes.texcoord, 2, gl.FLOAT, false, 0, 0);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, bufferBundle.normal);
-            gl.enableVertexAttribArray(this.shader.attributes.normal);
-            gl.vertexAttribPointer(this.shader.attributes.normal, 3, gl.FLOAT, false, 0, 0);
+            gl.enableVertexAttribArray(shader.attributes.normal);
+            gl.vertexAttribPointer(shader.attributes.normal, 3, gl.FLOAT, false, 0, 0);
 
             //console.log('voxels.mjs drawing tuples2: ' + bufferBundle.tuples);
             gl.drawArrays(gl.TRIANGLES, 0, bufferBundle.tuples);

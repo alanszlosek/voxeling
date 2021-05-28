@@ -149,7 +149,7 @@ class WebGL {
                 "v_normal = a_normal;" +
                 "v_texcoord = a_texcoord;" +
 
-                "gl_Position = u_projection * u_view * a_position;" +
+                "gl_Position = v_position;" +
             "}";
 
         this.shaders.projectionViewPosition = createShader(
@@ -160,6 +160,40 @@ class WebGL {
             ['position', 'normal', 'texcoord'],
             // uniforms
             ['projection', 'view', 'texture', 'textureOffset', 'ambientLightColor', 'directionalLightColor', 'directionalLightPosition', 'hazeDistance']
+        );
+
+
+        var vertexShaderCodeBillboard =
+            "uniform mat4 u_projection;" +
+            "uniform mat4 u_view;" +
+            "uniform vec4 u_cameraposition;" +
+
+            "attribute vec4 a_position;" +
+            "attribute vec3 a_normal;" +
+            "attribute vec2 a_texcoord;" +
+
+            "varying vec4 v_position;" +
+            "varying vec3 v_normal;" +
+            "varying vec2 v_texcoord;" +
+
+            "void main() {" +
+                "v_position = u_projection * u_view * a_position;" +
+                "v_normal = a_normal;" +
+                "v_texcoord = a_texcoord;" +
+
+                "vec4 view_position = u_view * u_cameraposition;" +
+                "float dist = -view_position.z;" +
+
+                "gl_Position = u_projection * (view_position + vec4(a_position.xyz * dist, 0));" +
+            "}";
+        this.shaders.projectionViewBillboard = createShader(
+            this.gl,
+            vertexShaderCodeBillboard,
+            fragmentShaderCode,
+            // attributes
+            ['position', 'normal', 'texcoord'],
+            // uniforms
+            ['projection', 'view', 'cameraposition', 'texture', 'textureOffset', 'ambientLightColor', 'directionalLightColor', 'directionalLightPosition', 'hazeDistance']
         );
 
 
@@ -216,6 +250,7 @@ class WebGL {
 
         var vertexShaderCode3 =
             "uniform mat4 u_projection;" +
+            "uniform mat4 u_view;" +
 
             "attribute vec4 a_position;" +
             "attribute vec3 a_normal;" +
@@ -226,11 +261,11 @@ class WebGL {
             "varying vec2 v_texcoord;" +
 
             "void main() {" +
-                "v_position = u_projection * a_position;" +
+                "v_position = u_projection * u_view * a_position;" +
                 "v_normal = a_normal;" +
                 "v_texcoord = a_texcoord;" +
 
-                "gl_Position = u_projection * a_position;" +
+                "gl_Position = v_position;" +
             "}";
         var fragmentShaderCode3 =
             "precision mediump float;" +
@@ -278,7 +313,7 @@ class WebGL {
             // attributes
             ['position', 'normal', 'texcoord'],
             // uniforms
-            ['projection', 'texture', 'textureOffset', 'ambientLightColor', 'directionalLightColor', 'directionalLightPosition', 'hazeDistance']
+            ['projection', 'view', 'texture', 'textureOffset', 'ambientLightColor', 'directionalLightColor', 'directionalLightPosition', 'hazeDistance']
         );
     }
 
