@@ -200,7 +200,17 @@ class Player extends MovableCollidable {
         }
     }
 
+    constrainPitch() {
+        if (this.pitch > 90) {
+            this.pitch = 90;
+
+        } else if (this.pitch < -90) {
+            this.pitch = -90;
+        }
+    }
+
     tick() {
+        this.constrainPitch();
         this.updateQuat();
         vec3.transformQuat(this.eyePosition, this.eyeOffset, this.rotationQuatY);
         vec3.add(this.eyePosition, this.eyePosition, this.position);
