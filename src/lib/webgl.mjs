@@ -166,6 +166,7 @@ class WebGL {
         var vertexShaderCodeBillboard =
             "uniform mat4 u_projection;" +
             "uniform mat4 u_view;" +
+            "uniform mat4 u_model;" +
             "uniform vec4 u_cameraposition;" +
 
             "attribute vec4 a_position;" +
@@ -177,23 +178,33 @@ class WebGL {
             "varying vec2 v_texcoord;" +
 
             "void main() {" +
-                "v_position = u_projection * u_view * a_position;" +
+                //"v_position = u_projection * u_view * u_model * (a_position + u_cameraposition);" +
                 "v_normal = a_normal;" +
                 "v_texcoord = a_texcoord;" +
 
-                "vec4 view_position = u_view * u_cameraposition;" +
-                "float dist = -view_position.z;" +
+                //"vec4 pos = vec4(0, 0, 0, 1);" + //u_cameraposition;" +
+                "vec3 camX = vec3(u_view[0].x, u_view[1].x, u_view[2].x);" +
+                "vec3 camY = vec3(u_view[0].y, u_view[1].y, u_view[2].y);" +
+                //"vec3 camZ = vec3(u_view[0].z, u_view[1].z, u_view[2].z);" +
 
-                "gl_Position = u_projection * (view_position + vec4(a_position.xyz * dist, 0));" +
+                // think rpoblem is right here
+                "vec4 pos = vec4((camX * a_position[0]) + (camY * a_position[1]), 1);" +
+
+                "v_position = u_projection * u_view * ((u_model * pos) + u_cameraposition);" +
+
+
+                //"gl_Position = u_projection * (view_position + vec4(a_position.xyz * dist, 0));" +
+                //"v_position = u_projection * (view_position + vec4(a_position.xyz * dist, 0));" +
+                "gl_Position = v_position;" +
             "}";
-        this.shaders.projectionViewBillboard = createShader(
+        this.shaders.mvpBillboard = createShader(
             this.gl,
             vertexShaderCodeBillboard,
             fragmentShaderCode,
             // attributes
             ['position', 'normal', 'texcoord'],
             // uniforms
-            ['projection', 'view', 'cameraposition', 'texture', 'textureOffset', 'ambientLightColor', 'directionalLightColor', 'directionalLightPosition', 'hazeDistance']
+            ['projection', 'view', 'model', 'cameraposition', 'texture', 'textureOffset', 'ambientLightColor', 'directionalLightColor', 'directionalLightPosition', 'hazeDistance']
         );
 
 
