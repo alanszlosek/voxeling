@@ -135,6 +135,7 @@ class WebGL {
         var vertexShaderCode =
             "uniform mat4 u_projection;" +
             "uniform mat4 u_view;" +
+            "uniform mat4 u_model;" +
 
             "attribute vec4 a_position;" +
             "attribute vec3 a_normal;" +
@@ -145,21 +146,21 @@ class WebGL {
             "varying vec2 v_texcoord;" +
 
             "void main() {" +
-                "v_position = u_projection * u_view * a_position;" +
+                "v_position = u_projection * u_view * u_model * a_position;" +
                 "v_normal = a_normal;" +
                 "v_texcoord = a_texcoord;" +
 
                 "gl_Position = v_position;" +
             "}";
 
-        this.shaders.projectionViewPosition = createShader(
+        this.shaders.mvp = createShader(
             this.gl,
             vertexShaderCode,
             fragmentShaderCode,
             // attributes
             ['position', 'normal', 'texcoord'],
             // uniforms
-            ['projection', 'view', 'texture', 'textureOffset', 'ambientLightColor', 'directionalLightColor', 'directionalLightPosition', 'hazeDistance']
+            ['projection', 'view', 'model', 'texture', 'textureOffset', 'ambientLightColor', 'directionalLightColor', 'directionalLightPosition', 'hazeDistance']
         );
 
 

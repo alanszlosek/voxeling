@@ -5,7 +5,7 @@ import scratch from '../scratch';
 // TODO: fix these
 var tempQuat = scratch.quat;
 var model = scratch.mat4;
-var view = scratch.mat4_0;
+
 var directionalLightVector = vec3.fromValues(0.85, 0.8, 0.75);
 var tempVector = scratch.vec3;
 var rotation1 = scratch.mat4_0;
@@ -116,6 +116,8 @@ class Model extends Renderable {
             mesh.render(gl, ts);
             // Walk animation: http://math.stackexchange.com/questions/652102/rotate-a-point-around-another-point-by-an-angle
             // positiveTranslatedMatrix * rotationMatrix * negativeTranslatedMatrix
+
+            var view = scratch.mat4_0;
             mat4.translate(rotation1, scratch.identityMat4, mesh.rotateAround);
             mat4.translate(rotation2, scratch.identityMat4, [-mesh.rotateAround[0], -mesh.rotateAround[1], -mesh.rotateAround[2]]);
             mat4.multiply(view, rotation1, mesh.view);
@@ -123,7 +125,7 @@ class Model extends Renderable {
             mat4.multiply(view, view, rotation2);
             mat4.multiply(view, model, view);
 
-            gl.uniformMatrix4fv(this.shader.uniforms.view, false, view);
+            gl.uniformMatrix4fv(this.shader.uniforms.model, false, view);
             //gl.uniform1i(this.shaderUniforms.part, false, mesh.part);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, mesh.buffers.vertices);

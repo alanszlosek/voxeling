@@ -13,7 +13,7 @@ class Player extends MovableCollidable {
 
     setup() {
         let gl = this.game.userInterface.webgl.gl;
-        let shader = this.game.userInterface.webgl.shaders.projectionViewPosition; //2;
+        let shader = this.game.userInterface.webgl.shaders.mvp; //2;
         let texture = this.game.textureAtlas.byName['player'];
         let avatar = 'player';
 
