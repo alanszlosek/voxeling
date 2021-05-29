@@ -167,7 +167,7 @@ class WebGL {
             "uniform mat4 u_projection;" +
             "uniform mat4 u_view;" +
             "uniform mat4 u_model;" +
-            "uniform vec4 u_cameraposition;" +
+            "uniform vec3 u_cameraposition;" +
 
             "attribute vec4 a_position;" +
             "attribute vec3 a_normal;" +
@@ -190,7 +190,7 @@ class WebGL {
                 // think rpoblem is right here
                 "vec4 pos = vec4((camX * a_position[0]) + (camY * a_position[1]), 1);" +
 
-                "v_position = u_projection * u_view * ((u_model * pos) + u_cameraposition);" +
+                "v_position = u_projection * u_view * ((u_model * pos) + vec4(u_cameraposition, 1));" +
 
 
                 //"gl_Position = u_projection * (view_position + vec4(a_position.xyz * dist, 0));" +
