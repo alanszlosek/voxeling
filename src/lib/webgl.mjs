@@ -168,7 +168,7 @@ class WebGL {
             "uniform mat4 u_projection;" +
             "uniform mat4 u_view;" +
             "uniform mat4 u_model;" +
-            "uniform vec3 u_cameraposition;" +
+            "uniform vec3 u_baseposition;" +
 
             "attribute vec4 a_position;" +
             "attribute vec3 a_normal;" +
@@ -183,15 +183,14 @@ class WebGL {
                 "v_normal = a_normal;" +
                 "v_texcoord = a_texcoord;" +
 
-                //"vec4 pos = vec4(0, 0, 0, 1);" + //u_cameraposition;" +
                 "vec3 camX = vec3(u_view[0].x, u_view[1].x, u_view[2].x);" +
                 "vec3 camY = vec3(u_view[0].y, u_view[1].y, u_view[2].y);" +
-                //"vec3 camZ = vec3(u_view[0].z, u_view[1].z, u_view[2].z);" +
+                // // think rpoblem is right here
+                "vec4 pos = vec4((camX * a_position[0]) + (camY * a_position[1]), 0);" +
+                // "v_position = (u_projection * u_view * u_model * pos) + (u_projection * u_view * vec4(u_baseposition, 1));" +
 
-                // think rpoblem is right here
-                "vec4 pos = vec4((camX * a_position[0]) + (camY * a_position[1]), 1);" +
-
-                "v_position = u_projection * u_view * ((u_model * pos) + vec4(u_cameraposition, 1));" +
+                //"v_position = u_projection * u_view * ((u_model * pos) + vec4(u_baseposition, 1));" +
+                "v_position = u_projection * u_view * ((u_model * pos) + vec4(u_baseposition, 1));" +
 
 
                 //"gl_Position = u_projection * (view_position + vec4(a_position.xyz * dist, 0));" +
@@ -205,7 +204,7 @@ class WebGL {
             // attributes
             ['position', 'normal', 'texcoord'],
             // uniforms
-            ['projection', 'view', 'model', 'cameraposition', 'texture', 'textureOffset', 'ambientLightColor', 'directionalLightColor', 'directionalLightPosition', 'hazeDistance']
+            ['projection', 'view', 'model', 'baseposition', 'texture', 'textureOffset', 'ambientLightColor', 'directionalLightColor', 'directionalLightPosition', 'hazeDistance']
         );
 
 

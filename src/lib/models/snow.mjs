@@ -311,8 +311,6 @@ class Snow extends Renderable {
         for (let _tickableId in this.snowflakes) {
             let sf = this.snowflakes[ _tickableId ];
 
-            //quat.rotateZ(scratch.quat, scratch.identityQuat, ts / 1000);
-
             mat4.fromRotationTranslationScale(
                 scratch.mat4,
                 [0,0,0,0],
@@ -321,7 +319,7 @@ class Snow extends Renderable {
             );
             gl.uniformMatrix4fv(shader.uniforms.model, false, scratch.mat4);
 
-            gl.uniform3fv(shader.uniforms.cameraposition, sf.position);
+            gl.uniform3fv(shader.uniforms.baseposition, sf.position);
 
             for (let textureUnit in this.buffersPerTextureUnit) {
                 let buffers = this.buffersPerTextureUnit[textureUnit];
