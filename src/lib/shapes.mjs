@@ -138,6 +138,7 @@ let shapes = {
                 texcoord: null
             };
         },
+        // p1-4 are points in counter-clockwise direction
         rectangleBoundsWithTexcoords: function(p1, p2, p3, p4, uv) {
             var points = [];
             points.push(p1[0], p1[1], p1[2]);

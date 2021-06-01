@@ -37,14 +37,45 @@ let scales = [
 let scaleIndex = 0;
 
 let snowLayer = {};
-let newSnowLayer = {};
+
+let newSnowpack = {};
+class Helper {
+    constructor(maxLength) {
+        this.items = {};
+        this.lru = [];
+        this.maxLength = maxLength;
+    }
+
+    set(key, value) {
+        if (key in this.items) {
+            this.items[key] = value;
+            // move to recent
+            let offset = this.lru.indexOf(key);
+            this.lru.splice(offset, 1);
+            this.lru.push( key );
+            return;
+        }
+
+        this.items[ key ] = value;
+        this.lru.push( key );
+
+        while (this.lru.length > this.maxLength) {
+            let key = this.lru.shift();
+            delete this.items[ key ];
+        }
+    }
+}
+
+/*
+converting layers to instancing
+*/
 
 
 class Snowflake extends Tickable {
     constructor(game) {
         super();
         this.game = game;
-        this.enabled = false;
+        this.enabled = true;
        
         this.respawn();
     }
@@ -64,52 +95,13 @@ class Snowflake extends Tickable {
         this.scale = this.getScale();
         this.fallSpeed = 0.06; // some range up to 0.1
         let spread = 32;
+        // add 0.5 to center within block
         this.position = vec3.fromValues(
-            getRandomInt(position[0] - spread, position[0] + spread),
+            getRandomInt(position[0] - spread, position[0] + spread) + 0.5,
             getRandomInt(position[1] + 10, position[1] + 30),
-            getRandomInt(position[2] - spread, position[2] + spread)
+            getRandomInt(position[2] - spread, position[2] + spread) + 0.5
         );
         this.collisionCheck = 0;
-    }
-
-    addLayer(position) {
-        let positionInts = position.map(Math.floor);
-        let pos = positionInts.join(',');
-
-        let textureValue = 5; // white wool
-        this.textureUnit = this.game.textureOffsets['textureToTextureUnit'][ textureValue ]
-        let textureV = this.game.textureOffsets['offsets'][ textureValue ];
-        let height = this.game.textureOffsets['textureRowHeight'];
-        // lower left, upper right in texture map
-        let uv = [0, textureV, 1, textureV + height];
-
-        if (pos in snowLayer || pos in newSnowLayer) {
-            
-        } else {
-            newSnowLayer[ pos ] = Shapes.two.rectangleBoundsWithTexcoords(
-                [
-                    positionInts[0],
-                    positionInts[1] + 1.01,
-                    positionInts[2]
-                ],
-                [
-                    positionInts[0] + 1,
-                    positionInts[1] + 1.01,
-                    positionInts[2]
-                ],
-                [
-                    positionInts[0] + 1,
-                    positionInts[1] + 1.01,
-                    positionInts[2] + 1
-                ],
-                [
-                    positionInts[0],
-                    positionInts[1] + 1.01,
-                    positionInts[2] + 1
-                ],
-                uv
-            );
-        }
     }
 
     tick(ts, delta) {
@@ -124,8 +116,15 @@ class Snowflake extends Tickable {
         // Don't check for collision on every frame. Snowflakes fall slowly enough that we don't have to
         if (this.collisionCheck == 3) {
             if (this.game.voxelCache.getBlock(this.position[0], this.position[1], this.position[2]) > 0) {
-                // TODO: add layer of snow on top of block here
-                this.addLayer(this.position);
+                // log where snowflake collided as snowpack position
+                let pos = this.position.map(Math.floor);
+                let key = pos.join(',');
+                // tweak position to be top center of block
+                pos[0] += 0.5;
+                pos[1] += 1.1;
+                pos[2] += 0.5;
+                newSnowpack[ key ] = pos;
+
                 this.respawn();
             }
             this.collisionCheck = 0;
@@ -142,7 +141,7 @@ class Snow extends Renderable {
         // 1200 starts to stutter on GTX960
         this.numSnowflakes = 300;
         this.snowflakes = {};
-        this.enabled = false;
+        this.enabled = true;
     }
     init() {
         for (let i = 0; i < this.numSnowflakes; i++) {
@@ -152,42 +151,86 @@ class Snow extends Renderable {
 
         // Prepare shared mesh and buffers
         // which texture unit / atlas is the white wool in?
-        let textureValue = 5; // white wool
-        this.textureUnit = this.game.textureOffsets['textureToTextureUnit'][ textureValue ]
-        let textureV = this.game.textureOffsets['offsets'][ textureValue ];
+        this.snowTextureValue = 5; // white wool        
+        let textureY = this.game.textureOffsets['offsets'][ this.snowTextureValue ];
         let height = this.game.textureOffsets['textureRowHeight'];
         // lower left, upper right in texture map
-        let uv = [0, textureV, 1, textureV + height];
+        this.snowTexcoords = [0, textureY, 1, textureY + height];
+        this.snowTextureUnit = this.game.textureOffsets['textureToTextureUnit'][ this.snowTextureValue ]
 
-        let d = 1;
+        this.initSnowflakeMeshes();
+        this.initSnowpack();
 
-        // main
+        return Promise.resolve();
+    }
+
+    initSnowflakeMeshes() {
         let meshes = [
             // main body of snowflake
-            Shapes.two.rectangleDimensionsTexcoordsPosition(d, d, uv),
+            Shapes.two.rectangleDimensionsTexcoordsPosition(1.0, 1.0, this.snowTexcoords, [0,0,0]),
             // smaller pieces to left
-            Shapes.two.rectangleDimensionsTexcoordsPosition(0.5, 0.5, uv, [-0.75, 0.75, 0]),
-            Shapes.two.rectangleDimensionsTexcoordsPosition(0.5, 0.5, uv, [-1, 0, 0]),
-            Shapes.two.rectangleDimensionsTexcoordsPosition(0.5, 0.5, uv, [-0.75, -0.75, 0]),
+            Shapes.two.rectangleDimensionsTexcoordsPosition(0.5, 0.5, this.snowTexcoords, [-0.75, 0.75, 0]),
+            Shapes.two.rectangleDimensionsTexcoordsPosition(0.5, 0.5, this.snowTexcoords, [-1, 0, 0]),
+            Shapes.two.rectangleDimensionsTexcoordsPosition(0.5, 0.5, this.snowTexcoords, [-0.75, -0.75, 0]),
             // smaller pieces to right
-            Shapes.two.rectangleDimensionsTexcoordsPosition(0.5, 0.5, uv, [0.75, 0.75, 0]),
-            Shapes.two.rectangleDimensionsTexcoordsPosition(0.5, 0.5, uv, [1, 0, 0]),
-            Shapes.two.rectangleDimensionsTexcoordsPosition(0.5, 0.5, uv, [0.75, -0.75, 0]),
-
-            Shapes.two.rectangleDimensionsTexcoordsPosition(0.5, 0.5, uv, [0, 1.0, 0]),
-            Shapes.two.rectangleDimensionsTexcoordsPosition(0.5, 0.5, uv, [0, -1.0, 0]),
+            Shapes.two.rectangleDimensionsTexcoordsPosition(0.5, 0.5, this.snowTexcoords, [0.75, 0.75, 0]),
+            Shapes.two.rectangleDimensionsTexcoordsPosition(0.5, 0.5, this.snowTexcoords, [1, 0, 0]),
+            Shapes.two.rectangleDimensionsTexcoordsPosition(0.5, 0.5, this.snowTexcoords, [0.75, -0.75, 0]),
+            // smaller pieces above and below
+            Shapes.two.rectangleDimensionsTexcoordsPosition(0.5, 0.5, this.snowTexcoords, [0, 1.0, 0]),
+            Shapes.two.rectangleDimensionsTexcoordsPosition(0.5, 0.5, this.snowTexcoords, [0, -1.0, 0]),
 
         ];
 
         // Would love to specify offsets and have that show up in mesh coords that are returned
         // Also would love to be able to get a tuple of 4 coord bounds of texture, by name
         // gives us: vertices, texcoords, normals
-        // TODO: could have rectangle3 append into existing arrays
-        this.buffersPerTextureUnit = {};
 
-        this.buffersPerTextureUnit[ this.textureUnit ] = this.meshesToBuffers(this.game.gl, meshes);
+        this.snowflakeBuffers = this.meshesToBuffers(this.game.gl, meshes);
+    }
 
-        return Promise.resolve();
+    initSnowpack() {
+        this.snowpackMemory = 2400;
+        this.snowpackHelper = new Helper(this.snowpackMemory);
+        this.snowpackTranslations = new Float32Array( 4 * this.snowpackMemory );
+
+        // position at 0,0,0
+        this.snowpackMesh = Shapes.two.rectangleBoundsWithTexcoords(
+            [-0.5, 0, 0.5],
+            [0.5, 0, 0.5],
+            [0.5, 0, -0.5],
+            [-0.5, 0, -0.5],
+            this.snowTexcoords
+        );
+
+        let gl = this.game.gl;
+        let buffers = {
+            vertices: gl.createBuffer(),
+            //indices: gl.createBuffer(),
+            normals: gl.createBuffer(),
+            texcoords: gl.createBuffer(),
+            translations: gl.createBuffer(),
+            tuples: 0
+        };
+        
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffers.vertices);
+        gl.bufferData(gl.ARRAY_BUFFER, this.snowpackMesh.vertices, gl.STATIC_DRAW);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffers.normals);
+        gl.bufferData(gl.ARRAY_BUFFER, this.snowpackMesh.normals, gl.STATIC_DRAW);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffers.texcoords);
+        gl.bufferData(gl.ARRAY_BUFFER, this.snowpackMesh.texcoords, gl.STATIC_DRAW);
+
+        // allocate space
+        // this is the main buffer that will drive instancing
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffers.translations);
+        // snowpackMemory is places, but we need 4 floats for each position, and 4 bytes for each float
+        gl.bufferData(gl.ARRAY_BUFFER, 4 * 4 * this.snowpackMemory, gl.STATIC_DRAW);
+
+        this.snowpackBuffers = buffers;
+
+
     }
 
     toggle() {
@@ -199,100 +242,40 @@ class Snow extends Renderable {
     }
 
     createSnowBuffers() {
-        let gl = this.game.gl;
-        let buffers = {
-            vertices: gl.createBuffer(),
-            //indices: gl.createBuffer(),
-            normals: gl.createBuffer(),
-            texcoords: gl.createBuffer(),
-            tuples: 0
-        };
-        let sz = 65536 * 4; // bytes!
-
-        // set sizes
-        gl.bindBuffer(gl.ARRAY_BUFFER, buffers.vertices);
-        gl.bufferData(gl.ARRAY_BUFFER, sz, gl.STATIC_DRAW);
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, buffers.normals);
-        gl.bufferData(gl.ARRAY_BUFFER, sz, gl.STATIC_DRAW);
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, buffers.texcoords);
-        gl.bufferData(gl.ARRAY_BUFFER, sz, gl.STATIC_DRAW);
-
-        this.snowBuffers = buffers;
-    }
-    fillSnowBuffer(meshes) {
-        let sz1 = 0;
-        let sz2 = 0;
-        let sz3 = 0;
-        let gl = this.game.gl;
-
-        /*
-
-        for (var i = 0; i < meshes.length; i++) {
-            var mesh = meshes[i];
-            sz1 += mesh.vertices.length;
-            sz2 += mesh.normals.length;
-            sz3 += mesh.texcoords.length;
-        }
-
-        let vertices = new Float32Array(sz1);
-        let normals = new Float32Array(sz2);
-        let texcoords = new Float32Array(sz3);
-
-        sz1 = sz2 = sz3 = 0;
-        */
-
-        console.log('meshes: ' + meshes.length);
-
-        let buffers = this.snowBuffers;
-        for (var i = 0; i < meshes.length; i++) {
-            var mesh = meshes[i];
-
-            gl.bindBuffer(gl.ARRAY_BUFFER, buffers.vertices);
-            gl.bufferSubData(gl.ARRAY_BUFFER, sz1, mesh.vertices, 0, mesh.vertices.length * 4);
-            sz1 += mesh.vertices.length * 4;
-
-            gl.bindBuffer(gl.ARRAY_BUFFER, buffers.normals);
-            gl.bufferSubData(gl.ARRAY_BUFFER, sz2, mesh.normals, 0, mesh.normals.length * 4);
-            sz2 += mesh.normals.length * 4;
-
-            gl.bindBuffer(gl.ARRAY_BUFFER, buffers.texcoords);
-            gl.bufferSubData(gl.ARRAY_BUFFER, sz3, mesh.texcoords, 0, mesh.texcoords.length * 4);
-            sz3 += mesh.texcoords.length * 4;
-        }
-
-        buffers.tuples = sz1 / 3;
+        
     }
 
     tick() {
-        let newMeshes = Object.keys(newSnowLayer);
+        let newMeshes = Object.keys(newSnowpack);
         if (newMeshes.length == 0) {
             return;
         }
         // make list of all meshes
         // merge new snow layer into existing
         // clear new layer
-        let meshes = [];
-        for (let i in snowLayer) {
-            meshes.push( snowLayer[i] );
+        for (let key in newSnowpack) {
+            this.snowpackHelper.set(key, newSnowpack[key]);
         }
-        for (let i in newSnowLayer) {
-            meshes.push( newSnowLayer[i] );
-            snowLayer[i] = newSnowLayer[i];
+        newSnowpack = {};
+
+        this.updateSnowpackTranslations();
+    }
+
+    updateSnowpackTranslations() {
+        let gl = this.game.gl;
+        let sz = 0;
+        for (let key in this.snowpackHelper.items) {
+            let position = this.snowpackHelper.items[key];
+            this.snowpackTranslations.set(position, sz);
+            sz += 4;
         }
-        newSnowLayer = {};
 
-        // TODO: do more thinking about how to purge old snow layers as we move through the world
-        // maybe sort by chunks in the layer object
+        let buffers = this.snowpackBuffers;
 
-        // TODO: create really large buffer for now
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffers.translations);
+        gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.snowpackTranslations, 0, sz);
 
-        if (!this.snowBuffers) {
-            this.createSnowBuffers();
-        }
-        // fill buffers
-        this.fillSnowBuffer(meshes);
+        this.snowpackBuffers.tuples = sz / 4;
     }
 
 
@@ -321,66 +304,69 @@ class Snow extends Renderable {
 
             gl.uniform3fv(shader.uniforms.baseposition, sf.position);
 
-            for (let textureUnit in this.buffersPerTextureUnit) {
-                let buffers = this.buffersPerTextureUnit[textureUnit];
+            let buffers = this.snowflakeBuffers;
 
-                // bind the texture to this handle
-                gl.uniform1i(shader.uniforms.texture, textureUnit);
+            // bind the texture to this handle
+            gl.uniform1i(shader.uniforms.texture, this.snowTextureUnit);
 
-                gl.bindBuffer(gl.ARRAY_BUFFER, buffers.vertices);
-                gl.enableVertexAttribArray(shader.attributes.position);
-                gl.vertexAttribPointer(shader.attributes.position, 3, gl.FLOAT, false, 0, 0);
+            gl.bindBuffer(gl.ARRAY_BUFFER, buffers.vertices);
+            gl.enableVertexAttribArray(shader.attributes.position);
+            gl.vertexAttribPointer(shader.attributes.position, 3, gl.FLOAT, false, 0, 0);
 
-                gl.bindBuffer(gl.ARRAY_BUFFER, buffers.normals);
-                gl.enableVertexAttribArray(shader.attributes.normal);
-                gl.vertexAttribPointer(shader.attributes.normal, 3, gl.FLOAT, false, 0, 0);
+            gl.bindBuffer(gl.ARRAY_BUFFER, buffers.normals);
+            gl.enableVertexAttribArray(shader.attributes.normal);
+            gl.vertexAttribPointer(shader.attributes.normal, 3, gl.FLOAT, false, 0, 0);
 
-                gl.bindBuffer(gl.ARRAY_BUFFER, buffers.texcoords);
-                gl.enableVertexAttribArray(shader.attributes.texcoord);
-                gl.vertexAttribPointer(shader.attributes.texcoord, 2, gl.FLOAT, false, 0, 0);
+            gl.bindBuffer(gl.ARRAY_BUFFER, buffers.texcoords);
+            gl.enableVertexAttribArray(shader.attributes.texcoord);
+            gl.vertexAttribPointer(shader.attributes.texcoord, 2, gl.FLOAT, false, 0, 0);
 
-                gl.drawArrays(gl.TRIANGLES, 0, buffers.tuples);
-            }
+            gl.drawArrays(gl.TRIANGLES, 0, buffers.tuples);
         }
 
 
         // draw snow layer
-        if (!this.snowBuffers) {
+        if (this.snowpackBuffers.tuples == 0) {
             return;
         }
 
-        shader = this.game.userInterface.webgl.shaders.projectionPosition;
+        shader = this.game.userInterface.webgl.shaders.translationInstanced;
 
         gl.useProgram(shader.program);
         gl.uniformMatrix4fv(shader.uniforms.projection, false, this.game.camera.projectionMatrix);
         gl.uniformMatrix4fv(shader.uniforms.view, false, this.game.camera.viewMatrix);
-        gl.uniform3fv(shader.uniforms.ambientLightColor, this.game.sky.ambientLightColor);
-        gl.uniform3fv(shader.uniforms.directionalLightColor, this.game.sky.directionalLight.color);
-        gl.uniform3fv(shader.uniforms.directionalLightPosition, this.game.sky.directionalLight.position);
-        gl.uniform1f(shader.uniforms.hazeDistance, 90.0);
 
-        gl.disable(gl.CULL_FACE);
+        gl.uniform1i(shader.uniforms.texture, this.snowTextureUnit);
         gl.uniform1f(shader.uniforms.textureOffset, 0.00);
 
-        gl.uniform1i(shader.uniforms.texture, this.textureUnit);
-
-        let bufferBundle = this.snowBuffers;
+        let bufferBundle = this.snowpackBuffers;
 
         // TODO: fix the voxels shader
         gl.bindBuffer(gl.ARRAY_BUFFER, bufferBundle.vertices);
         gl.enableVertexAttribArray(shader.attributes.position);
-        gl.vertexAttribPointer(shader.attributes.position, 3, gl.FLOAT, false, 0, 0);
+        gl.vertexAttribPointer(shader.attributes.position, 3, gl.FLOAT, false, 12, 0);
+        //gl.vertexAttribDivisor(shader.attributes.position, 1);
 
         gl.bindBuffer(gl.ARRAY_BUFFER, bufferBundle.texcoords);
         gl.enableVertexAttribArray(shader.attributes.texcoord);
-        gl.vertexAttribPointer(shader.attributes.texcoord, 2, gl.FLOAT, false, 0, 0);
+        gl.vertexAttribPointer(shader.attributes.texcoord, 2, gl.FLOAT, false, 8, 0);
+        //gl.vertexAttribDivisor(shader.attributes.texcoords, 1);
 
         gl.bindBuffer(gl.ARRAY_BUFFER, bufferBundle.normals);
         gl.enableVertexAttribArray(shader.attributes.normal);
-        gl.vertexAttribPointer(shader.attributes.normal, 3, gl.FLOAT, false, 0, 0);
+        gl.vertexAttribPointer(shader.attributes.normal, 3, gl.FLOAT, false, 12, 0);
+        //gl.vertexAttribDivisor(shader.attributes.normals, 1);
+
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, bufferBundle.translations);
+        gl.enableVertexAttribArray(shader.attributes.translation);
+        gl.vertexAttribPointer(shader.attributes.translation, 4, gl.FLOAT, false, 16, 0);
+        gl.vertexAttribDivisor(shader.attributes.translation, 1);
+
 
         //console.log('voxels.mjs drawing tuples1: ' + bufferBundle.tuples);
-        gl.drawArrays(gl.TRIANGLES, 0, bufferBundle.tuples);
+        gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, bufferBundle.tuples);
+        //gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
 }
 

@@ -66,7 +66,7 @@ function createShader(gl, vertexShaderCode, fragmentShaderCode, attributes, unif
 
 class WebGL {
     constructor(canvas) {
-        let gl = canvas.getContext("webgl");
+        let gl = canvas.getContext("webgl2");
         // If we don't have a GL context, give up now
         if (!gl) {
             // TODO: fix exceptions
@@ -323,6 +323,36 @@ class WebGL {
             fragmentShaderCode3,
             // attributes
             ['position', 'normal', 'texcoord'],
+            // uniforms
+            ['projection', 'view', 'texture', 'textureOffset', 'ambientLightColor', 'directionalLightColor', 'directionalLightPosition', 'hazeDistance']
+        );
+
+        var instancedVertexShader =
+        "uniform mat4 u_projection;" +
+        "uniform mat4 u_view;" +
+
+        "attribute vec4 a_position;" +
+        "attribute vec3 a_normal;" +
+        "attribute vec2 a_texcoord;" +
+        "attribute vec4 a_translation;" +
+
+        "varying vec4 v_position;" +
+        "varying vec3 v_normal;" +
+        "varying vec2 v_texcoord;" +
+
+        "void main() {" +
+            "v_position = u_projection * u_view * (a_position + a_translation);" +
+            "v_normal = a_normal;" +
+            "v_texcoord = a_texcoord;" +
+
+            "gl_Position = v_position;" +
+        "}";
+        this.shaders.translationInstanced = createShader(
+            this.gl,
+            instancedVertexShader,
+            fragmentShaderCode,
+            // attributes
+            ['position', 'normal', 'texcoord', 'translation'],
             // uniforms
             ['projection', 'view', 'texture', 'textureOffset', 'ambientLightColor', 'directionalLightColor', 'directionalLightPosition', 'hazeDistance']
         );
