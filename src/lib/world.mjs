@@ -33,7 +33,7 @@ class World extends Tickable {
         var thisRegion = this.game.coordinates.positionToChunk(this.game.player.position);
         var lastRegion = this.lastRegion;
         if (thisRegion[0] !== lastRegion[0] || thisRegion[1] !== lastRegion[1] || thisRegion[2] !== lastRegion[2]) {
-            console.log('region change');
+            //console.log('region change');
             this.game.clientWorkerHandle.regionChange();
         }
         this.lastRegion = thisRegion;
