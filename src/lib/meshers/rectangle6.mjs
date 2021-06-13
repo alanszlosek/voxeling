@@ -276,8 +276,8 @@ class RectangleMesher {
             }
         } // End z,y,x loop building up contiguous blocks
 
-        this.debug( JSON.stringify(previous) );
-        this.debug( JSON.stringify(contiguous) );
+        //this.debug( JSON.stringify(previous) );
+        //this.debug( JSON.stringify(contiguous) );
 
 
         // Now emit points
@@ -589,7 +589,7 @@ class RectangleMesher {
         texcoord.data[ texcoord.offset++ ] = 1.0 * columns;
         texcoord.data[ texcoord.offset++ ] = textureBottom;
         texcoord.data[ texcoord.offset++ ] = 1.0 * columns;
-        texcoord.data[ texcoord.offset++ ] = textureTop
+        texcoord.data[ texcoord.offset++ ] = textureTop;
         texcoord.data[ texcoord.offset++ ] = 0;
         texcoord.data[ texcoord.offset++ ] = textureBottom;
         texcoord.data[ texcoord.offset++ ] = 1.0 * columns;
