@@ -1,7 +1,7 @@
 import config from '../config';
 import { Coordinates } from './lib/coordinates';
 //import mesher from './lib/meshers/horizontal-merge2';
-import { RectangleMesher } from '../src/lib/meshers/rectangle6.mjs';
+import { RectangleMesher } from '../src/lib/meshers/rectangle8.mjs';
 import Log from './lib/log';
 import MC from './lib/max-concurrent';
 import textureOffsets from '../texture-offsets';

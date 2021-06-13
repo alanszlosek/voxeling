@@ -15,37 +15,32 @@ with open('../config.mjs', 'r') as f:
     j = re.sub(r"(// [^\n]+)", '', j)
     config = json.loads(j)
 
-# let's support triangles spanning 4 rows,
-# thus we need 4 copies of a texture, with a row above and below for mipmapping,
-# so 6 copies total of each block.
-# this means we need to compute how many texture atlases we'll need, given
-# the max dimensions of 16384 x 16384
+# let's support triangles spanning up to 14 rows and columns
+# include padding for mipmapping, we'll have 16x16 chunks
+# thus we need 16x16 copies of a texture
+# the max dimensions that a texture can be are 16384 x 16384
 
 width = 128
 height = width
 numTextures = len(config['textures'])
-trianglesCanSpanRows = config['meshedTriangleMaxRowSpan']
-pixelsPerTexture = width * (trianglesCanSpanRows + 2)
-texturesPerAtlas = math.floor(16384 / pixelsPerTexture) - 1 # just to keep us away from the max
-numAtlases = math.ceil(40 / texturesPerAtlas)
 
-print('Need %d atlases' % numAtlases)
+repeatCount = 16
+regionWidth = repeatCount * width
+atlasWidth = 16384
+atlasCols = atlasWidth / regionWidth
+atlasRows = math.ceil(numTextures / atlasCols)
+atlasHeight = atlasRows * regionWidth
 
-# just use max as height, makes things easier
-atlasHeight = 16384 # texturesPerAtlas * pixelsPerTexture
-print('height %d' % atlasHeight)
-
+print("Atlas cols/rows: %d %d" % (atlasCols, atlasRows))
 
 
-# TODO: think this is the way to key keys
 textureValues = list(config['textures'].keys())
 textureValues.sort()
 
 # out becomes texture-offsets.json
 out = {
-     # height of a single texture within the atlas. we mult this by the number of rows a triangle spans
-    "textureRowHeight": 128 /  atlasHeight,
-    "textureRowPixels": 128,
+     # dims of a single texture within the atlas, normalized to 0-1.0
+    "textureDimensions": [width / atlasWidth, width / atlasHeight],
     # rename this
     "offsets": {
         # texture value
@@ -60,57 +55,65 @@ out = {
 i = 0
 pixelOffset = 0 # for the material picker UI
 materialPickerAtlas = Image.new('RGBA', (width, width * numTextures), )
-while i < numAtlases:
+
+atlasIndex = 0
+numAtlases = 1
+while atlasIndex < numAtlases:
+    atlasIndex += 1
     # create new atlas
     out['numAtlases'] += 1
-    # height of 16384 since we know that's a power of two
-    # power of two in both dimensions means higher quality mipmapping
-    combined = Image.new('RGBA', (width, 16384), )
+    combined = Image.new('RGBA', (atlasWidth, atlasHeight), )
 
-    yOffset = 0
 
-    j = 0
-    while j < texturesPerAtlas:
-        # add textures
-        if len(textureValues) == 0:
-            break;
-        textureValue = textureValues.pop()
-        # for now, we reserve 0-2 for character textures, so don't use those
-        out['textureToTextureUnit'][ textureValue ] = i + 3 # so we know which WebGL texture unit to use within the shader
-        # if no more, bail and save image
+    # how many pixels are in a repeated texture region?
+    chunkStep = width * repeatCount
+    row = 0
+    while row < atlasRows:
+        offsetY = row * chunkStep
+        col = 0
+        row += 1
+        while col < atlasCols:
+            if not textureValues:
+                break
+            textureValue = textureValues.pop()
 
-        path = config['textures'][textureValue]
-        print('Loading %s' % path)
+            offsetX = col * chunkStep
 
-        with Image.open('../www' + path) as image:
-            if image.width != width:
-                print('resizing %d to %d' % (image.width, width))
-                image = image.resize( (width, width), resample=Image.NEAREST )
-            
-            # Copy to combined file that will be used for the material picker UI
-            materialPickerAtlas.paste(image, (0, pixelOffset))
+            # for now, we reserve 0-2 for character textures, so don't use those
+            out['textureToTextureUnit'][ textureValue ] = i + 3 # so we know which WebGL texture unit to use within the shader
+            # if no more, bail and save image
 
-            # Now flip image and copy into the texture atlas file for GPU rendering
-            image = image.transpose(Image.FLIP_TOP_BOTTOM)
-        
-            k = 0
-            while k < trianglesCanSpanRows + 2:
-                combined.paste(image, (0, yOffset))
+            path = config['textures'][textureValue]
+            print('Loading %s' % path)
+
+            with Image.open('../www' + path) as image:
+                if image.width != width:
+                    print('resizing %d to %d' % (image.width, width))
+                    image = image.resize( (width, width), resample=Image.NEAREST )
+                
+                # Copy to combined file that will be used for the material picker UI
+                materialPickerAtlas.paste(image, (0, pixelOffset))
+
+                # Now flip image and copy into the texture atlas file for GPU rendering
+                image = image.transpose(Image.FLIP_TOP_BOTTOM)
+
+                # 16 x 16
+                x = 0
+                while x < repeatCount:
+                    y = 0
+                    while y < repeatCount:
+                        combined.paste(image, (offsetX + (x * width), offsetY + (y * width)))
+                        y += 1
+                    x += 1
 
                 # we only log the offset of the second row of this block
                 # because the first row is only there to ensure mipmapping doesn't
                 # result in artifacts
+                out['offsets'][textureValue] = [ (offsetX + width) / atlasWidth, (offsetY + width) / atlasHeight ]
+                out['pixelOffsets'][textureValue] = pixelOffset
 
-                # TODO: rethink this again, when not tired
-                if k == 1:
-                    out['offsets'][textureValue] = yOffset / atlasHeight
-                    out['pixelOffsets'][textureValue] = pixelOffset
-                yOffset += width
-                k += 1
-            #yOffset += 2
-        
-        j += 1
-        pixelOffset += width
+            col += 1
+            pixelOffset += width
     
     # save
     # do we really need to flip, if we need to flip again on the webgl side?
@@ -118,7 +121,6 @@ while i < numAtlases:
     # let's try not to flip ... but make sure coordinates map to bottom, since GPU draws bottom up
     combined.save('../www/textures%d.png' % i, quality=100.0)
 
-    i += 1
 
 materialPickerAtlas.save('../www/materials.png', quality=100.0)
 
