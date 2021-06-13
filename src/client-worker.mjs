@@ -1,7 +1,7 @@
 import config from '../config';
 import { Coordinates } from './lib/coordinates';
 //import mesher from './lib/meshers/horizontal-merge2';
-import { RectangleMesher } from '../src/lib/meshers/rectangle8.mjs';
+import { RectangleMesher } from '../src/lib/meshers/rectangle9.mjs';
 import Log from './lib/log';
 import MC from './lib/max-concurrent';
 import textureOffsets from '../texture-offsets';
@@ -317,31 +317,26 @@ var worker = {
             var transfer = {};
             var transferList = [];
 
-            for (var textureValue in mesh) {
-                var texture = mesh[textureValue];
+            // points are meshed into a buffer group per faceIndex
+            for (var bufferGroupId in mesh) {
+                var bufferGroup = mesh[bufferGroupId];
 
                 // We pass data.buffer, the underlying ArrayBuffer
-                transfer[textureValue] = {
+                transfer[bufferGroupId] = {
                     position: {
-                        buffer: texture.position.data.buffer,
-                        offset: texture.position.offset,
-                        offsetBytes: texture.position.offset * 4,
-                        tuples: texture.position.offset / 3
+                        buffer: bufferGroup.position.data.buffer,
+                        offset: bufferGroup.position.offset,
+                        offsetBytes: bufferGroup.position.offset * 4,
+                        tuples: bufferGroup.position.offset / 3
                     },
                     texcoord: {
-                        buffer: texture.texcoord.data.buffer,
-                        offset: texture.texcoord.offset,
-                        offsetBytes: texture.texcoord.offset * 4
-                    },
-                    normal: {
-                        buffer: texture.normal.data.buffer,
-                        offset: texture.normal.offset,
-                        offsetBytes: texture.normal.offset * 4
+                        buffer: bufferGroup.texcoord.data.buffer,
+                        offset: bufferGroup.texcoord.offset,
+                        offsetBytes: bufferGroup.texcoord.offset * 4
                     }
                 };
-                transferList.push(texture.position.data.buffer);
-                transferList.push(texture.texcoord.data.buffer);
-                transferList.push(texture.normal.data.buffer);
+                transferList.push(bufferGroup.position.data.buffer);
+                transferList.push(bufferGroup.texcoord.data.buffer);
             }
 
             // specially list the ArrayBuffer object we want to transfer
@@ -395,12 +390,11 @@ var worker = {
     Client no longer needs this mesh
     */
     freeMesh: function(mesh) {
-        for (var textureValue in mesh) {
-            var textureMesh = mesh[textureValue];
+        for (var bufferGroupId in mesh) {
+            var bufferGroup = mesh[bufferGroupId];
             // We pass ArrayBuffers across worker boundary, so need to we-wrap in the appropriate type
-            pool.free('float32', new Float32Array(textureMesh.position.buffer));
-            pool.free('float32', new Float32Array(textureMesh.texcoord.buffer));
-            pool.free('float32', new Float32Array(textureMesh.normal.buffer));
+            pool.free('float32', new Float32Array(bufferGroup.position.buffer));
+            pool.free('float32', new Float32Array(bufferGroup.texcoord.buffer));
         }
     },
     /*
@@ -409,11 +403,10 @@ var worker = {
     */
     freeChunk: function(chunk) {
         var mesh = chunk.mesh;
-        for (var textureValue in mesh) {
-            var textureMesh = mesh[textureValue];
-            textureMesh.position.free();
-            textureMesh.texcoord.free();
-            textureMesh.normal.free();
+        for (var bufferGroupId in mesh) {
+            var bufferGroup = mesh[bufferGroupId];
+            bufferGroup.position.free();
+            bufferGroup.texcoord.free();
         }
 
         //pool.free('uint8', chunk.voxels);

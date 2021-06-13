@@ -259,55 +259,51 @@ class WebGL {
         */
 
 
-        var vertexShaderCode3 =
+        var voxelVertexShader =
             "uniform mat4 u_projection;" +
             "uniform mat4 u_view;" +
 
             "attribute vec4 a_position;" +
-            "attribute vec3 a_normal;" +
             "attribute vec2 a_texcoord;" +
 
             "varying vec4 v_position;" +
-            "varying vec3 v_normal;" +
             "varying vec2 v_texcoord;" +
 
             "void main() {" +
                 "v_position = u_projection * u_view * a_position;" +
-                "v_normal = a_normal;" +
                 "v_texcoord = a_texcoord;" +
 
                 "gl_Position = v_position;" +
             "}";
-        var fragmentShaderCode3 =
+        var voxelFragmentShader =
             "precision mediump float;" +
 
             "uniform sampler2D u_texture;" +
-            "uniform float u_textureOffset;" +
             "uniform vec3 u_ambientLightColor;" +
             "uniform vec3 u_directionalLightColor;" +
             "uniform vec3 u_directionalLightPosition;" +
             "uniform float u_hazeDistance;" +
+            "uniform vec3 u_normal;" +
 
             "varying vec4 v_position;" +
-            "varying vec3 v_normal;" +
             "varying vec2 v_texcoord;" +
 
             "vec3 fogColor;" +
 
             "void main() {" +
-                "vec4 texelColor = texture2D(u_texture, v_texcoord + vec2(0, u_textureOffset));" +
+                "vec4 texelColor = texture2D(u_texture, v_texcoord);" +
                 //"vec3 temp;" +
 
                 "if(texelColor.a < 0.5) " +
                     "discard;" +
 
                 //"float distance = length(v_position.xyz);" +
-                "vec3 lightDirection = normalize(u_directionalLightPosition - v_position.xyz);" +
-                "highp float directionalLightWeight = max(dot(v_normal, lightDirection), 0.0);" +
-                "vec3 lightWeight = u_ambientLightColor + (u_directionalLightColor * directionalLightWeight);" +
+                //"vec3 lightDirection = normalize(u_directionalLightPosition - v_position.xyz);" +
+                //"highp float directionalLightWeight = max(dot(u_normal, lightDirection), 0.0);" +
+                //"vec3 lightWeight = u_ambientLightColor + (u_directionalLightColor * directionalLightWeight);" +
 
                 // Apply light before we apply the haze?
-                "gl_FragColor.rgb = texelColor.rgb * lightWeight;" +
+                "gl_FragColor.rgb = texelColor.rgb;" + // * lightWeight;" +
 
                 //"float depth = gl_FragCoord.z / gl_FragCoord.w;" +
                 // Start haze 1 chunk away, complete haze beyond 2.8 chunks away
@@ -319,12 +315,12 @@ class WebGL {
             "}";
         this.shaders.projectionPosition = createShader(
             this.gl,
-            vertexShaderCode3,
-            fragmentShaderCode3,
+            voxelVertexShader,
+            voxelFragmentShader,
             // attributes
-            ['position', 'normal', 'texcoord'],
+            ['position', 'texcoord'],
             // uniforms
-            ['projection', 'view', 'texture', 'textureOffset', 'ambientLightColor', 'directionalLightColor', 'directionalLightPosition', 'hazeDistance']
+            ['projection', 'view', 'texture', 'normal', 'ambientLightColor', 'directionalLightColor', 'directionalLightPosition', 'hazeDistance']
         );
 
         var instancedVertexShader =

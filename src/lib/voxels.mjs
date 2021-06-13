@@ -5,9 +5,19 @@ let debug = false;
 WebGL stuff that pertains only to voxels
 */
 
-/*
+// prepare normals
+let normals = [
+    Float32Array.from([0, 1.0, 0]), // top
+    Float32Array.from([0, 0, -1.0]), // back
+    Float32Array.from([0, 0, 1.0]), // front
+    Float32Array.from([-1.0, 0, 0]), // left
+    Float32Array.from([1.0, 0, 0]), // right
+    Float32Array.from([0, -1.0, 0]) // bottom
+];
 
-*/
+
+
+
 class Voxels extends Renderable {
     constructor(game, textureOffsets) {
         super();
@@ -15,8 +25,8 @@ class Voxels extends Renderable {
         
         this.textures = game.textureAtlas;
         this.textureOffsets = textureOffsets;
-        this.nearBuffersByTexture = {};
-        this.farBuffersByTexture = {};
+        this.nearBuffersByGroup = {};
+        this.farBuffersByGroup = {};
 
         // We re-buffer nearby meshes more frequently than far meshes
         this.nearMeshes = {};
@@ -128,12 +138,11 @@ class Voxels extends Renderable {
     releaseMesh(mesh) {
         // Release old mesh
         var transferList = [];
-        for (var textureValue in mesh) {
-            var texture = mesh[textureValue];
+        for (var bundleGroupId in mesh) {
+            var bundleGroup = mesh[bundleGroupId];
             // Go past the Growable, to the underlying ArrayBuffer
-            transferList.push(texture.position.buffer);
-            transferList.push(texture.texcoord.buffer);
-            transferList.push(texture.normal.buffer);
+            transferList.push(bundleGroup.position.buffer);
+            transferList.push(bundleGroup.texcoord.buffer);
         }
         // specially list the ArrayBuffer object we want to transfer
         this.game.clientWorkerHandle.worker.postMessage(
@@ -144,46 +153,47 @@ class Voxels extends Renderable {
 
 
     prepareMeshBuffers(near) {
-        var self = this;
-        var start = Date.now();
-        var gl = this.gl;
-        var currentBuffersByTexture;
-        var currentMeshes;
+        let self = this;
+        let start = Date.now();
+        let gl = this.gl;
+        let currentBuffersByGroup;
+        let currentMeshes;
 
-        var largestBuffer = 0;
+        let largestBuffer = 0;
 
         if (near) {
-            currentBuffersByTexture = this.nearBuffersByTexture;
+            currentBuffersByGroup = this.nearBuffersByGroup;
             currentMeshes = this.nearMeshes;
+            console.log('perparing near');
         } else {
-            currentBuffersByTexture = this.farBuffersByTexture;
+            currentBuffersByGroup = this.farBuffersByGroup;
             currentMeshes = this.farMeshes;
+            console.log('perparing far');
         }
 
         // Tally up the bytes we need to allocate for each texture's buffer tuple
-        var bytesByTexture = {};
+        let bytesByGroup = {};
         // Queue up texture-specific data so we can push it into GL buffers later
-        var attributesByTexture = {};
-        for (var chunkId in currentMeshes) {
-            var mesh = currentMeshes[ chunkId ];
-            for (var textureValue in mesh) {
-                var attributes = mesh[textureValue];
+        let attributesByGroup = {};
+        for (let chunkId in currentMeshes) {
+            let mesh = currentMeshes[ chunkId ];
+            for (let bufferGroupId in mesh) {
+                let bufferGroup = mesh[bufferGroupId];
 
-                if (textureValue in bytesByTexture) {
-                    bytesByTexture[ textureValue ].position += attributes.position.offsetBytes;
-                    bytesByTexture[ textureValue ].texcoord += attributes.texcoord.offsetBytes;
-                    // Normal bytes is always same as position
+                if (bufferGroupId in bytesByGroup) {
+                    bytesByGroup[ bufferGroupId ].position += bufferGroup.position.offsetBytes;
+                    bytesByGroup[ bufferGroupId ].texcoord += bufferGroup.texcoord.offsetBytes;
 
-                    attributesByTexture[ textureValue ].push(attributes);
+                    attributesByGroup[ bufferGroupId ].push(bufferGroup);
 
                 } else {
-                    bytesByTexture[ textureValue ] = {
-                        position: attributes.position.offsetBytes,
-                        texcoord: attributes.texcoord.offsetBytes
+                    bytesByGroup[ bufferGroupId ] = {
+                        position: bufferGroup.position.offsetBytes,
+                        texcoord: bufferGroup.texcoord.offsetBytes
                     };
 
-                    attributesByTexture[ textureValue ] = [
-                        attributes
+                    attributesByGroup[ bufferGroupId ] = [
+                        bufferGroup
                     ];
                 }
             }
@@ -191,40 +201,39 @@ class Voxels extends Renderable {
 
         // Delete buffers we don't need right now
         // Eventually maybe do something different
-        for (var textureValue in currentBuffersByTexture) {
-            var bufferBundle = currentBuffersByTexture[ textureValue ];
-            bufferBundle.tuples = 0;
+        /*
+        for (let bufferGroupId in currentBuffersByGroup) {
+            let bufferGroup = currentBuffersByGroup[ bufferGroupId ];
+            bufferGroup.tuples = 0;
         }
+        */
 
         // Create 3 GL buffers for each texture and allocate the necessary space
-        var buffersByTexture = {};
-        for (var textureValue in bytesByTexture) {
-            var bytes = bytesByTexture[ textureValue ];
+        let buffersByGroup = {};
+        for (let bufferGroupId in bytesByGroup) {
+            let bytes = bytesByGroup[ bufferGroupId ];
 
-            var offsets = {
+            let offsets = {
                 position: 0,
                 texcoord: 0
             };
 
-            var buffers;
-            if (textureValue in currentBuffersByTexture) {
-                var newLength;
-                buffers = currentBuffersByTexture[ textureValue ];
+            let buffers;
+            if (bufferGroupId in currentBuffersByGroup) {
+                let newLength;
+                buffers = currentBuffersByGroup[ bufferGroupId ];
                 buffers.tuples = 0;
                 // Destroy and re-create as double if not large enough
                 if (buffers.positionBytes < bytes.position) {
+                    
                     newLength = buffers.positionBytes * 2;
                     while (newLength < bytes.position) {
                         newLength *= 2;
                     }
+                    console.log('Reallocating gl buffer of size: ' + newLength);
                     gl.deleteBuffer(buffers.position);
                     buffers.position = gl.createBuffer();
                     gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
-                    gl.bufferData(gl.ARRAY_BUFFER, newLength, gl.STATIC_DRAW);
-                    
-                    gl.deleteBuffer(buffers.normal);
-                    buffers.normal = gl.createBuffer();
-                    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.normal);
                     gl.bufferData(gl.ARRAY_BUFFER, newLength, gl.STATIC_DRAW);
                     
                     buffers.positionBytes = newLength;
@@ -249,40 +258,33 @@ class Voxels extends Renderable {
                 buffers = {
                     position: gl.createBuffer(),
                     texcoord: gl.createBuffer(),
-                    normal: gl.createBuffer(),
                     tuples: 0,
                     positionBytes: bytes.position,
-                    texcoordBytes: bytes.texcoord,
-                    textureUnit: this.textureOffsets['textureToTextureUnit'][ textureValue ]
+                    texcoordBytes: bytes.texcoord
+                    //textureUnit: this.textureOffsets['textureToTextureUnit'][ textureValue ]
                 };
                 gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
                 gl.bufferData(gl.ARRAY_BUFFER, bytes.position, gl.STATIC_DRAW);
-                
-                gl.bindBuffer(gl.ARRAY_BUFFER, buffers.normal);
-                gl.bufferData(gl.ARRAY_BUFFER, bytes.position, gl.STATIC_DRAW);
-                
+                                
                 gl.bindBuffer(gl.ARRAY_BUFFER, buffers.texcoord);
                 gl.bufferData(gl.ARRAY_BUFFER, bytes.texcoord, gl.STATIC_DRAW);
 
                 //largestBuffer = Math.max(largestBuffer, bytes.position, bytes.texcoord);
             }
 
-            var attributeQueue = attributesByTexture[ textureValue ];
+            var attributeQueue = attributesByGroup[ bufferGroupId ];
             for (var i = 0; i < attributeQueue.length; i++) {
                 var attributes = attributeQueue[i];
 
                 var positions = new Float32Array(attributes.position.buffer, 0, attributes.position.offset);
                 var texcoords = new Float32Array(attributes.texcoord.buffer, 0, attributes.texcoord.offset);
-                var normals = new Float32Array(attributes.normal.buffer, 0, attributes.normal.offset);
 
                 // Fill buffers
                 
                 gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
                 gl.bufferSubData(gl.ARRAY_BUFFER, offsets.position, positions);
-                gl.bindBuffer(gl.ARRAY_BUFFER, buffers.normal);
-                gl.bufferSubData(gl.ARRAY_BUFFER, offsets.position, normals);
                 offsets.position += attributes.position.offsetBytes;
-
+                
                 gl.bindBuffer(gl.ARRAY_BUFFER, buffers.texcoord);
                 gl.bufferSubData(gl.ARRAY_BUFFER, offsets.texcoord, texcoords);
                 offsets.texcoord += attributes.texcoord.offsetBytes;
@@ -290,14 +292,14 @@ class Voxels extends Renderable {
                 buffers.tuples += attributes.position.tuples;
             }
 
-            buffersByTexture[ textureValue ] =  buffers;
+            buffersByGroup[ bufferGroupId ] =  buffers;
         }
 
-        // This will replace nearBuffersByTexture or farBuffersByTexture
+        // This will replace nearBuffersByGroup or farBuffersByGroup
         if (near) {
-            this.nearBuffersByTexture = buffersByTexture;
+            this.nearBuffersByGroup = buffersByGroup;
         } else {
-            this.farBuffersByTexture = buffersByTexture;
+            this.farBuffersByGroup = buffersByGroup;
         }
 
         //timer.slog('Voxels.prepareMeshBuffers ' + blen, Date.now() - start); //, largestBuffer);
@@ -314,7 +316,6 @@ class Voxels extends Renderable {
         if (ts - this.farTimestamp >= 1000.0) {
             this.farTimestamp = ts;
             if (this.farPending) {
-                console.log('preparing far buffers');
                 this.prepareMeshBuffers(false);
                 this.farPending = false;
             }
@@ -334,59 +335,28 @@ class Voxels extends Renderable {
         gl.useProgram(shader.program);
         gl.uniformMatrix4fv(shader.uniforms.projection, false, this.game.camera.projectionMatrix);
         gl.uniformMatrix4fv(shader.uniforms.view, false, this.game.camera.viewMatrix);
-        gl.uniform3fv(shader.uniforms.ambientLightColor, ambientLight);
-        gl.uniform3fv(shader.uniforms.directionalLightColor, directionalLight.color);
-        gl.uniform3fv(shader.uniforms.directionalLightPosition, directionalLight.position);
-        gl.uniform1f(shader.uniforms.hazeDistance, this.hazeDistance);
 
-        // TODO: i don't think we need to activate each render
-        //gl.activeTexture(gl.TEXTURE0);
-        // think we can just set the uniform.texture to the right integer
-        // to correspond to TEXTURE#
-        // Voxel textures are loaded and bound to gl.TEXTURE0
+        //gl.uniform3fv(shader.uniforms.ambientLightColor, ambientLight);
+        //gl.uniform3fv(shader.uniforms.directionalLightColor, directionalLight.color);
+        //gl.uniform3fv(shader.uniforms.directionalLightPosition, directionalLight.position);
+        //gl.uniform1f(shader.uniforms.hazeDistance, this.hazeDistance);
+        gl.uniform1i(shader.uniforms.texture, 3); // all voxel textures are in the same
 
-        // need to smartly set this based on which atlas a texture is part of
-        //gl.uniform1i(shader.uniforms.texture, 0);
-        
-
-        // set which of the 32 handles we want this bound to
-        //gl.bindTexture(gl.TEXTURE_2D, this.textures.byValue[0]);
-        // bind the texture to this handle
-        //gl.uniform1i(shader.uniforms.texture, 0);
+        gl.enable(gl.CULL_FACE);
 
         // TODO: measure time within render body per second, so we can see how much render changes help
         // TODO: refactor this to render once per texture atlas, isntead of per-texture
         // TODO: need to flag textures in config that have "cutouts" or alpha, and move them to a dedicated texture atlas
         // so we can disable face culling when rendering that atlas
 
-        for (var textureValue in this.nearBuffersByTexture) {
-            var bufferBundle = this.nearBuffersByTexture[ textureValue ];
+        for (var bufferGroupId in this.nearBuffersByGroup) {
+            var bufferBundle = this.nearBuffersByGroup[ bufferGroupId ];
             if (bufferBundle.tuples == 0) {
                 continue;
             }
 
-            if (textureValue == 6) {
-                // poor man's water animation
-                //gl.uniform1f(shader.uniforms.textureOffset, ts / 10000);
-
-            } else if (textureValue < 100) {
-                // Don't do face culling when drawing textures with opacity
-                gl.enable(gl.CULL_FACE);
-                gl.uniform1f(shader.uniforms.textureOffset, 0.00);
-                
-            } else {
-                gl.disable(gl.CULL_FACE);
-                gl.uniform1f(shader.uniforms.textureOffset, 0.00);
-                //gl.uniform1f(shaderUniforms.textureOffset, ts / 10000);
-            }
-            // do the texture stuff ourselves ... too convoluted otherwise
-            //gl.activeTexture(gl.TEXTURE0);
-
-            // set which of the 32 handles we want this bound to
-            //gl.bindTexture(gl.TEXTURE_2D, this.textures.byValue[textureValue].glTexture);
-
-            // bind the texture to this handle
-            gl.uniform1i(shader.uniforms.texture, bufferBundle.textureUnit);
+            // set normals
+            gl.uniform3fv(shader.uniforms.normal, normals[bufferGroupId]);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, bufferBundle.position);
             gl.enableVertexAttribArray(shader.attributes.position);
@@ -396,43 +366,16 @@ class Voxels extends Renderable {
             gl.enableVertexAttribArray(shader.attributes.texcoord);
             gl.vertexAttribPointer(shader.attributes.texcoord, 2, gl.FLOAT, false, 0, 0);
 
-            gl.bindBuffer(gl.ARRAY_BUFFER, bufferBundle.normal);
-            gl.enableVertexAttribArray(shader.attributes.normal);
-            gl.vertexAttribPointer(shader.attributes.normal, 3, gl.FLOAT, false, 0, 0);
-
-            //console.log('voxels.mjs drawing tuples1: ' + bufferBundle.tuples);
             gl.drawArrays(gl.TRIANGLES, 0, bufferBundle.tuples);
         }
 
-        for (var textureValue in this.farBuffersByTexture) {
-            var bufferBundle = this.farBuffersByTexture[ textureValue ];
+        for (var bufferGroupId in this.farBuffersByGroup) {
+            var bufferBundle = this.farBuffersByGroup[ bufferGroupId ];
             if (bufferBundle.tuples == 0) {
                 continue;
             }
 
-            if (textureValue == 6) {
-                // poor man's water animation
-                //gl.uniform1f(shader.uniforms.textureOffset, ts / 10000);
-
-            } else if (textureValue < 100) {
-                // Don't do face culling when drawing textures with opacity
-                gl.enable(gl.CULL_FACE);
-                gl.uniform1f(shader.uniforms.textureOffset, 0.00);
-                
-            } else {
-                gl.disable(gl.CULL_FACE);
-                gl.uniform1f(shader.uniforms.textureOffset, 0.00);
-                //gl.uniform1f(shaderUniforms.textureOffset, ts / 10000);
-            }
-            // do the texture stuff ourselves ... too convoluted otherwise
-            //gl.activeTexture(gl.TEXTURE0);
-
-            // set which of the 32 handles we want this bound to
-            //gl.bindTexture(gl.TEXTURE_2D, this.textures.byValue[textureValue].glTexture);
-
-            // bind the texture to this handle
-            //gl.uniform1i(shader.uniforms.texture, 0);
-            gl.uniform1i(shader.uniforms.texture, bufferBundle.textureUnit);
+            gl.uniform3fv(shader.uniforms.normal, normals[bufferGroupId]);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, bufferBundle.position);
             gl.enableVertexAttribArray(shader.attributes.position);
@@ -442,11 +385,6 @@ class Voxels extends Renderable {
             gl.enableVertexAttribArray(shader.attributes.texcoord);
             gl.vertexAttribPointer(shader.attributes.texcoord, 2, gl.FLOAT, false, 0, 0);
 
-            gl.bindBuffer(gl.ARRAY_BUFFER, bufferBundle.normal);
-            gl.enableVertexAttribArray(shader.attributes.normal);
-            gl.vertexAttribPointer(shader.attributes.normal, 3, gl.FLOAT, false, 0, 0);
-
-            //console.log('voxels.mjs drawing tuples2: ' + bufferBundle.tuples);
             gl.drawArrays(gl.TRIANGLES, 0, bufferBundle.tuples);
         }
 
