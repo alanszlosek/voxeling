@@ -422,24 +422,32 @@ class RectangleMesher {
             return;
         }
 
-        if (faceIndex in out) {
+        let outIndex = faceIndex;
+        // if face texture has transparency, put it in a separate bucket
+        if (textureValue in this.config.texturesWithTransparency) {
+            // might have string conversion issues
+            outIndex += 6;
+            //console.log(textureValue + ' has transp, remapping to face ' + faceIndex);
+        }
+
+        if (outIndex in out) {
             // Is points large enough to fit another batch?
-            out[faceIndex].position.need(18);
+            out[outIndex].position.need(18);
             // Is texcoord large enough to fit another batch?
-            out[faceIndex].texcoord.need(12);
+            out[outIndex].texcoord.need(12);
         } else {
             // Start points Growable at 1/10 of chunk with single texture, 353808 floats
             // nah, 1/20 = 88452 floats
 
             // Going for no allocations
-            out[faceIndex] = {
+            out[outIndex] = {
                 position: new Growable('float32', 32000),
                 texcoord: new Growable('float32', 32000)
             };
         }
 
-        var points = out[faceIndex].position;
-        var texcoord = out[faceIndex].texcoord;
+        var points = out[outIndex].position;
+        var texcoord = out[outIndex].texcoord;
         let x, y, z;
 
         // i changed this to be different from horiz merge mesher ... hope it doesn't screw stuff up

@@ -82,6 +82,9 @@ class WebGL {
         // if our fragment has a depth value that is less than the one that is currently there, use our new one
         gl.depthFunc(gl.LESS);
 
+        gl.enable(gl.BLEND);
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
         // TODO: resize events might need to call this again
         gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);

@@ -41,6 +41,7 @@ textureValues.sort()
 out = {
      # dims of a single texture within the atlas, normalized to 0-1.0
     "textureDimensions": [width / atlasWidth, width / atlasHeight],
+    "textureRowPixels": width,
     # rename this
     "offsets": {
         # texture value
@@ -93,6 +94,8 @@ while atlasIndex < numAtlases:
                 
                 # Copy to combined file that will be used for the material picker UI
                 materialPickerAtlas.paste(image, (0, pixelOffset))
+                out['pixelOffsets'][textureValue] = pixelOffset
+                pixelOffset += width
 
                 # Now flip image and copy into the texture atlas file for GPU rendering
                 image = image.transpose(Image.FLIP_TOP_BOTTOM)
@@ -110,10 +113,10 @@ while atlasIndex < numAtlases:
                 # because the first row is only there to ensure mipmapping doesn't
                 # result in artifacts
                 out['offsets'][textureValue] = [ (offsetX + width) / atlasWidth, (offsetY + width) / atlasHeight ]
-                out['pixelOffsets'][textureValue] = pixelOffset
+                
 
             col += 1
-            pixelOffset += width
+            
     
     # save
     # do we really need to flip, if we need to flip again on the webgl side?

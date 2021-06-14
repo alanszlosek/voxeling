@@ -12,6 +12,13 @@ let normals = [
     Float32Array.from([0, 0, 1.0]), // front
     Float32Array.from([-1.0, 0, 0]), // left
     Float32Array.from([1.0, 0, 0]), // right
+    Float32Array.from([0, -1.0, 0]), // bottom
+    // duplicate for transparent faces
+    Float32Array.from([0, 1.0, 0]), // top
+    Float32Array.from([0, 0, -1.0]), // back
+    Float32Array.from([0, 0, 1.0]), // front
+    Float32Array.from([-1.0, 0, 0]), // left
+    Float32Array.from([1.0, 0, 0]), // right
     Float32Array.from([0, -1.0, 0]) // bottom
 ];
 
@@ -349,9 +356,14 @@ class Voxels extends Renderable {
         // TODO: need to flag textures in config that have "cutouts" or alpha, and move them to a dedicated texture atlas
         // so we can disable face culling when rendering that atlas
 
+
         for (var bufferGroupId in this.nearBuffersByGroup) {
             var bufferBundle = this.nearBuffersByGroup[ bufferGroupId ];
             if (bufferBundle.tuples == 0) {
+                continue;
+            }
+            // dont do faces with transparency yet
+            if (bufferGroupId != '0' && bufferGroupId != '1' && bufferGroupId != '2' && bufferGroupId != '3' && bufferGroupId != '4' && bufferGroupId != '5') {
                 continue;
             }
 
@@ -375,6 +387,31 @@ class Voxels extends Renderable {
                 continue;
             }
 
+            gl.uniform3fv(shader.uniforms.normal, normals[bufferGroupId]);
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, bufferBundle.position);
+            gl.enableVertexAttribArray(shader.attributes.position);
+            gl.vertexAttribPointer(shader.attributes.position, 3, gl.FLOAT, false, 0, 0);
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, bufferBundle.texcoord);
+            gl.enableVertexAttribArray(shader.attributes.texcoord);
+            gl.vertexAttribPointer(shader.attributes.texcoord, 2, gl.FLOAT, false, 0, 0);
+
+            gl.drawArrays(gl.TRIANGLES, 0, bufferBundle.tuples);
+        }
+
+        // now render near meshes with transparency
+        for (var bufferGroupId in this.nearBuffersByGroup) {
+            var bufferBundle = this.nearBuffersByGroup[ bufferGroupId ];
+            if (bufferBundle.tuples == 0) {
+                continue;
+            }
+            // only do faces with transparency
+            if (bufferGroupId == '0' || bufferGroupId == '1' || bufferGroupId == '2' || bufferGroupId == '3' || bufferGroupId == '4' || bufferGroupId == '5') {
+                continue;
+            }
+
+            // set normals
             gl.uniform3fv(shader.uniforms.normal, normals[bufferGroupId]);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, bufferBundle.position);
