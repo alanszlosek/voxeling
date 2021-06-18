@@ -1,7 +1,7 @@
 import config from '../config';
 import { Coordinates } from './lib/coordinates';
 //import mesher from './lib/meshers/horizontal-merge2';
-import { RectangleMesher } from '../src/lib/meshers/rectangle9.mjs';
+import { RectangleMesher } from '../src/lib/meshers/rectangle10.mjs';
 import Log from './lib/log';
 import MC from './lib/max-concurrent';
 import textureOffsets from '../texture-offsets';
@@ -274,7 +274,7 @@ var worker = {
         }
 
         postMessage(
-            ['meshesToShow', chunkDistances]
+            ['chunksToShow', chunkDistances]
         );
         postMessage(
             ['nearbyChunks', nearbyChunks]
@@ -314,9 +314,12 @@ var worker = {
             //var mesh = mesher.mesh(chunk.position, chunk.voxels);
             var mesh = this.mesher.run(chunk.position, chunk.voxels);
 
-            var transfer = {};
+            // transferring work with a sparse array?
+            var transfer = [];
             var transferList = [];
 
+            // TODO: is there any way i can optimize this?
+            // in terms of reducing GC, nesting, something?
             // points are meshed into a buffer group per faceIndex
             for (var bufferGroupId in mesh) {
                 var bufferGroup = mesh[bufferGroupId];
