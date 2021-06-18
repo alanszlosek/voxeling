@@ -23,23 +23,6 @@ let normals = [
     Float32Array.from([0, -1.0, 0]) // bottom
 ];
 
-function setIntersection(setA, setB) {
-    let _intersection = new Set();
-    for (let elem of setB) {
-        if (setA.has(elem)) {
-            _intersection.add(elem);
-        }
-    }
-    return _intersection;
-}
-
-function setDifference(setA, setB) {
-    let _difference = new Set(setA);
-    for (let elem of setB) {
-        _difference.delete(elem);
-    }
-    return _difference;
-}
 
 /*
 - currentChunksInBuffer
@@ -54,53 +37,21 @@ function setDifference(setA, setB) {
 
 */
 
-// For each chunk, a handle the Bufs, offsets and positions
-class Manifest {
-    constructor() {
-        this.manifest = {}
-    }
-    // details = [positionBuf, offset, length, texcoordBuf, offset, length]
-    add(chunkId, details) {
-        this.manifest[chunkid] = details;
-    }
-    delete(chunkId) {
-        delete this.manifest[chunkId];
-
-    }
-    contains(chunkId) {
-        return chunkId in this.manifest;
-    }
-    getByteNeeds() {
-        let bytes1 = 0;
-        let bytes2 = 0;
-        let bytes = {
-            position: 0,
-            texcoord: 0
-        };
-        for (let chunkId in this.manifest) {
-            let chunk = this.manifest[chunkId];
-            bytes.position += chunk[2];
-            bytes.texcoord += chunk[4];
-        }
-        return bytes;
-    }
-}
 
 // We have an instance of this for each cube face ...
 // Holds position and texcoord values for each face mesh
 class BufGroup {
-    constructor(groupId) {
-        this.groupId = groupId;
-        this.uuid = uuid();
-
-        this.positionBuf = new Buf();
-        this.texcoordBuf = new Buf();
+    constructor(gl, groupId) {
+        this.gl = gl;
+        this.id = groupId;
+        this.positionBuf = new Buf(gl);
+        this.texcoordBuf = new Buf(gl);
     }
 
     toShow(chunkId, bufferBundle) {
         // todo check these
-        this.positionBuf.toShow(chunkId, bufferBundle.position.data, bufferBundle.position.offsetBytes);
-        this.texcoordBuf.toShow(chunkId, bufferBundle.texcoord.data, bufferBundle.texcoord.offsetBytes);
+        this.positionBuf.toShow(chunkId, bufferBundle.position.buffer, bufferBundle.position.offsetBytes);
+        this.texcoordBuf.toShow(chunkId, bufferBundle.texcoord.buffer, bufferBundle.texcoord.offsetBytes);
     }
     toDelete(chunkId) {
         this.positionBuf.toDelete(chunkId);
@@ -109,6 +60,12 @@ class BufGroup {
     toCopy(chunkId, sources) {
         this.positionBuf.toCopy(chunkId, sources.position);
         this.texcoordBuf.toCopy(chunkId, sources.texcoord);
+    }
+    getLocations(chunkId) {
+        return {
+            position: this.positionBuf.getLocation(chunkId),
+            texcoord: this.texcoordBuf.getLocation(chunkId)
+        };
     }
 
     update() {
@@ -126,88 +83,106 @@ class BufGroup {
 }
 
 class Buf {
-    constructor(byteSize) {
-        this.currentState = this._newState();
-        this.nextState = this._newState();
-        this.pending = false;
- 
+    constructor(gl) {
+        this.gl = gl;
+        // TODO: we might not need these currently as-is
+        this.currentBuffer = this._newBuffer();
+        this.nextBuffer = this._newBuffer();
+        this._toCopy = {};
+        this._toDelete = {};
+        this._toShow = {};
+        this.pendingToCopy = false;
+        this.pendingToDelete = false;
+        this.pendingToShow = false;
+        
+        this.chunks = {}; // chunkId -> [glbuffer, offset, length]
+        // track sizes of chunks currently in the buffer
+        this.chunkBytes = {};
+        // if we need to make changes, put them here first
+        // this should start out as a copy of chunkBytes
+        this.pendingChunkBytes = {};
     }
-    _newState() {
+    _newBuffer() {
         return {
-            byteNeeds: {},
-            offsets: {},
             buffer: null,
-            bufferSize: 0,
-
-            toCopy: {},
-            toShow: {}
+            bufferSize: 0
         };
     }
     toShow(chunkId, data, length) {
-        let state = this.nextState;
-        state.byteNeeds[ chunkId ] = length;
-        state.toShow[ chunkId ] = data;
-        // do we already have this in current state?
-        // if same size we don't have to gen new buffer ... but maybe that logic will work
-        // itself out in update()
-    
-        //if (chunkId in this.current.byteNeeds && length == )
-
-        this.pending = true;
+        this.pendingChunkBytes[ chunkId ] = length;
+        this._toShow[ chunkId ] = data;   
+        this.pendingToShow = true;
     }
 
     toDelete(chunkId) {
-        delete this.nextState.byteNeeds[chunkId];
+        this._toDelete[ chunkId ] = true;
+        this.pendingToDelete = true;
     }
 
     // source = [glBuffer, offset, byteLength]
     toCopy(chunkId, source) {
-        // ???
-        //this.nextState.toCopy[chunkId]
-        this.nextState.byteNeeds[chunkId] = source[2];
-        this.nextState.toCopy[chunkId] = source;
-        this.pending = true;
+        this.pendingChunkBytes[chunkId] = source[2];
+        this._toCopy[chunkId] = source;
+        this.pendingToCopy = true;
+    }
+
+    // used to help copy data between gl buffers
+    getLocation(chunkId) {
+        return this.chunks[chunkId]; //[this.currentBuffer, this.chunkOffsets[chunkId], this.chunkBytes[chunkId]];
     }
 
     update() {
-        if (!this.pending) {
+        if (!this.pendingToCopy && !this.pendingToDelete && !this.pendingToShow) {
             return;
         }
         let gl = this.gl;
-
-        let state = this.nextState;
-        let byteNeeds = 0;
-        for (let chunkId in state.byteNeeds) {
-            byteNeeds += state.byteNeeds[chunkId];
-
-            if (!(chunkId in state.toCopy)) {
-                // pull from current state, so we can copy from other GL buffer
-                state.toCopy[chunkId] = this.currentState.manifest[chunkId];
-            }
+        // copy data to the other gl buffer if pending copy or delete
+        let copyData = this.pendingToCopy || this.pendingToDelete;
+        let buffer = copyData ? this.nextBuffer : this.currentBuffer; // points to gl buffer container
+        let bytesNeeded = 0;
+        for (let chunkId in this.pendingChunkBytes) {
+            bytesNeeded += this.pendingChunkBytes[chunkId];
         }
 
-        // what if we don't really need to swap to new buffer?
-        // in some cases, we can just copy toShow back into current buffer
-        // how can i handle that case?
-
-        // do we need to re-allocate our buffer?
-        if (byteNeeds != state.bufferSize) {
-            if (state.buffer) {
-                gl.deleteBuffer(state.buffer);
+        // Realloc if todelete or tocopy or too small
+        if (bytesNeeded > buffer.bufferSize) {
+            // if we have to re-alloc, use nextBuffer buffer
+            buffer = this.nextBuffer;
+            if (buffer.buffer) {
+                gl.deleteBuffer(buffer.buffer);
             }
-            console.log('gl.createBuffer ' + byteNeeds);
+            // copy data to other gl buffer if we had to re-alloc due to size
+            copyData = true;
+
+            console.log('gl.createBuffer ' + bytesNeeded);
             // need to re-alloc
-            state.buffer = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, state.buffer);
-            gl.bufferData(gl.ARRAY_BUFFER, byteNeeds, gl.STATIC_DRAW);
-            state.bufferSize = byteNeeds;
+            buffer.buffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, buffer.buffer);
+            gl.bufferData(gl.ARRAY_BUFFER, bytesNeeded, gl.DYNAMIC_DRAW);
+            buffer.bufferSize = bytesNeeded;
         }
+
+        // If we need to copy between our buffers, prepare the copy manifests
+        /*
+        if (copyData) {
+            // none of this exists currently .. can't copy
+            for (let chunkId in this.chunkBytes) {
+                // don't squash an existing copy operation
+                // though not sure why this is necessary
+                // TODO: think through this
+                if (!(chunkId in this._toCopy)) {
+                    this._toCopy[ chunkId ] = this.chunks[chunkId];
+                }
+            }
+        }
+        */
+
 
         let offset = 0;
-        gl.bindBuffer(gl.ARRAY_BUFFER, state.buffer);
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffer.buffer);
         // Copy data from other buffers
-        for (let chunkId in state.toCopy) {
-            let source = state.toCopy[chunkId];
+        for (let chunkId in this._toCopy) {
+            let source = this._toCopy[chunkId];
             let size = source[2];
 
             console.log('gl.copyBufferSubData size: ' + size);
@@ -215,37 +190,52 @@ class Buf {
             gl.bindBuffer(gl.COPY_READ_BUFFER, source[0]);
             gl.copyBufferSubData(gl.COPY_READ_BUFFER, gl.ARRAY_BUFFER, source[1], offset, size);
 
-            state.offsets[chunkId] = offset;
-            state.manifest[chunkId] = [state.buffer, offset, size];
+            // might have issue here if another Buf has handle to this for copying data, but shouldn't
+            this.chunks[chunkId] = [buffer.buffer, offset, size];
             offset += size;
         }
         // now copy in new data
-        for (let chunkId in state.toShow) {
-            let source = state.toShow[chunkId];
-            let size = state.byteNeeds[chunkId];
+        for (let chunkId in this._toShow) {
+            let source = this._toShow[chunkId];
+            let size = this.pendingChunkBytes[chunkId];
 
             // TODO: source should be float 32
             console.log('gl.bufferSubData size: ' + source.length);
-            gl.bufferSubData(gl.ARRAY_BUFFER, offset, source);
+            // probably don't need to convert to float32 ... maybe just array view and leave size in bytes instead of div by 4
+            gl.bufferSubData(gl.ARRAY_BUFFER, offset, new Float32Array(source), 0, size / 4);
 
-            state.offsets[chunkId] = offset;
-            state.manifest[chunkId] = [state.buffer, offset, size];
+            this.chunks[chunkId] = [buffer.buffer, offset, size];
             offset += size;
         }
 
-        state.toCopy = {};
-        state.toShow = {};
 
-        // swap currentState and nextState?
-        if (this.swap) {
-            let temp = this.currentState;
-            this.currentState = this.nextState;
-            this.currentState = temp;
+
+        // copy pendingChunkBytes to chunkBytes
+        for (let chunkId in this.pendingChunkBytes) {
+            this.chunkBytes[chunkId] = this.pendingChunkBytes[chunkId];
         }
 
+        // remove old chunks from all data structures
+        for (let chunkId in this._toDelete) {
+            delete this.chunks[chunkId];
+            delete this.chunkBytes[chunkId];
+        }
+
+        // swap currentBuffer and nextBuffer>
+        if (buffer != this.currentBuffer) {
+            let temp = this.currentBuffer;
+            this.currentBuffer = this.nextBuffer;
+            this.nextBuffer = temp;
+        }
+
+        this._toCopy = {};
+        this._toDelete = {};
+        this._toShow = {};
+        this.pendingToCopy = this.pendingToDelete = this.pendingToShow = false;
+
         return {
-            buffer: this.currentState.buffer,
-            byteSize: this.currentState.bufferSize
+            buffer: this.currentBuffer.buffer,
+            byteSize: this.currentBuffer.bufferSize
         };
     }
 }
@@ -266,7 +256,8 @@ class Voxels extends Renderable {
         this.farRenderBuffersByGroup = [];
         this.nearChunksToShow = {};
         this.farChunksToShow = {};
-        this.pendingBufGroups = {};
+        this.pendingNearBufGroups = {};
+        this.pendingFarBufGroups = {};
         this.nearChunkToGroups = {};
         this.farChunkToGroups = {};
         this.nearBufGroups = [];
@@ -307,8 +298,8 @@ class Voxels extends Renderable {
             this.nearRenderBuffersByGroup.push(createRenderBufferContainer());
             this.farRenderBuffersByGroup.push(createRenderBufferContainer());
 
-            this.nearBufGroups.push( new BufGroup(i) );
-            this.farBufGroups.push( new BufGroup(i) );
+            this.nearBufGroups.push( new BufGroup(this.gl, i) );
+            this.farBufGroups.push( new BufGroup(this.gl, i) );
         };
     }
 
@@ -329,66 +320,80 @@ class Voxels extends Renderable {
     // This controls which chunks we draw, and helps us discard far chunks as we move through the world.
     // Param is a map of chunkId to distance away from player, which helps us sort each chunk into near/far
     chunksToShow(chunkDistances) {
+
+        chunkDistances = {
+            '0|0|0': 0
+
+        };
+
         for (let chunkId in chunkDistances) {
             if (chunkDistances[chunkId] < this.farDistance) {
                 // near
                 if (chunkId in this.farChunkToGroups) {
-                    // relocate
-                    // get source and destination
-                    for (let groupId in this.farChunkToGroups[chunkId]) {
-
-                    }
+                    // relocate from far to near
+                    this.farChunkToGroups[chunkId].forEach(function(bufGroup) {
+                        let id = bufGroup.id;
+                        this.nearBufGroups[ id ].toCopy(chunkId, bufGroup.getLocations(chunkId));
+                    });
                 }
             } else {
                 // far
                 if (chunkId in this.nearChunkToGroups) {
-                    // relocate
+                    // relocate from near to far
+                    this.nearChunkToGroups[chunkId].forEach(function(bufGroup) {
+                        let id = bufGroup.id;
+                        this.farBufGroups[ id ].toCopy(chunkId, bufGroup.getLocations(chunkId));
+                    });
                 }
             }
         }
         // handle deletions
         for (let chunkId in this.farChunkToGroups) {
-            if (!(chunkId in chunkDistances)) {
-                // delete
-                this.farChunkToGroups[ chunkId ].forEach(function(bufGroup) {
-                    bufGroup.toDelete(chunkId);
-                    this.pendingBufGroups[ bufGroup.uuid ] = bufGroup;
-                });
+            if (chunkId in chunkDistances) {
+                continue;
             }
+            // delete
+            this.farChunkToGroups[ chunkId ].forEach(function(bufGroup) {
+                bufGroup.toDelete(chunkId);
+                this.pendingFarBufGroups[ bufGroup.id ] = bufGroup;
+            });
         }
         for (let chunkId in this.nearChunkToGroups) {
-            if (!(chunkId in chunkDistances)) {
-                // delete
-                this.nearChunkToGroups[ chunkId ].forEach(function(bufGroup) {
-                    bufGroup.toDelete(chunkId);
-                    this.pendingBufGroups[ bufGroup.uuid ] = bufGroup;
-                });
+            if (chunkId in chunkDistances) {
+                continue;
             }
+            // delete
+            this.nearChunkToGroups[ chunkId ].forEach(function(bufGroup) {
+                bufGroup.toDelete(chunkId);
+                this.pendingNearBufGroups[ bufGroup.id ] = bufGroup;
+            });
         }
         this.visibleChunks = chunkDistances;
     }
 
     update() {
+        let self = this;
 
-        // TODO: when do we add to nearChunkToGroups?
         for (let chunkId in this.nearChunksToShow) {
             let data = this.nearChunksToShow[chunkId];
             // compare to current nearChunkToGroups // hmmm
 
             // remove this chunk from buffer group it's no longer in
-            this.chunkToBufGroups[chunkId].forEach(function(bufGroup) {
-                // is this 
-                if (!data[ bufGroup.groupId ]) {
-                    bufGroup.toDelete( chunkId );
-                    this.pendingNearBufGroups[ bufGroup.uuid ] = bufGroup;
-                }
-            });
+            if (chunkId in this.nearChunkToGroups) {
+                this.nearChunkToGroups[chunkId].forEach(function(bufGroup) {
+                    // is this going to work?
+                    if (!data[ bufGroup.id ]) {
+                        bufGroup.toDelete( chunkId );
+                        self.pendingNearBufGroups[ bufGroup.id ] = bufGroup;
+                    }
+                });
+            }
             let groups = [];
             data.forEach(function(bufferBundle, groupId) {
-                let bufGroup = this.nearBufGroups[groupId];
+                let bufGroup = self.nearBufGroups[groupId];
                 groups.push(bufGroup);
                 bufGroup.toShow(chunkId, bufferBundle);
-                this.pendingNearBufGroups[ bufGroup.uuid ] = bufGroup;
+                self.pendingNearBufGroups[ bufGroup.id ] = bufGroup;
             });
             this.nearChunkToGroups[chunkId] = groups;
         }
@@ -398,34 +403,35 @@ class Voxels extends Renderable {
             // compare to current nearChunkToGroups // hmmm
 
             // remove this chunk from buffer group it's no longer in
-            this.chunkToBufGroups[chunkId].forEach(function(bufGroup) {
-                // is this 
-                if (!data[ bufGroup.groupId ]) {
-                    bufGroup.toDelete( chunkId );
-                    this.pendingFarBufGroups[ bufGroup.uuid ] = bufGroup;
-                }
-            });
+            if (chunkId in this.farChunkToGroups) {
+                this.farChunkToGroups[chunkId].forEach(function(bufGroup) {
+                    // is this going to work?
+                    if (!data[ bufGroup.id ]) {
+                        bufGroup.toDelete( chunkId );
+                        self.pendingFarBufGroups[ bufGroup.id ] = bufGroup;
+                    }
+                });
+            }
             let groups = [];
             data.forEach(function(bufferBundle, groupId) {
-                let bufGroup = this.farBufGroups[groupId];
+                let bufGroup = self.farBufGroups[groupId];
                 groups.push(bufGroup);
                 bufGroup.toShow(chunkId, bufferBundle);
-                this.pendingFarBufGroups[ bufGroup.uuid ] = bufGroup;
+                self.pendingFarBufGroups[ bufGroup.id ] = bufGroup;
             });
             this.farChunkToGroups[chunkId] = groups;
         }
 
-        // TODO: split this into near and far
         for (let id in this.pendingNearBufGroups) {
             let bufGroup = this.pendingNearBufGroups[id];
             let glBuffers = bufGroup.update();
 
-            this.nearRenderBuffersByGroup[ groupId ] = glBuffers;
+            this.nearRenderBuffersByGroup[ id ] = glBuffers;
         }
         for (let id in this.pendingFarBufGroups) {
             let bufGroup = this.pendingFarBufGroups[id];
             let glBuffers = bufGroup.update();
-            this.farRenderBuffersByGroup[ groupId ] = glBuffers;
+            this.farRenderBuffersByGroup[ id ] = glBuffers;
         }
 
         this.nearChunksToShow = {};
@@ -454,7 +460,7 @@ class Voxels extends Renderable {
 
     tick(ts) {
         if (ts > this.nearCutoff) {
-            this.nearCutoff = ts + 200;
+            this.nearCutoff = ts + 1000;
             this.update();
             /*
             if (this.nearPending) {
