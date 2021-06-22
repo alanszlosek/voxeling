@@ -1,6 +1,10 @@
 import { Renderable } from './entities/renderable.mjs';
 import uuid from 'hat';
 
+// IN THE PROECT OF CONVERTING TO MAPS FOR BUF AND BUFGROUP
+
+
+
 let debug = false;
 /*
 WebGL stuff that pertains only to voxels
@@ -90,12 +94,7 @@ class Buf {
         // TODO: we might not need these currently as-is
         this.currentBuffer = this._newBuffer();
         this.nextBuffer = this._newBuffer();
-        this._toCopy = {};
-        this._toDelete = {};
-        this._toShow = {};
-        this.pendingToCopy = false;
-        this.pendingToDelete = false;
-        this.pendingToShow = false;
+        this.reset();
         
         this.chunks = {}; // chunkId -> [glbuffer, offset, length]
         // track sizes of chunks currently in the buffer
@@ -105,29 +104,27 @@ class Buf {
         this.pendingChunkBytes = {};
     }
     _newBuffer() {
-        let gl = this.gl;
-        let defaultSize = 16384;
-
-        let buf = {
-            buffer: gl.createBuffer(),
-            byteSize: defaultSize,
-            offset: 0
+        return {
+            buffer: null,
+            bufferSize: 0
         };
-        gl.bindBuffer(gl.ARRAY_BUFFER, buf.buffer);
-        gl.bufferData(gl.ARRAY_BUFFER, defaultSize, gl.DYNAMIC_DRAW);
-
-        return buf;
+    }
+    reset() {
+        // we use maps to preserve order,
+        this._toCopy = new Map();
+        this._toDelete = new Map();
+        this._toShow = new Map();
+        this.pendingToCopy = this.pendingToDelete = this.pendingToShow = false;
     }
     toShow(chunkId, data, length) {
         this.pendingChunkBytes[ chunkId ] = length;
-        this._toShow[ chunkId ] = data;   
+        this._toShow.set(chunkId, data);   
         this.pendingToShow = true;
     }
 
     toDelete(chunkId) {
         this._toDelete[ chunkId ] = true;
         // preemptively remove from _toShow and _toCopy too?
-        delete this.pendingChunkBytes[ chunkId ];
         this.pendingToDelete = true;
     }
 
@@ -156,10 +153,10 @@ class Buf {
             bytesNeeded += this.pendingChunkBytes[chunkId];
         }
 
-        //console.log('pendingToCopy and pendingToDelete', this.pendingToCopy, this.pendingToDelete);
+        console.log('pendingToCopy and pendingToDelete', this.pendingToCopy, this.pendingToDelete);
 
         // Realloc if todelete or tocopy or too small
-        if (bytesNeeded > buffer.byteSize) {
+        if (bytesNeeded > buffer.bufferSize) {
             // if we have to re-alloc, use nextBuffer buffer
             buffer = this.nextBuffer;
             if (buffer.buffer) {
@@ -168,34 +165,31 @@ class Buf {
             // copy data to other gl buffer if we had to re-alloc due to size
             copyToNextBuffer = true;
 
-            let newByteSize = buffer.byteSize * 2;
-
-            console.log('gl.createBuffer ' + newByteSize);
+            console.log('gl.createBuffer ' + bytesNeeded);
 
             // need to re-alloc
             buffer.buffer = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, buffer.buffer);
             // TODO: convert this to webgl2 format
-            gl.bufferData(gl.ARRAY_BUFFER, newByteSize, gl.DYNAMIC_DRAW);
-            buffer.byteSize = newByteSize;
-            buffer.offset = 0; // doubles as "used bytes"
+            gl.bufferData(gl.ARRAY_BUFFER, bytesNeeded, gl.DYNAMIC_DRAW);
+            buffer.bufferSize = bytesNeeded;
         }
 
         // If we need to copy between our buffers, prepare the copy manifests
         if (copyToNextBuffer) {
-            buffer.offset = 0;
             for (let chunkId in this.chunks) {
                 // don't copy old data if we have new data for this chunk
-                if (chunkId in this._toShow || chunkId in this._toDelete) {
+                if (chunkId in this._toShow) {
                     continue;
                 }
                 this._toCopy[ chunkId ] = this.chunks[chunkId];
             }
-            console.log('Will copy ' + Object.keys(this._toCopy).length + ' chunks to another buffer: ');
+            console.log('Will copy N chunks to another buffer: ' + Object.keys(this._toCopy).length);
         }
 
 
 
+        let offset = 0;
         gl.bindBuffer(gl.ARRAY_BUFFER, buffer.buffer);
         // Copy data from other buffers
         for (let chunkId in this._toCopy) {
@@ -207,14 +201,14 @@ class Buf {
                 continue;
             }
 
-            console.log('toCopy: readOffset writeOffset size:', source[1], buffer.offset, size);
+            console.log('toCopy: readOffset writeOffset size:', source[1], offset, size);
 
             gl.bindBuffer(gl.COPY_READ_BUFFER, source[0]);
-            gl.copyBufferSubData(gl.COPY_READ_BUFFER, gl.ARRAY_BUFFER, source[1], buffer.offset, size);
+            gl.copyBufferSubData(gl.COPY_READ_BUFFER, gl.ARRAY_BUFFER, source[1], offset, size);
 
             // might have issue here if another Buf has handle to this for copying data, but shouldn't
-            this.chunks[chunkId] = [buffer.buffer, buffer.offset, size];
-            buffer.offset += size;
+            this.chunks[chunkId] = [buffer.buffer, offset, size];
+            offset += size;
         }
         // now copy in new data
         for (let chunkId in this._toShow) {
@@ -224,10 +218,10 @@ class Buf {
             // TODO: source should be float 32
             //console.log('toShow: copying in bytes: ' + source.length);
             // probably don't need to convert to float32 ... maybe just array view and leave size in bytes instead of div by 4
-            gl.bufferSubData(gl.ARRAY_BUFFER, buffer.offset, new Float32Array(source), 0, size / 4);
+            gl.bufferSubData(gl.ARRAY_BUFFER, offset, source, 0, size);
 
-            this.chunks[chunkId] = [buffer.buffer, buffer.offset, size];
-            buffer.offset += size;
+            this.chunks[chunkId] = [buffer.buffer, offset, size];
+            offset += size;
         }
 
 
@@ -256,14 +250,11 @@ class Buf {
             this.nextBuffer = temp;
         }
 
-        this._toCopy = {};
-        this._toDelete = {};
-        this._toShow = {};
-        this.pendingToCopy = this.pendingToDelete = this.pendingToShow = false;
+        this._clear();
 
         return {
             buffer: this.currentBuffer.buffer,
-            byteSize: this.currentBuffer.offset
+            byteSize: this.currentBuffer.bufferSize
         };
     }
 }

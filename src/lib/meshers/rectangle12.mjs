@@ -2,6 +2,9 @@
 import { Growable } from '../growable.mjs';
 import ofi from './ofi.mjs';
 
+// going back to a mesher that assumes UV wrapping in the X direction
+// also will pass in texture sampler id
+
 class RectangleMesher {
     constructor(config, voxToTex, texOffsets, coordinates, cache) {
         this._debug = false;
@@ -10,7 +13,6 @@ class RectangleMesher {
         this.textureOffsets = texOffsets;
         this.coordinates = coordinates;
         this.cache = cache;
-        this.repeatCount = 14;
 
         this.chunkWidth = config.chunkWidth;
         this.chunkWidth2 = config.chunkWidth * config.chunkWidth;
@@ -74,30 +76,14 @@ class RectangleMesher {
         }
         return current;
     }
-    // UNUSED: this is too slow
-    sparseDelete(out, keys) {
-        let current = out;
-        let last = keys.pop();
-        for (let i in keys) {
-            let key = keys[i];
-            let element = current[key];
-            if (element) { // not undefined
-                current = element;
-            } else {
-                return undefined;
-            }
-        }
-        delete current[last];
-    }
 
     run(basePosition, voxels) {
         if (!voxels || voxels.length == 0) {
             this.debug('Empty voxels');
             return null;
         }
-        let self = this;
 
-        let out = []; // changing from obj to array so indexes are numeric
+        let out = {};
         let sh = "  ";
         this.debug('Mesh basePosition: ' + basePosition);
 
@@ -231,48 +217,50 @@ class RectangleMesher {
                                 row = z;
                                 break;
                         }
-
-                        let sparseHelper = function(faceTexture, faceIndex, plane, column, row, del) {
-                            let oppositeFaceIndex = oppositeFaceIndices[ faceIndex ];
-                            if (oppositeFaceIndex != -1 && voxels[ oppositeFaceIndex ] > 0) {
-                                // Clear info about previously seen face texture
-                                if (del) {
-                                    delete previous[ faceIndex ][ plane ][ row ];
-                                }
-                                //self.sparseDelete(previous, [faceIndex, plane, row]);
-                                self.debug('Clearing previous face info');
-                            } else {
-                                // value of 0 might be handled implicitly, not sure
-                                let newPrev = {
-                                    faceTexture: faceTexture,
-                                    start: column,
-                                    length: 1
-                                };
-                                //self.debug('Setting previous at: ' + [faceIndex, plane, row].join(','));
-                                //self.debug(newPrev);
-                                self.sparseSet(previous, [faceIndex, plane, row], newPrev);
-                                self.sparseSet(contiguous, [faceTexture, faceIndex, plane, column, row], newPrev);
-                            }
-                        };
                         
                         let prev = this.sparseGet(previous, [faceIndex, plane, row]);
                         if (prev) {
                             if (prev.faceTexture != faceTexture) {
                                 // Run has ended, check for blocked face
                                 // TODO: could conditionally create oppositeFaceIndices here
-                                sparseHelper(faceTexture, faceIndex, plane, column, row, true);
+                                let oppositeFaceIndex = oppositeFaceIndices[ faceIndex ];
+                                if (oppositeFaceIndex != -1 && voxels[ oppositeFaceIndex ] > 0) {
+                                    // Clear info about previously seen face texture
+                                    delete previous[ faceIndex ][ plane ][ row ];
+                                    this.debug('Clearing previous face inf');
+                                } else {
+                                    // value of 0 might be handled implicitly, not sure
+                                    let newPrev = {
+                                        faceTexture: faceTexture,
+                                        start: column,
+                                        length: 1
+                                    };
+                                    this.sparseSet(previous, [faceIndex, plane, row], newPrev);
+                                    this.sparseSet(contiguous, [faceTexture, faceIndex, plane, column, row], newPrev);
+                                }
                             } else {
                                 prev.length++;
-
-                                if (prev.length == this.repeatCount) {
-                                    sparseHelper(faceTexture, faceIndex, plane, column, row, true);
-                                }
                             }
                         } else { // No info about previously seen faces
                             this.debug('No immediately previous face');
                             // possible start of a run, check for blocked face
                             // TODO: could conditionally create oppositeFaceIndices here
-                            sparseHelper(faceTexture, faceIndex, plane, column, row, false);
+                            let oppositeFaceIndex = oppositeFaceIndices[ faceIndex ];
+                            if (oppositeFaceIndex != -1 && voxels[ oppositeFaceIndex ] > 0) {
+                                // Skip this one
+                                this.debug('Face is blocked');
+                            } else {
+                                this.debug('New face to track');
+                                let newPrev = {
+                                    faceTexture: faceTexture,
+                                    start: column,
+                                    length: 1
+                                };
+                                this.debug('Setting previous at: ' + [faceIndex, plane, row].join(','));
+                                this.debug(newPrev);
+                                this.sparseSet(previous, [faceIndex, plane, row], newPrev);
+                                this.sparseSet(contiguous, [faceTexture, faceIndex, plane, column, row], newPrev);
+                            }
                         }
                     }
                 }
@@ -307,27 +295,6 @@ class RectangleMesher {
                                 if (currentRow) {
                                     if (previousRow.length == currentRow.length) {
                                         this.debug('Found adjacent row with same length of same texture! ' + [plane,column,row].join(','));
-
-                                        // our texture atlas only supports up 14x14
-                                        if (row - rowStart == this.repeatCount) {
-                                            this.debug('Reached our contiguous limit. Flushing ! ' + [plane,column,row].join(','));
-                                            // We'll re-map plane, column, row in addPoints
-                                            this.addPoints(
-                                                out,
-                                                basePosition,
-                                                faceIndex, // this determines how plane, column, row are interpreted
-                                                textureValue,
-                                                plane,
-                                                column,
-                                                rowStart,
-                                                // columns
-                                                previousRow.length,
-                                                // rows
-                                                row - rowStart
-                                            );
-                                            rowStart = row;
-                                            previousRow = currentRow;
-                                        }
                                     } else {
                                         this.debug('Found different row. Flushing ! ' + [plane,column,row].join(','));
                                         // We'll re-map plane, column, row in addPoints
@@ -414,11 +381,18 @@ class RectangleMesher {
             return;
         }
 
-        let outIndex = faceIndex;
+        // we're using this value as an index in out, but voxel textures
+        // start in textures sampler 3 and beyond, but we want our indexes
+        // to start at 0, so subtract 3
+        // sorry this is quirky
+        let textureSampler = this.textureOffsets['textureToTextureUnit'][ textureValue ];
+        // 6 faces ... we'll shift transparent faces up
+        let outIndex = ((textureSampler-3) * 6) + faceIndex;
+        let transparentOffset
         // if face texture has transparency, put it in a separate bucket
         if (textureValue in this.config.texturesWithTransparency) {
-            // might have string conversion issues
-            outIndex += 6;
+            // TODO: don't hardcode this
+            outIndex += (this.textureOffsets['numAtlases'] * 6);
             //console.log(textureValue + ' has transp, remapping to face ' + faceIndex);
         }
 
@@ -434,10 +408,10 @@ class RectangleMesher {
             // Going for no allocations
             out[outIndex] = {
                 position: new Growable('float32', 32000),
-                texcoord: new Growable('float32', 32000)
+                texcoord: new Growable('float32', 32000),
+                sampler: textureSampler
             };
         }
-
         var points = out[outIndex].position;
         var texcoord = out[outIndex].texcoord;
         let x, y, z;
@@ -451,7 +425,6 @@ class RectangleMesher {
                 // winding should be clockwise for this back face
                 // starting from the left if you're around the back side of the cube
                 // think this will keep the texture wrapping order the same
-                // TODO: this might be right
                 points.data[ points.offset++ ] = x + columns;
                 points.data[ points.offset++ ] = y;
                 points.data[ points.offset++ ] = z;
@@ -604,24 +577,21 @@ class RectangleMesher {
                 this.debug('unexpected');
         }
 
-        let offsetsInAtlas = this.textureOffsets['offsets'][textureValue];
-        let textureDimensions = this.textureOffsets['textureDimensions'];
-        let textureWidth = textureDimensions[0];
-        let textureHeight = textureDimensions[1];
+        let textureBottom = this.textureOffsets['offsets'][textureValue];
+        let textureTop = textureBottom + (this.textureOffsets['textureRowHeight'] * rows);
 
-        texcoord.data[ texcoord.offset++ ] = offsetsInAtlas[0];
-        texcoord.data[ texcoord.offset++ ] = offsetsInAtlas[1];
-        texcoord.data[ texcoord.offset++ ] = offsetsInAtlas[0] + (textureWidth * columns);
-        texcoord.data[ texcoord.offset++ ] = offsetsInAtlas[1];
-        texcoord.data[ texcoord.offset++ ] = offsetsInAtlas[0] + (textureWidth * columns);
-        texcoord.data[ texcoord.offset++ ] = offsetsInAtlas[1] + (textureHeight * rows);
-
-        texcoord.data[ texcoord.offset++ ] = offsetsInAtlas[0];
-        texcoord.data[ texcoord.offset++ ] = offsetsInAtlas[1];
-        texcoord.data[ texcoord.offset++ ] = offsetsInAtlas[0] + (textureWidth * columns);
-        texcoord.data[ texcoord.offset++ ] = offsetsInAtlas[1] + (textureHeight * rows);
-        texcoord.data[ texcoord.offset++ ] = offsetsInAtlas[0];
-        texcoord.data[ texcoord.offset++ ] = offsetsInAtlas[1] + (textureHeight * rows);
+        texcoord.data[ texcoord.offset++ ] = 0.0;
+        texcoord.data[ texcoord.offset++ ] = textureBottom;
+        texcoord.data[ texcoord.offset++ ] = 1.0 * columns;
+        texcoord.data[ texcoord.offset++ ] = textureBottom;
+        texcoord.data[ texcoord.offset++ ] = 1.0 * columns;
+        texcoord.data[ texcoord.offset++ ] = textureTop;
+        texcoord.data[ texcoord.offset++ ] = 0;
+        texcoord.data[ texcoord.offset++ ] = textureBottom;
+        texcoord.data[ texcoord.offset++ ] = 1.0 * columns;
+        texcoord.data[ texcoord.offset++ ] = textureTop;
+        texcoord.data[ texcoord.offset++ ] = 0;
+        texcoord.data[ texcoord.offset++ ] = textureTop;
     }
 }
 

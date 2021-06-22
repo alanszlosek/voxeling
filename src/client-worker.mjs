@@ -1,7 +1,7 @@
 import config from '../config';
 import { Coordinates } from './lib/coordinates';
 //import mesher from './lib/meshers/horizontal-merge2';
-import { RectangleMesher } from '../src/lib/meshers/rectangle10.mjs';
+import { RectangleMesher } from '../src/lib/meshers/rectangle12.mjs';
 import Log from './lib/log';
 import MC from './lib/max-concurrent';
 import textureOffsets from '../texture-offsets';
@@ -336,7 +336,8 @@ var worker = {
                         buffer: bufferGroup.texcoord.data.buffer,
                         offset: bufferGroup.texcoord.offset,
                         offsetBytes: bufferGroup.texcoord.offset * 4
-                    }
+                    },
+                    sampler: bufferGroup.sampler
                 };
                 transferList.push(bufferGroup.position.data.buffer);
                 transferList.push(bufferGroup.texcoord.data.buffer);

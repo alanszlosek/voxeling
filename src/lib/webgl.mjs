@@ -82,8 +82,8 @@ class WebGL {
         // if our fragment has a depth value that is less than the one that is currently there, use our new one
         gl.depthFunc(gl.LESS);
 
-        gl.enable(gl.BLEND);
-        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+        //gl.enable(gl.BLEND);
+        //gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
         // TODO: resize events might need to call this again
         gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
@@ -211,60 +211,10 @@ class WebGL {
         );
 
 
-        /*
-        var fragmentShaderCode2 =
-            "precision mediump float;" +
-
-            "uniform sampler2D u_texture;" +
-
-            "varying vec4 v_position;" +
-            "varying vec3 v_normal;" +
-            "varying vec2 v_texcoord;" +
-
-            "vec3 fogColor;" +
-
-            "void main() {" +
-                "vec4 texelColor = texture2D(u_texture, v_texcoord);" +
-
-                // Apply light before we apply the haze?
-                "gl_FragColor.rgb = texelColor.rgb;" +
-                "gl_FragColor.a = texelColor.a;" +
-            "}";
-        var vertexShaderCode2 =
-            "uniform mat4 u_projection;" +
-            "uniform mat4 u_view;" +
-
-            "attribute vec4 a_position;" +
-            "attribute vec3 a_normal;" +
-            "attribute vec2 a_texcoord;" +
-
-            "varying vec4 v_position;" +
-            "varying vec3 v_normal;" +
-            "varying vec2 v_texcoord;" +
-
-            "void main() {" +
-                "v_position = u_projection * u_view * a_position;" +
-                "v_normal = a_normal;" +
-                "v_texcoord = a_texcoord;" +
-
-                "gl_Position = u_projection * u_view * a_position;" +
-            "}";
-        this.shaders.projectionViewPosition2 = createShader(
-            this.gl,
-            vertexShaderCode2,
-            fragmentShaderCode2,
-            // attributes
-            ['position', 'normal', 'texcoord'],
-            // uniforms
-            ['projection', 'view', 'texture'],
-            'projectionViewPosition2'
-        );
-        */
-
-
         var voxelVertexShader =
             "uniform mat4 u_projection;" +
             "uniform mat4 u_view;" +
+            "uniform sampler2D u_sampler;" +
 
             "attribute vec4 a_position;" +
             "attribute vec2 a_texcoord;" +
@@ -281,12 +231,8 @@ class WebGL {
         var voxelFragmentShader =
             "precision mediump float;" +
 
-            "uniform sampler2D u_texture;" +
-            "uniform vec3 u_ambientLightColor;" +
-            "uniform vec3 u_directionalLightColor;" +
-            "uniform vec3 u_directionalLightPosition;" +
-            "uniform float u_hazeDistance;" +
-            "uniform vec3 u_normal;" +
+            "uniform sampler2D u_sampler;" +
+            //"uniform vec3 u_ambientLightColor;" +
 
             "varying vec4 v_position;" +
             "varying vec2 v_texcoord;" +
@@ -294,11 +240,14 @@ class WebGL {
             "vec3 fogColor;" +
 
             "void main() {" +
-                "vec4 texelColor = texture2D(u_texture, v_texcoord);" +
+                "vec4 texelColor = texture2D(u_sampler, v_texcoord);" +
+                "gl_FragColor.rgb = texelColor.rgb;" +
+                "gl_FragColor.a = texelColor.a;" +
+
                 //"vec3 temp;" +
 
-                "if(texelColor.a < 0.5) " +
-                    "discard;" +
+                //"if(texelColor.a < 0.5) " +
+                //    "discard;" +
 
                 //"float distance = length(v_position.xyz);" +
                 //"vec3 lightDirection = normalize(u_directionalLightPosition - v_position.xyz);" +
@@ -306,15 +255,17 @@ class WebGL {
                 //"vec3 lightWeight = u_ambientLightColor + (u_directionalLightColor * directionalLightWeight);" +
 
                 // Apply light before we apply the haze?
-                "gl_FragColor.rgb = texelColor.rgb;" + // * lightWeight;" +
+                //"gl_FragColor.rgb = texelColor.rgb;" + // * lightWeight;" +
 
                 //"float depth = gl_FragCoord.z / gl_FragCoord.w;" +
                 // Start haze 1 chunk away, complete haze beyond 2.8 chunks away
                 // TODO: adjusting these doesn't seem to do anything
                 //"float fogFactor = smoothstep( 32.0, u_hazeDistance, depth );" +
                 //"gl_FragColor.a = texelColor.a - fogFactor;" +
+                
             
-                "gl_FragColor.a = texelColor.a;" +
+                //"gl_FragColor = texelColor;" +
+                //"gl_FragColor.a = texelColor.a;" +
             "}";
         this.shaders.projectionPosition = createShader(
             this.gl,
@@ -323,7 +274,8 @@ class WebGL {
             // attributes
             ['position', 'texcoord'],
             // uniforms
-            ['projection', 'view', 'texture', 'normal', 'ambientLightColor', 'directionalLightColor', 'directionalLightPosition', 'hazeDistance']
+            //['projection', 'view', 'texture', 'normal', 'ambientLightColor', 'directionalLightColor', 'directionalLightPosition', 'hazeDistance']
+            ['projection', 'view', 'sampler']
         );
 
         var instancedVertexShader =

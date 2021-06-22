@@ -10,7 +10,6 @@ class RectangleMesher {
         this.textureOffsets = texOffsets;
         this.coordinates = coordinates;
         this.cache = cache;
-        this.repeatCount = 14;
 
         this.chunkWidth = config.chunkWidth;
         this.chunkWidth2 = config.chunkWidth * config.chunkWidth;
@@ -97,7 +96,7 @@ class RectangleMesher {
         }
         let self = this;
 
-        let out = []; // changing from obj to array so indexes are numeric
+        let out = {};
         let sh = "  ";
         this.debug('Mesh basePosition: ' + basePosition);
 
@@ -170,10 +169,11 @@ class RectangleMesher {
                                     row = z;
                                     break;
                             }
-                            if (this.sparseGet(previous, [faceIndex, plane, row])) {
+                            let key1 = faceIndex + '-' + plane + '-' + row;
+                            if (this.sparseGet(previous[ key1 ]) {
                                 this.debug('Clearing previous');
 
-                                delete previous[ faceIndex ][ plane ][ row ];
+                                delete previous[ key ];
                             }
                         }
                         continue;
@@ -231,13 +231,16 @@ class RectangleMesher {
                                 row = z;
                                 break;
                         }
+                        let key1 = faceIndex + '-' + plane + '-' + row;
+                        let key2 = faceTexture + '-' + faceIndex + '-' + plane + '-' + column + '-' + row;
 
                         let sparseHelper = function(faceTexture, faceIndex, plane, column, row, del) {
                             let oppositeFaceIndex = oppositeFaceIndices[ faceIndex ];
+                            
                             if (oppositeFaceIndex != -1 && voxels[ oppositeFaceIndex ] > 0) {
                                 // Clear info about previously seen face texture
                                 if (del) {
-                                    delete previous[ faceIndex ][ plane ][ row ];
+                                    delete previous[ key1 ];
                                 }
                                 //self.sparseDelete(previous, [faceIndex, plane, row]);
                                 self.debug('Clearing previous face info');
@@ -249,13 +252,12 @@ class RectangleMesher {
                                     length: 1
                                 };
                                 //self.debug('Setting previous at: ' + [faceIndex, plane, row].join(','));
-                                //self.debug(newPrev);
-                                self.sparseSet(previous, [faceIndex, plane, row], newPrev);
-                                self.sparseSet(contiguous, [faceTexture, faceIndex, plane, column, row], newPrev);
+                                previous[key1] = newPrev;
+                                contiguous[key2] = newPrev;
                             }
                         };
                         
-                        let prev = this.sparseGet(previous, [faceIndex, plane, row]);
+                        let prev = previous[ key1 ];
                         if (prev) {
                             if (prev.faceTexture != faceTexture) {
                                 // Run has ended, check for blocked face
@@ -264,7 +266,7 @@ class RectangleMesher {
                             } else {
                                 prev.length++;
 
-                                if (prev.length == this.repeatCount) {
+                                if (prev.length == 14) {
                                     sparseHelper(faceTexture, faceIndex, plane, column, row, true);
                                 }
                             }
@@ -309,7 +311,7 @@ class RectangleMesher {
                                         this.debug('Found adjacent row with same length of same texture! ' + [plane,column,row].join(','));
 
                                         // our texture atlas only supports up 14x14
-                                        if (row - rowStart == this.repeatCount) {
+                                        if (row - rowStart == 14) {
                                             this.debug('Reached our contiguous limit. Flushing ! ' + [plane,column,row].join(','));
                                             // We'll re-map plane, column, row in addPoints
                                             this.addPoints(
