@@ -133,6 +133,9 @@ class Buf {
 
     // source = [glBuffer, offset, byteLength]
     toCopy(chunkId, source) {
+
+
+
         this.pendingChunkBytes[chunkId] = source[2];
         this._toCopy[chunkId] = source;
         this.pendingToCopy = true;
@@ -169,6 +172,9 @@ class Buf {
             copyToNextBuffer = true;
 
             let newByteSize = buffer.byteSize * 2;
+            while (newByteSize < bytesNeeded) {
+                newByteSize *= 2;
+            }
 
             console.log('gl.createBuffer ' + newByteSize);
 
@@ -207,7 +213,7 @@ class Buf {
                 continue;
             }
 
-            console.log('toCopy: readOffset writeOffset size:', source[1], buffer.offset, size);
+            //console.log('toCopy: readOffset writeOffset size:', source[1], buffer.offset, size);
 
             gl.bindBuffer(gl.COPY_READ_BUFFER, source[0]);
             gl.copyBufferSubData(gl.COPY_READ_BUFFER, gl.ARRAY_BUFFER, source[1], buffer.offset, size);
@@ -221,10 +227,19 @@ class Buf {
             let source = this._toShow[chunkId];
             let size = this.pendingChunkBytes[chunkId];
 
+            if (chunkId in this._toDelete) {
+                console.log('CHUNK IN toShow AND toDelete');
+            }
+
+            if (buffer.byteSize < buffer.offset + size) {
+                console.log('oh boy');
+            }
+
             // TODO: source should be float 32
             //console.log('toShow: copying in bytes: ' + source.length);
             // probably don't need to convert to float32 ... maybe just array view and leave size in bytes instead of div by 4
-            gl.bufferSubData(gl.ARRAY_BUFFER, buffer.offset, new Float32Array(source), 0, size / 4);
+            let f = new Float32Array(source);
+            gl.bufferSubData(gl.ARRAY_BUFFER, buffer.offset, f, 0, f.length);
 
             this.chunks[chunkId] = [buffer.buffer, buffer.offset, size];
             buffer.offset += size;
@@ -250,7 +265,7 @@ class Buf {
 
         // swap currentBuffer and nextBuffer>
         if (buffer != this.currentBuffer) {
-            console.log('promoting nextBuffer');
+            //console.log('promoting nextBuffer');
             let temp = this.currentBuffer;
             this.currentBuffer = this.nextBuffer;
             this.nextBuffer = temp;
@@ -318,20 +333,21 @@ class Voxels extends Renderable {
 
 
         // prepare nearRenderBuffersByGroup and far
-        let createRenderBufferContainer = function() {
+        let createRenderBufferContainer = function(sampler) {
             return {
                 position: null,
                 texcoord: null,
-                sampler: 0,
+                sampler: sampler,
                 tuples: 0
             };
         }
-        for (let i = 0; i < 240; i++) {
-            this.nearRenderBuffersByGroup.push(createRenderBufferContainer());
-            this.farRenderBuffersByGroup.push(createRenderBufferContainer());
+        // TODO: how should we index these now?
+        for (let i = 3; i < 3 + 10; i++) {
+            this.nearRenderBuffersByGroup[i] = createRenderBufferContainer(i);
+            this.farRenderBuffersByGroup[i] = createRenderBufferContainer(i);
 
-            this.nearBufGroups.push( new BufGroup(this.gl, i, (i/6)+3) );
-            this.farBufGroups.push( new BufGroup(this.gl, i, (i/6)+3) );
+            this.nearBufGroups[i] = new BufGroup(this.gl, i, i);
+            this.farBufGroups[i] = new BufGroup(this.gl, i, i);
         };
     }
 
@@ -340,6 +356,8 @@ class Voxels extends Renderable {
         if (!(chunkId in this.visibleChunks)) {
             return;
         }
+
+        // think we just need to queue, and figure out near/far later
 
         if (this.visibleChunks[chunkId] < this.farDistance) {
             this.nearChunksToShow[chunkId] = mesh;
@@ -388,7 +406,7 @@ class Voxels extends Renderable {
         }
         // handle deletions
         for (let chunkId in this.farChunkToGroups) {
-            if (chunkId in chunkDistances) {
+            if (chunkId in chunkDistances && chunkDistances[chunkId] >= this.farDistance) {
                 continue;
             }
             // delete
@@ -399,7 +417,7 @@ class Voxels extends Renderable {
             this.farPending = true;
         }
         for (let chunkId in this.nearChunkToGroups) {
-            if (chunkId in chunkDistances) {
+            if (chunkId in chunkDistances && chunkDistances[chunkId] < this.farDistance) {
                 continue;
             }
             // delete
@@ -551,8 +569,8 @@ class Voxels extends Renderable {
         // so we can disable face culling when rendering that atlas
 
 
-        for (let bufferGroupId = 0; bufferGroupId < 120; bufferGroupId++) {
-            var bufferBundle = this.nearRenderBuffersByGroup[ bufferGroupId ];
+        for (let i = 0; i < 13; i++) {
+            var bufferBundle = this.nearRenderBuffersByGroup[ i ];
             if (!bufferBundle) {
                 continue;
             }
@@ -577,8 +595,11 @@ class Voxels extends Renderable {
             gl.drawArrays(gl.TRIANGLES, 0, bufferBundle.tuples);
         }
 
-        for (let bufferGroupId = 0; bufferGroupId < 120; bufferGroupId++) {
-            var bufferBundle = this.farRenderBuffersByGroup[ bufferGroupId ];
+        for (let i = 0; i < 13; i++) {
+            var bufferBundle = this.farRenderBuffersByGroup[ i ];
+            if (!bufferBundle) {
+                continue;
+            }
             if (bufferBundle.tuples == 0) {
                 continue;
             }
@@ -597,6 +618,7 @@ class Voxels extends Renderable {
         }
 
         // now render near meshes with transparency
+        /*
         for (let bufferGroupId = 120; bufferGroupId < 240; bufferGroupId++) {
             var bufferBundle = this.nearRenderBuffersByGroup[ bufferGroupId ];
             if (bufferBundle.tuples == 0) {
@@ -616,6 +638,7 @@ class Voxels extends Renderable {
 
             gl.drawArrays(gl.TRIANGLES, 0, bufferBundle.tuples);
         }
+        */
 
         //console.log('Voxels.render ms', Date.now() - start);
     }

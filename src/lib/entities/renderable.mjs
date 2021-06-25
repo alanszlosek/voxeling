@@ -1,4 +1,4 @@
-import { Tickable, tickables } from './tickable';
+import { Tickable, tickables } from './tickable.mjs';
 
 var renderables = {};
 

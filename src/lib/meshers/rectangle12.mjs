@@ -83,7 +83,6 @@ class RectangleMesher {
             return null;
         }
 
-        let out = {};
         let sh = "  ";
         this.debug('Mesh basePosition: ' + basePosition);
 
@@ -270,11 +269,80 @@ class RectangleMesher {
         //this.debug( JSON.stringify(previous) );
         //this.debug( JSON.stringify(contiguous) );
 
+        // calculate array sizes we'll need
+        let addPointsCalls = {};
+        // TODO:    go back to numeric checks
+        // for in loops over all properties on array
+        for (let textureValue = 0; textureValue < contiguous.length; textureValue++) {
+            if (!contiguous[textureValue]) continue;
+            let textureSampler = this.textureOffsets['textureToTextureUnit'][ textureValue ];
+            if (!(textureSampler  in addPointsCalls)) {
+                addPointsCalls[ textureSampler ] = 0;
+            }
+            //face order: top, back, front, left, right, bottom
+            for (let faceIndex = 0; faceIndex < contiguous[textureValue].length; faceIndex++) {
+                if (!contiguous[textureValue][faceIndex]) continue;
+                // Loop over planes
+                for (plane = 0; plane < contiguous[textureValue][faceIndex].length; plane++) {
+                    if (!contiguous[textureValue][faceIndex][plane]) continue;
+                    // Loop over columns
+                    for (column = 0; column < contiguous[textureValue][faceIndex][plane].length; column++) {
+                        if (!contiguous[textureValue][faceIndex][plane][column]) continue;
+                        // Loop over rows
+                        // loop over info on contiguous blocks, each index is plane row within the same column
+                        let previousRow;
+                        let rowStart = 0;
+                        for (row = 0; row < contiguous[textureValue][faceIndex][plane][column].length; row++) {
+                            let currentRow = contiguous[ textureValue ][ faceIndex ][ plane ][ column ][ row ];
+                            if (previousRow) {
+                                if (currentRow) {
+                                    if (previousRow.length == currentRow.length) {
+                                    } else {
+                                        addPointsCalls[ textureSampler ]++;
+                                        rowStart = row;
+                                        previousRow = currentRow;
+                                    }
+                                } else {
+                                    addPointsCalls[ textureSampler ]++;
+                                    previousRow = undefined;
+                                }
+                            } else {
+                                if (currentRow) {
+                                    rowStart = row;
+                                    previousRow = currentRow;
+                                }
+                            }
+                        }
+                        // Done row loop, add any previousRow items not yet processed
+                        if (previousRow) {
+                            addPointsCalls[ textureSampler ]++;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Pre-allocate 
+        let out = {};
+        for (let textureSampler in addPointsCalls) {
+            out[textureSampler] = {
+                position: {
+                    data: new Float32Array(addPointsCalls[textureSampler] * 18),
+                    offset: 0
+                },
+                texcoord: {
+                    data: new Float32Array(addPointsCalls[textureSampler] * 12),
+                    offset: 0
+                },
+                sampler: textureSampler
+            };
+        }
 
         // Now emit points
         // for .. in will return keys as strings. Not what we want.
         for (let textureValue = 0; textureValue < contiguous.length; textureValue++) {
             if (!contiguous[textureValue]) continue;
+            let textureSampler = this.textureOffsets['textureToTextureUnit'][ textureValue ];
             //face order: top, back, front, left, right, bottom
             for (let faceIndex = 0; faceIndex < contiguous[textureValue].length; faceIndex++) {
                 if (!contiguous[textureValue][faceIndex]) continue;
@@ -300,6 +368,7 @@ class RectangleMesher {
                                         // We'll re-map plane, column, row in addPoints
                                         this.addPoints(
                                             out,
+                                            textureSampler,
                                             basePosition,
                                             faceIndex, // this determines how plane, column, row are interpreted
                                             textureValue,
@@ -318,6 +387,7 @@ class RectangleMesher {
                                     this.debug('Flushing previous. No identical contiguous at current row: ' + [plane,column,row].join(','));
                                     this.addPoints(
                                         out,
+                                        textureSampler,
                                         basePosition,
                                         faceIndex, // this determines how plane, column, row are interpreted
                                         textureValue,
@@ -345,6 +415,7 @@ class RectangleMesher {
                             this.debug('Processing final row: ' + row + ' rowStart: ' + rowStart);
                             this.addPoints(
                                 out,
+                                textureSampler,
                                 basePosition,
                                 faceIndex, // this determines how plane, column, row are interpreted
                                 textureValue,
@@ -375,43 +446,7 @@ class RectangleMesher {
     - and so on
     */
 
-    addPoints(out, basePosition, faceIndex, textureValue, plane, column, row, columns, rows) {
-        if (!(textureValue in this.textureOffsets['offsets'])) {
-            this.debug('textureValue ' + textureValue + ' not in textureOffsets');
-            return;
-        }
-
-        // we're using this value as an index in out, but voxel textures
-        // start in textures sampler 3 and beyond, but we want our indexes
-        // to start at 0, so subtract 3
-        // sorry this is quirky
-        let textureSampler = this.textureOffsets['textureToTextureUnit'][ textureValue ];
-        // 6 faces ... we'll shift transparent faces up
-        let outIndex = ((textureSampler-3) * 6) + faceIndex;
-        let transparentOffset
-        // if face texture has transparency, put it in a separate bucket
-        if (textureValue in this.config.texturesWithTransparency) {
-            // TODO: don't hardcode this
-            outIndex += (this.textureOffsets['numAtlases'] * 6);
-            //console.log(textureValue + ' has transp, remapping to face ' + faceIndex);
-        }
-
-        if (outIndex in out) {
-            // Is points large enough to fit another batch?
-            out[outIndex].position.need(18);
-            // Is texcoord large enough to fit another batch?
-            out[outIndex].texcoord.need(12);
-        } else {
-            // Start points Growable at 1/10 of chunk with single texture, 353808 floats
-            // nah, 1/20 = 88452 floats
-
-            // Going for no allocations
-            out[outIndex] = {
-                position: new Growable('float32', 32000),
-                texcoord: new Growable('float32', 32000),
-                sampler: textureSampler
-            };
-        }
+    addPoints(out, outIndex, basePosition, faceIndex, textureValue, plane, column, row, columns, rows) {
         var points = out[outIndex].position;
         var texcoord = out[outIndex].texcoord;
         let x, y, z;

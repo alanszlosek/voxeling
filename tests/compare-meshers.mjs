@@ -2,7 +2,9 @@ import { default as config } from '../config.mjs';
 import configServer from '../config-server.mjs';
 import chunkGenerator from '../src/lib/generators/server-terraced.mjs';
 import { Coordinates } from '../src/lib/coordinates.mjs';
-import { RectangleMesher } from '../src/lib/meshers/rectangle6.mjs';
+import { RectangleMesher as RectangleMesher06 } from '../src/lib/meshers/rectangle06.mjs';
+import { RectangleMesher as RectangleMesher09 } from '../src/lib/meshers/rectangle09.mjs';
+import { RectangleMesher as RectangleMesher10 } from '../src/lib/meshers/rectangle12.mjs';
 import mesher from '../src/lib/meshers/horizontal-merge2.mjs';
 import { MysqlChunkStore } from '../src/lib/chunk-stores/mysql.mjs';
 import textureOffsets from '../texture-offsets.js';
@@ -19,7 +21,9 @@ config.chunkElements = 32*32*32;
 let coordinates = new Coordinates(config);
 var chunkCache = {};
 
-let rectangle = new RectangleMesher(config, config.voxels, textureOffsets, coordinates);
+let rectangle06 = new RectangleMesher06(config, config.voxels, textureOffsets, coordinates);
+let rectangle09 = new RectangleMesher09(config, config.voxels, textureOffsets, coordinates);
+let rectangle10 = new RectangleMesher10(config, config.voxels, textureOffsets, coordinates);
 mesher.config(config, config.voxels, textureOffsets, coordinates, chunkCache);
 
 
@@ -30,16 +34,25 @@ var chunkStore = new MysqlChunkStore(
 );
 
 let meshers = [
+    /*
     {
         'name': 'horizontal-merge',
         'func': function(position, voxels) {
             return mesher.mesh(position, voxels);
         }
     },
+    */
     {
-        'name': 'rectangle6',
+        'name': 'rectangle06',
         'func': function(position, voxels) {
-            return rectangle.run(position, voxels);
+            return rectangle06.run(position, voxels);
+        }
+    },
+
+    {
+        'name': 'rectangle10',
+        'func': function(position, voxels) {
+            return rectangle10.run(position, voxels);
         }
     }
 ];
@@ -84,9 +97,14 @@ let cb = function(error, chunk) {
         for (let voxelValue in mesh) {
             points += mesh[voxelValue].position.offset;
 
-            mesh[voxelValue].position.free();
-            mesh[voxelValue].texcoord.free();
-            mesh[voxelValue].normal.free();
+            if (i == 0) {
+
+                mesh[voxelValue].position.free();
+                mesh[voxelValue].texcoord.free();
+                if ('normal' in mesh[voxelValue]) {
+                    mesh[voxelValue].normal.free();
+                }
+            }
         }
 
         if (!(mesher.name in results)) {
@@ -119,7 +137,7 @@ let cb = function(error, chunk) {
         chunkStore.end();
 
         let nl = "\n";
-        let fields = ['Mesher','Points','Total Time','Min Time','Max Time','Mesh Operations'];
+        let fields = ['Mesher','Points','Total Time ms','Min Time','Max Time','Mesh Operations'];
         let out = '"' + fields.join('","') + '"' + nl;
 
         for (let mesherName in results) {
