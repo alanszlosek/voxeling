@@ -50,13 +50,13 @@ class AtlasBuffer {
                 glBuffer: null,
                 // so we can delete old glBuffer after all copies are done
                 glBuffer_delete: null,
-                byteSize: 0,
+                byteLength: 0,
                 offset: 0
             },
             texcoord: {
                 glBuffer: null,
                 glBuffer_delete: null,
-                byteSize: 0,
+                byteLength: 0,
                 offset: 0
             }
         };
@@ -121,21 +121,21 @@ class AtlasBuffer {
             buf.glBuffer_delete = buf.glBuffer;
         }
         // minimum is 16k
-        if (buf.byteSize == 0) {
-            buf.byteSize = 16384;
+        if (buf.byteLength == 0) {
+            buf.byteLength = 16384;
         } else {
             console.log('here');
         }
-        let newByteSize = buf.byteSize * 2;
-        while (newByteSize < bytesNeeded) {
-            newByteSize *= 2;
+        let newByteLength = buf.byteLength;
+        while (newByteLength < bytesNeeded) {
+            newByteLength *= 2;
         }
 
         buf.glBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, buf.glBuffer);
         // TODO: convert this to webgl2 format
-        gl.bufferData(gl.ARRAY_BUFFER, newByteSize, gl.DYNAMIC_DRAW);
-        buf.byteSize = newByteSize;
+        gl.bufferData(gl.ARRAY_BUFFER, newByteLength, gl.DYNAMIC_DRAW);
+        buf.byteLength = newByteLength;
         buf.offset = 0; // doubles as "used bytes"
     };
 
@@ -182,12 +182,18 @@ class AtlasBuffer {
     update(gl) {
         let self = this;
         // calculate bytes needed for each glBuffer
+        if (this.id == 8 && this.near == true) {
+            console.log('here');
+        }
         let bytesNeeded = this._bytesNeeded();
 
         // TODO: do we need to move?
 
+        // if removing lots during regionChange, we need to shuffle to new buffer even though
+        // size requirements may be less
+
         // determine whether we need to ferry to larger glBuffers
-        if (bytesNeeded.position > this.glBuffers.position.byteSize) {
+        if (bytesNeeded.position > this.glBuffers.position.byteLength || this.shuffle) {
             console.log('create new GL buffer ' + this.info());
             this._newGlBuffer(gl, this.glBuffers.position, bytesNeeded.position);
             this._newGlBuffer(gl, this.glBuffers.texcoord, bytesNeeded.texcoord);
@@ -195,6 +201,7 @@ class AtlasBuffer {
             this._glBufferHandles.texcoord = this.glBuffers.texcoord.glBuffer;
             this.shuffle = true;
         } else {
+
             // do we need to reset offsets for any other reason?
             // or do anything else if we're not moving to a new glBuffer?
         }
@@ -252,6 +259,9 @@ class AtlasBuffer {
             gl.bindBuffer(gl.ARRAY_BUFFER, target.glBuffer);
             gl.bindBuffer(gl.COPY_READ_BUFFER, source.glBuffer);
             // TODO: errors here
+            if (target.byteLength < (target.offset  + source.byteLength)) {
+                console.log('likely copyBufferSubData overflow ' + self.info());
+            }
             gl.copyBufferSubData(gl.COPY_READ_BUFFER, gl.ARRAY_BUFFER, source.offset, target.offset, source.byteLength);
 
             manifestToUpdate.glBuffer = target.glBuffer;
@@ -276,6 +286,10 @@ class AtlasBuffer {
         // TODO: how do i process toFill and populate chunks?
         let fillBuffer = function(source, target, manifestToUpdate, inPlace) {
             gl.bindBuffer(gl.ARRAY_BUFFER, target.glBuffer);
+
+            if (target.byteLength < (target.offset  + source.byteLength)) {
+                console.log('likely bufferSubData overflow ' + self.info());
+            }
 
             let f = new Float32Array(source);
             // bufferSubData wants length in items, not bytes
@@ -451,7 +465,7 @@ class Voxels extends Renderable {
                 console.log('new mesh ' + chunkId);
                 chunk.buffers.forEach(function(buffer, i) {
                     console.log('checking whether to remove from old buffers');
-                    if (!chunk.data[i]) {
+                    if (!chunk.mesh[i]) {
                         // new data doesn't use this texture atlas
                         buffer.delete(chunkId);
                     } else {
