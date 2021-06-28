@@ -39,250 +39,6 @@ let normals = [
 */
 
 
-// We have an instance of this for each cube face ...
-// Holds position and texcoord values for each face mesh
-class BufGroup {
-    constructor(gl, groupId, sampler) {
-        this.gl = gl;
-        this.id = groupId;
-        this.sampler = sampler;
-        this.positionBuf = new Buf(gl);
-        this.texcoordBuf = new Buf(gl);
-    }
-
-    toShow(chunkId, bufferBundle) {
-        // todo check these
-        this.positionBuf.toShow(chunkId, bufferBundle.position.buffer, bufferBundle.position.offsetBytes);
-        this.texcoordBuf.toShow(chunkId, bufferBundle.texcoord.buffer, bufferBundle.texcoord.offsetBytes);
-    }
-    toDelete(chunkId) {
-        this.positionBuf.toDelete(chunkId);
-        this.texcoordBuf.toDelete(chunkId);
-    }
-    toCopy(chunkId, sources) {
-        this.positionBuf.toCopy(chunkId, sources.position);
-        this.texcoordBuf.toCopy(chunkId, sources.texcoord);
-    }
-    getLocations(chunkId) {
-        return {
-            position: this.positionBuf.getLocation(chunkId),
-            texcoord: this.texcoordBuf.getLocation(chunkId)
-        };
-    }
-
-    update() {
-        // update tuples number?
-        let position = this.positionBuf.update();
-        let texcoord = this.texcoordBuf.update();
-
-        return {
-            position: position.buffer,
-            texcoord: texcoord.buffer,
-            sampler: this.sampler,
-            // 4 byte floats, 3 floats per tuple, i think?
-            tuples: position.byteSize / 12
-        };
-    }
-}
-
-class Buf {
-    constructor(gl) {
-        this.gl = gl;
-        // TODO: we might not need these currently as-is
-        this.currentBuffer = this._newBuffer();
-        this.nextBuffer = this._newBuffer();
-        this._toCopy = {};
-        this._toDelete = {};
-        this._toShow = {};
-        this.pendingToCopy = false;
-        this.pendingToDelete = false;
-        this.pendingToShow = false;
-        
-        this.chunks = {}; // chunkId -> [glbuffer, offset, length]
-        // track sizes of chunks currently in the buffer
-        this.chunkBytes = {};
-        // if we need to make changes, put them here first
-        // this should start out as a copy of chunkBytes
-        this.pendingChunkBytes = {};
-    }
-    _newBuffer() {
-        let gl = this.gl;
-        let defaultSize = 16384;
-
-        let buf = {
-            buffer: gl.createBuffer(),
-            byteSize: defaultSize,
-            offset: 0
-        };
-        gl.bindBuffer(gl.ARRAY_BUFFER, buf.buffer);
-        gl.bufferData(gl.ARRAY_BUFFER, defaultSize, gl.DYNAMIC_DRAW);
-
-        return buf;
-    }
-    toShow(chunkId, data, length) {
-        this.pendingChunkBytes[ chunkId ] = length;
-        this._toShow[ chunkId ] = data;   
-        this.pendingToShow = true;
-    }
-
-    toDelete(chunkId) {
-        this._toDelete[ chunkId ] = true;
-        // preemptively remove from _toShow and _toCopy too?
-        delete this.pendingChunkBytes[ chunkId ];
-        this.pendingToDelete = true;
-    }
-
-    // source = [glBuffer, offset, byteLength]
-    toCopy(chunkId, source) {
-
-
-
-        this.pendingChunkBytes[chunkId] = source[2];
-        this._toCopy[chunkId] = source;
-        this.pendingToCopy = true;
-    }
-
-    // used to help copy data between gl buffers
-    getLocation(chunkId) {
-        return this.chunks[chunkId];
-    }
-
-    update() {
-        if (!this.pendingToCopy && !this.pendingToDelete && !this.pendingToShow) {
-            return;
-        }
-        let gl = this.gl;
-        // copy data to the other gl buffer if pending copy or delete
-        let copyToNextBuffer = this.pendingToCopy || this.pendingToDelete;
-        let buffer = copyToNextBuffer ? this.nextBuffer : this.currentBuffer; // points to gl buffer container
-        let bytesNeeded = 0;
-        for (let chunkId in this.pendingChunkBytes) {
-            bytesNeeded += this.pendingChunkBytes[chunkId];
-        }
-
-        //console.log('pendingToCopy and pendingToDelete', this.pendingToCopy, this.pendingToDelete);
-
-        // Realloc if todelete or tocopy or too small
-        if (bytesNeeded > buffer.byteSize) {
-            // if we have to re-alloc, use nextBuffer buffer
-            buffer = this.nextBuffer;
-            if (buffer.buffer) {
-                gl.deleteBuffer(buffer.buffer);
-            }
-            // copy data to other gl buffer if we had to re-alloc due to size
-            copyToNextBuffer = true;
-
-            let newByteSize = buffer.byteSize * 2;
-            while (newByteSize < bytesNeeded) {
-                newByteSize *= 2;
-            }
-
-            console.log('gl.createBuffer ' + newByteSize);
-
-            // need to re-alloc
-            buffer.buffer = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, buffer.buffer);
-            // TODO: convert this to webgl2 format
-            gl.bufferData(gl.ARRAY_BUFFER, newByteSize, gl.DYNAMIC_DRAW);
-            buffer.byteSize = newByteSize;
-            buffer.offset = 0; // doubles as "used bytes"
-        }
-
-        // If we need to copy between our buffers, prepare the copy manifests
-        if (copyToNextBuffer) {
-            buffer.offset = 0;
-            for (let chunkId in this.chunks) {
-                // don't copy old data if we have new data for this chunk
-                if (chunkId in this._toShow || chunkId in this._toDelete) {
-                    continue;
-                }
-                this._toCopy[ chunkId ] = this.chunks[chunkId];
-            }
-            console.log('Will copy ' + Object.keys(this._toCopy).length + ' chunks to another buffer: ');
-        }
-
-
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, buffer.buffer);
-        // Copy data from other buffers
-        for (let chunkId in this._toCopy) {
-            let source = this._toCopy[chunkId];
-            let size = source[2];
-
-            if (!source[0]) {
-                //console.log('toCopy: source buffer is null. chunk must be old');
-                continue;
-            }
-
-            //console.log('toCopy: readOffset writeOffset size:', source[1], buffer.offset, size);
-
-            gl.bindBuffer(gl.COPY_READ_BUFFER, source[0]);
-            gl.copyBufferSubData(gl.COPY_READ_BUFFER, gl.ARRAY_BUFFER, source[1], buffer.offset, size);
-
-            // might have issue here if another Buf has handle to this for copying data, but shouldn't
-            this.chunks[chunkId] = [buffer.buffer, buffer.offset, size];
-            buffer.offset += size;
-        }
-        // now copy in new data
-        for (let chunkId in this._toShow) {
-            let source = this._toShow[chunkId];
-            let size = this.pendingChunkBytes[chunkId];
-
-            if (chunkId in this._toDelete) {
-                console.log('CHUNK IN toShow AND toDelete');
-            }
-
-            if (buffer.byteSize < buffer.offset + size) {
-                console.log('oh boy');
-            }
-
-            // TODO: source should be float 32
-            //console.log('toShow: copying in bytes: ' + source.length);
-            // probably don't need to convert to float32 ... maybe just array view and leave size in bytes instead of div by 4
-            let f = new Float32Array(source);
-            gl.bufferSubData(gl.ARRAY_BUFFER, buffer.offset, f, 0, f.length);
-
-            this.chunks[chunkId] = [buffer.buffer, buffer.offset, size];
-            buffer.offset += size;
-        }
-
-
-
-        // copy pendingChunkBytes to chunkBytes
-        for (let chunkId in this.pendingChunkBytes) {
-            this.chunkBytes[chunkId] = this.pendingChunkBytes[chunkId];
-        }
-
-        // remove old chunks from all data structures
-        for (let chunkId in this._toDelete) {
-            console.log('toDelete: removing ' + chunkId);
-            // set buffer to null in case it's present in _toCopy elsewhere
-            if (chunkId in this.chunks) {
-                this.chunks[chunkId][0] = null;
-                delete this.chunks[chunkId];
-            }
-            delete this.chunkBytes[chunkId];
-        }
-
-        // swap currentBuffer and nextBuffer>
-        if (buffer != this.currentBuffer) {
-            //console.log('promoting nextBuffer');
-            let temp = this.currentBuffer;
-            this.currentBuffer = this.nextBuffer;
-            this.nextBuffer = temp;
-        }
-
-        this._toCopy = {};
-        this._toDelete = {};
-        this._toShow = {};
-        this.pendingToCopy = this.pendingToDelete = this.pendingToShow = false;
-
-        return {
-            buffer: this.currentBuffer.buffer,
-            byteSize: this.currentBuffer.offset
-        };
-    }
-}
 
 class AtlasBuffer {
     constructor(id, near) {
@@ -294,12 +50,14 @@ class AtlasBuffer {
                 glBuffer: null,
                 // so we can delete old glBuffer after all copies are done
                 glBuffer_delete: null,
-                byteSize: 0
+                byteSize: 0,
+                offset: 0
             },
             texcoord: {
                 glBuffer: null,
                 glBuffer_delete: null,
-                byteSize: 0
+                byteSize: 0,
+                offset: 0
             }
         };
         this._glBufferHandles = {
@@ -319,12 +77,12 @@ class AtlasBuffer {
                 position: {
                     glBuffer: null,
                     offset: 0,
-                    byteSize: 0
+                    byteLength: 0
                 },
                 texcoord: {
                     glBuffer: null,
                     offset: 0,
-                    byteSize: 0
+                    byteLength: 0
                 }
             }
             */
@@ -392,8 +150,8 @@ class AtlasBuffer {
                 continue;
             }
             let chunk = this.chunks[chunkId];
-            positionBytesNeeded += chunk.position.size;
-            texcoordBytesNeeded += chunk.texcoord.size;
+            positionBytesNeeded += chunk.position.byteLength;
+            texcoordBytesNeeded += chunk.texcoord.byteLength;
         }
         for (let chunkId in this._copyFrom) {
             // if chunk is in _copyFrom and chunks, it's being moved to new glBuffer
@@ -401,7 +159,7 @@ class AtlasBuffer {
             if (chunkId in this.chunks) {
                 continue;
             }
-            let chunk = this._fill[chunkId];
+            let chunk = this._copyFrom[chunkId];
             positionBytesNeeded += chunk.position.byteLength;
             texcoordBytesNeeded += chunk.texcoord.byteLength;
         }
@@ -417,6 +175,10 @@ class AtlasBuffer {
         };
     }
 
+    info() {
+        return [this.id, this.near].join(',');
+    }
+
     update(gl) {
         let self = this;
         // calculate bytes needed for each glBuffer
@@ -426,6 +188,7 @@ class AtlasBuffer {
 
         // determine whether we need to ferry to larger glBuffers
         if (bytesNeeded.position > this.glBuffers.position.byteSize) {
+            console.log('create new GL buffer ' + this.info());
             this._newGlBuffer(gl, this.glBuffers.position, bytesNeeded.position);
             this._newGlBuffer(gl, this.glBuffers.texcoord, bytesNeeded.texcoord);
             this._glBufferHandles.position = this.glBuffers.position.glBuffer;
@@ -438,10 +201,15 @@ class AtlasBuffer {
         
         // enqueue copy operations for move to new glBuffers
         if (this.shuffle) {
+            let sz = Object.keys(this.chunks).length;
+            if (sz > 0) {
+                console.log('shuffling ' + sz + ' chunks to new GL buffer ' + this.info());
+            }
             for (let chunkId in this.chunks) {
                 let chunk = this.chunks[chunkId];
                 // skip if in fill
                 if (chunkId in this._fill) {
+                    // if size diff, reset manifest so we append
                     continue;
                 }
                 // copy from old glBuffer
@@ -449,33 +217,32 @@ class AtlasBuffer {
                     position: {
                         glBuffer: this.glBuffers.position.glBuffer_delete,
                         offset: chunk.position.offset,
-                        byteSize: chunk.position.byteSize
+                        byteLength: chunk.position.byteLength
                     },
                     texcoord: {
                         glBuffer: this.glBuffers.texcoord.glBuffer_delete,
                         offset: chunk.texcoord.offset,
-                        byteSize: chunk.texcoord.byteSize
+                        byteLength: chunk.texcoord.byteLength
                     }
                 };
             }
+            // clear manifest
+            this.chunks = {};
         } else {
             // reset offsets?
         }
 
-        let prepareManifest = function(chunkId) {
-            if (chunkId in self.chunks) {
-                return;
-            }
-            self.chunks[chunkId ] = {
+        let newManifest = function() {
+            return {
                 position: {
                     glBuffer: null,
                     offset: 0,
-                    byteSize: 0
+                    byteLength: 0
                 },
                 texcoord: {
                     glBuffer: null,
                     offset: 0,
-                    byteSize: 0
+                    byteLength: 0
                 }
             };
         }
@@ -485,48 +252,72 @@ class AtlasBuffer {
             gl.bindBuffer(gl.ARRAY_BUFFER, target.glBuffer);
             gl.bindBuffer(gl.COPY_READ_BUFFER, source.glBuffer);
             // TODO: errors here
-            gl.copyBufferSubData(gl.COPY_READ_BUFFER, gl.ARRAY_BUFFER, source.offset, target.offset, source.size);
+            gl.copyBufferSubData(gl.COPY_READ_BUFFER, gl.ARRAY_BUFFER, source.offset, target.offset, source.byteLength);
 
             manifestToUpdate.glBuffer = target.glBuffer;
             manifestToUpdate.offset = target.offset;
+            manifestToUpdate.byteLength = source.byteLength;
             
-            target.offset += source.size;
+            target.offset += source.byteLength;
+        }
+        if (Object.keys(this._copyFrom).length > 0) {
+            console.log('copying between glBuffers ' + this.info());
         }
         for (let chunkId in this._copyFrom) {
-            prepareManifest(chunkId);
+            let manifest = newManifest();
             let atlasBufferManifest = this._copyFrom[chunkId];
 
-            copyFromTo(atlasBufferManifest.position, this.glBuffers.position, this.chunks[chunkId].position);
-            copyFromTo(atlasBufferManifest.texcoord, this.glBuffers.texcoord, this.chunks[chunkId].texcoord);
+            copyFromTo(atlasBufferManifest.position, this.glBuffers.position, manifest.position);
+            copyFromTo(atlasBufferManifest.texcoord, this.glBuffers.texcoord, manifest.texcoord);
+            this.chunks[chunkId] = manifest;
         }
 
 
         // TODO: how do i process toFill and populate chunks?
-        let fillBuffer = function(source, target, manifestToUpdate) {
+        let fillBuffer = function(source, target, manifestToUpdate, inPlace) {
             gl.bindBuffer(gl.ARRAY_BUFFER, target.glBuffer);
 
             let f = new Float32Array(source);
             // bufferSubData wants length in items, not bytes
-            gl.bufferSubData(gl.ARRAY_BUFFER, target.offset, f, 0, f.length);
+            if (inPlace) {
+                console.log('COPYING DATA TO SAME SPOT IN BUFFER');
+                gl.bufferSubData(gl.ARRAY_BUFFER, manifestToUpdate.offset, f, 0, f.length);
 
-            manifestToUpdate.glBuffer = target.glBuffer;
-            manifestToUpdate.offset = target.offset;
-            manifestToUpdate.size = f.byteLength;
-            
-            target.offset += f.byteLength;
+            } else {
+                gl.bufferSubData(gl.ARRAY_BUFFER, target.offset, f, 0, f.length);
+
+                manifestToUpdate.glBuffer = target.glBuffer;
+                manifestToUpdate.offset = target.offset;
+                manifestToUpdate.byteLength = f.byteLength;
+                
+                target.offset += f.byteLength;
+            }
+        }
+        if (Object.keys(this._fill).length > 0) {
+            console.log('filling glBuffers ' + this.info());
         }
         for (let chunkId in this._fill) {
-            prepareManifest(chunkId);
             let chunk = this._fill[chunkId];
+            let manifest;
+            let inPlace = false;
 
-            // position and texcoord data
-            fillBuffer(chunk.position, this.glBuffers.position, this.chunks[chunkId].position);
-            fillBuffer(chunk.texcoord, this.glBuffers.texcoord, this.chunks[chunkId].texcoord);
+            // compare fill size against manifest. If same can reuse. 
+            if (chunkId in this.chunks) {
+                manifest = this.chunks[chunkId];
+                inPlace = manifest.position.byteLength == chunk.position.byteLength;
+            } else {
+                manifest = newManifest();
+            }
+
+            fillBuffer(chunk.position, this.glBuffers.position, manifest.position, inPlace);
+            fillBuffer(chunk.texcoord, this.glBuffers.texcoord, manifest.texcoord, inPlace);
+            this.chunks[chunkId] = manifest;
         }
 
         this.tuples = this._glBufferHandles.tuples = this.glBuffers.position.offset / 12;
         this._copyFrom = {};
         this._fill = {};
+        this.shuffle = false;
     }
 
     cleanup(gl) {
@@ -609,6 +400,13 @@ class Voxels extends Renderable {
         if (!(chunkId in this.visibleChunks)) {
             return;
         }
+        /*
+        for (let i = 0; i < 13; i++) {
+            if (i != 3 && mesh[i]) {
+                delete mesh[i];
+            }
+        }
+        */
         // TODO dont squash existing manifest
         if (chunkId in this.chunks) {
             this.chunks[chunkId].mesh = mesh;
@@ -618,6 +416,18 @@ class Voxels extends Renderable {
         this.nearPending = true;
     }
     chunksToShow(chunks) {
+        /*
+        chunks = {
+            '0|0|0': 0,
+            '-32|0|-32': 1,
+            '-32|0|32': 1,
+            '32|0|-32': 1,
+            
+            '32|0|32': 1
+        };
+    */
+
+
         this.visibleChunks = chunks;
 
     }
@@ -628,16 +438,19 @@ class Voxels extends Renderable {
             let chunk = this.chunks[ chunkId ];
             if (!(chunkId in this.visibleChunks)) {
                 // remove this chunk from all buffers
-                for (let buffer in chunk.buffers) {
+                console.log('removing chunk from buffers');
+                chunk.buffers.forEach(function(buffer, i) {
                     // delete from manifest
                     buffer.delete(chunkId);
-                }
+                });
                 // enqueue chunk to be removed from our manifest
                 toDelete[chunkId] = chunk;
 
             } else if (chunk.mesh) { // we have new data to draw
                 // check existing buffers
+                console.log('new mesh ' + chunkId);
                 chunk.buffers.forEach(function(buffer, i) {
+                    console.log('checking whether to remove from old buffers');
                     if (!chunk.data[i]) {
                         // new data doesn't use this texture atlas
                         buffer.delete(chunkId);
@@ -669,6 +482,7 @@ class Voxels extends Renderable {
                     // chunk still visible within same region, nothing to do?
 
                 } else {
+                    console.log('chunk moved near/far');
                     // chunk has moved near/far
                     let target = near ? this.farBuffers : this.nearBuffers;
                     let chunkBuffers = [];
@@ -681,6 +495,8 @@ class Voxels extends Renderable {
                 }
             }
         }
+
+        // TODO: try to reduce looping we do below
 
         this.nearBuffers.forEach(function(buffer, id) {
             buffer.update(gl);
@@ -710,6 +526,7 @@ class Voxels extends Renderable {
         for (let chunkId in toDelete) {
             delete this.chunks[chunkId];
         }
+        this.nearPending = false;
 
         /*
         - loop over buffers
@@ -806,10 +623,7 @@ class Voxels extends Renderable {
 
         for (let i = 0; i < 13; i++) {
             var bufferBundle = this.nearRenderBuffers[ i ];
-            if (!bufferBundle) {
-                continue;
-            }
-            if (bufferBundle.tuples == 0) {
+            if (!bufferBundle || bufferBundle.tuples == 0) {
                 continue;
             }
             // dont do faces with transparency yet
@@ -879,4 +693,4 @@ class Voxels extends Renderable {
     }
 }
 
-export { Voxels, Buf, BufGroup };
+export { Voxels };
