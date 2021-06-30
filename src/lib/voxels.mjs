@@ -39,34 +39,20 @@ let normals = [
 */
 
 
-
-class AtlasBuffer {
-    constructor(id, near) {
+class GlBuf {
+    constructor(id, near, defaultSize) {
+        this.defaultSize = defaultSize || 16384;
         this.id = id;
         this.near = near;
 
-        this.glBuffers = {
-            position: {
-                glBuffer: null,
-                // so we can delete old glBuffer after all copies are done
-                glBuffer_delete: null,
-                byteLength: 0,
-                offset: 0
-            },
-            texcoord: {
-                glBuffer: null,
-                glBuffer_delete: null,
-                byteLength: 0,
-                offset: 0
-            }
+        this.glBuffer = null;
+        // so we can delete old glBuffer after all copies are done
+        this.glBuffer_delete = null;
+        this.byteLength = 0;
+        this.handle = {
+            glBuffer: null,
+            tuples: 0
         };
-        this._glBufferHandles = {
-            position: null,
-            texcoord: null,
-            tuples: 0,
-            sampler: id
-        };
-        this.tuples = 0;
 
         this.shuffle = false;
         // intent: to provide a manifest of which chunks are in this AtlasBuffer and where
@@ -74,27 +60,17 @@ class AtlasBuffer {
             //chunkId: [offset, size]
             /*
             chunkId: {
-                position: {
-                    glBuffer: null,
-                    offset: 0,
-                    byteLength: 0
-                },
-                texcoord: {
-                    glBuffer: null,
-                    offset: 0,
-                    byteLength: 0
-                }
+                glBuffer: null,
+                offset: 0,
+                byteLength: 0
             }
             */
         };
         // intent: to hold mesh data to be copied into to this AtlasBuffer
         this._fill = {
             /*
-            chunkId: {
-                position: [Float32Array]
-            }
+            chunkId: [Float32Array]
             */
-            //chunkId: [data, size]
         };
         // intent: to point to data in another AtlasBuffer that should be copied into this one
         this._copyFrom = {
@@ -105,44 +81,28 @@ class AtlasBuffer {
         delete this.chunks[chunkId];
         this.shuffle = true;
     }
-    getLocations(chunkId) {
+    getLocation(chunkId) {
         return this.chunks[chunkId];
     }
     fill(chunkId, data) {
         this._fill[chunkId] = data;
+        // if size is different, shuffle
+        if (chunkId in this.chunks) {
+            let chunk = this.chunks[chunkId];
+            
+            if (data.byteLength != chunk.byteLength) {
+                //console.log('filling with diff sized data, need to shuffle')
+                this.shuffle = true;
+            }
+        }
     }
     copyFrom(chunkId, location) {
         this._copyFrom[chunkId] = location;
         this.shuffle = true;
     }
 
-    _newGlBuffer = function(gl, buf, bytesNeeded) {
-        if (buf.glBuffer) {
-            buf.glBuffer_delete = buf.glBuffer;
-        }
-        // minimum is 16k
-        if (buf.byteLength == 0) {
-            buf.byteLength = 16384;
-        } else {
-            console.log('here');
-        }
-        let newByteLength = buf.byteLength;
-        while (newByteLength < bytesNeeded) {
-            newByteLength *= 2;
-        }
-
-        buf.glBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, buf.glBuffer);
-        // TODO: convert this to webgl2 format
-        gl.bufferData(gl.ARRAY_BUFFER, newByteLength, gl.DYNAMIC_DRAW);
-        buf.byteLength = newByteLength;
-        buf.offset = 0; // doubles as "used bytes"
-    };
-
-    // TODO: this needs to consider fill, copyFrom, etc
     _bytesNeeded() {
-        let positionBytesNeeded = 0;
-        let texcoordBytesNeeded = 0;
+        let bytesNeeded = 0;
         for (let chunkId in this.chunks) {
             // if chunk is also in _fill, it might have a new size
             // so count it in that loop below
@@ -150,8 +110,7 @@ class AtlasBuffer {
                 continue;
             }
             let chunk = this.chunks[chunkId];
-            positionBytesNeeded += chunk.position.byteLength;
-            texcoordBytesNeeded += chunk.texcoord.byteLength;
+            bytesNeeded += chunk.byteLength;
         }
         for (let chunkId in this._copyFrom) {
             // if chunk is in _copyFrom and chunks, it's being moved to new glBuffer
@@ -160,32 +119,55 @@ class AtlasBuffer {
                 continue;
             }
             let chunk = this._copyFrom[chunkId];
-            positionBytesNeeded += chunk.position.byteLength;
-            texcoordBytesNeeded += chunk.texcoord.byteLength;
+            bytesNeeded += chunk.byteLength;
         }
         for (let chunkId in this._fill) {
             let chunk = this._fill[chunkId];
-            positionBytesNeeded += chunk.position.byteLength;
-            texcoordBytesNeeded += chunk.texcoord.byteLength;
+            bytesNeeded += chunk.byteLength;
         }
 
-        return {
-            position: positionBytesNeeded,
-            texcoord: texcoordBytesNeeded
-        };
+        return bytesNeeded;
     }
+
+    _newGlBuffer = function(gl, bytesNeeded) {
+        if (this.glBuffer) {
+            this.glBuffer_delete = this.glBuffer;
+        }
+        // minimum is 16k
+        if (this.byteLength == 0) {
+            this.byteLength = this.defaultSize;
+        }
+        let newByteLength = this.byteLength;
+        while (newByteLength < bytesNeeded) {
+            newByteLength *= 2;
+        }
+
+        console.log('creating new GL buffer for ' + newByteLength + ' bytes. ' + this.info());
+
+        this.glBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.glBuffer);
+        // TODO: convert this to webgl2 format
+        gl.bufferData(gl.ARRAY_BUFFER, newByteLength, gl.DYNAMIC_DRAW);
+        this.byteLength = newByteLength;
+        this.offset = 0; // doubles as "used bytes"
+
+        this.handle.glBuffer = this.glBuffer;
+    };
 
     info() {
         return [this.id, this.near].join(',');
     }
 
+    debug() {
+        console.log(this.chunks, this._copyFrom, this._fill, this.info());
+    }
+
     update(gl) {
         let self = this;
         // calculate bytes needed for each glBuffer
-        if (this.id == 8 && this.near == true) {
-            console.log('here');
-        }
         let bytesNeeded = this._bytesNeeded();
+
+        //this.debug();
 
         // TODO: do we need to move?
 
@@ -193,17 +175,9 @@ class AtlasBuffer {
         // size requirements may be less
 
         // determine whether we need to ferry to larger glBuffers
-        if (bytesNeeded.position > this.glBuffers.position.byteLength || this.shuffle) {
-            console.log('create new GL buffer ' + this.info());
-            this._newGlBuffer(gl, this.glBuffers.position, bytesNeeded.position);
-            this._newGlBuffer(gl, this.glBuffers.texcoord, bytesNeeded.texcoord);
-            this._glBufferHandles.position = this.glBuffers.position.glBuffer;
-            this._glBufferHandles.texcoord = this.glBuffers.texcoord.glBuffer;
+        if (bytesNeeded > this.byteLength || this.shuffle) {
+            this._newGlBuffer(gl, bytesNeeded);
             this.shuffle = true;
-        } else {
-
-            // do we need to reset offsets for any other reason?
-            // or do anything else if we're not moving to a new glBuffer?
         }
         
         // enqueue copy operations for move to new glBuffers
@@ -221,132 +195,171 @@ class AtlasBuffer {
                 }
                 // copy from old glBuffer
                 this._copyFrom[chunkId] = {
-                    position: {
-                        glBuffer: this.glBuffers.position.glBuffer_delete,
-                        offset: chunk.position.offset,
-                        byteLength: chunk.position.byteLength
-                    },
-                    texcoord: {
-                        glBuffer: this.glBuffers.texcoord.glBuffer_delete,
-                        offset: chunk.texcoord.offset,
-                        byteLength: chunk.texcoord.byteLength
-                    }
+                    glBuffer: this.glBuffer_delete,
+                    offset: chunk.offset,
+                    byteLength: chunk.byteLength
                 };
             }
-            // clear manifest
+            // clear manifest - OH NO
             this.chunks = {};
-        } else {
-            // reset offsets?
         }
+
+        //console.log(this._copyFrom, this._fill, this.info());
 
         let newManifest = function() {
             return {
-                position: {
-                    glBuffer: null,
-                    offset: 0,
-                    byteLength: 0
-                },
-                texcoord: {
-                    glBuffer: null,
-                    offset: 0,
-                    byteLength: 0
-                }
+                glBuffer: null,
+                offset: 0,
+                byteLength: 0
             };
         }
 
-        // copy between glBuffers using manifests
-        let copyFromTo = function(source, target, manifestToUpdate) {
-            gl.bindBuffer(gl.ARRAY_BUFFER, target.glBuffer);
-            gl.bindBuffer(gl.COPY_READ_BUFFER, source.glBuffer);
-            // TODO: errors here
-            if (target.byteLength < (target.offset  + source.byteLength)) {
-                console.log('likely copyBufferSubData overflow ' + self.info());
-            }
-            gl.copyBufferSubData(gl.COPY_READ_BUFFER, gl.ARRAY_BUFFER, source.offset, target.offset, source.byteLength);
-
-            manifestToUpdate.glBuffer = target.glBuffer;
-            manifestToUpdate.offset = target.offset;
-            manifestToUpdate.byteLength = source.byteLength;
-            
-            target.offset += source.byteLength;
-        }
         if (Object.keys(this._copyFrom).length > 0) {
             console.log('copying between glBuffers ' + this.info());
         }
         for (let chunkId in this._copyFrom) {
             let manifest = newManifest();
-            let atlasBufferManifest = this._copyFrom[chunkId];
+            let source = this._copyFrom[chunkId];
 
-            copyFromTo(atlasBufferManifest.position, this.glBuffers.position, manifest.position);
-            copyFromTo(atlasBufferManifest.texcoord, this.glBuffers.texcoord, manifest.texcoord);
             this.chunks[chunkId] = manifest;
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.glBuffer);
+            gl.bindBuffer(gl.COPY_READ_BUFFER, source.glBuffer);
+            // TODO: errors here
+            if (this.byteLength < (this.offset  + source.byteLength)) {
+                console.log('likely copyBufferSubData overflow ' + self.info());
+            }
+            gl.copyBufferSubData(gl.COPY_READ_BUFFER, gl.ARRAY_BUFFER, source.offset, this.offset, source.byteLength);
+
+            manifest.glBuffer = this.glBuffer;
+            manifest.offset = this.offset;
+            manifest.byteLength = source.byteLength;
+            
+            this.offset += source.byteLength;
         }
 
-
-        // TODO: how do i process toFill and populate chunks?
-        let fillBuffer = function(source, target, manifestToUpdate, inPlace) {
-            gl.bindBuffer(gl.ARRAY_BUFFER, target.glBuffer);
-
-            if (target.byteLength < (target.offset  + source.byteLength)) {
-                console.log('likely bufferSubData overflow ' + self.info());
-            }
-
-            let f = new Float32Array(source);
-            // bufferSubData wants length in items, not bytes
-            if (inPlace) {
-                console.log('COPYING DATA TO SAME SPOT IN BUFFER');
-                gl.bufferSubData(gl.ARRAY_BUFFER, manifestToUpdate.offset, f, 0, f.length);
-
-            } else {
-                gl.bufferSubData(gl.ARRAY_BUFFER, target.offset, f, 0, f.length);
-
-                manifestToUpdate.glBuffer = target.glBuffer;
-                manifestToUpdate.offset = target.offset;
-                manifestToUpdate.byteLength = f.byteLength;
-                
-                target.offset += f.byteLength;
-            }
-        }
         if (Object.keys(this._fill).length > 0) {
             console.log('filling glBuffers ' + this.info());
         }
         for (let chunkId in this._fill) {
-            let chunk = this._fill[chunkId];
+            let source = this._fill[chunkId];
             let manifest;
             let inPlace = false;
 
             // compare fill size against manifest. If same can reuse. 
             if (chunkId in this.chunks) {
                 manifest = this.chunks[chunkId];
-                inPlace = manifest.position.byteLength == chunk.position.byteLength;
+                inPlace = manifest.byteLength == source.byteLength;
             } else {
                 manifest = newManifest();
             }
 
-            fillBuffer(chunk.position, this.glBuffers.position, manifest.position, inPlace);
-            fillBuffer(chunk.texcoord, this.glBuffers.texcoord, manifest.texcoord, inPlace);
             this.chunks[chunkId] = manifest;
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.glBuffer);
+
+            let f = new Float32Array(source);
+            // bufferSubData wants length in items, not bytes
+            if (inPlace) {
+                if (this.byteLength < (manifest.offset  + source.byteLength)) {
+                    console.log('likely bufferSubData overflow ' + self.info());
+                }
+                console.log('COPYING DATA TO SAME SPOT IN BUFFER');
+                gl.bufferSubData(gl.ARRAY_BUFFER, manifest.offset, f, 0, f.length);
+
+            } else {
+                if (this.byteLength < (this.offset  + source.byteLength)) {
+                    console.log('likely bufferSubData overflow ' + self.info());
+                }
+                gl.bufferSubData(gl.ARRAY_BUFFER, this.offset, f, 0, f.length);
+
+                manifest.glBuffer = this.glBuffer;
+                manifest.offset = this.offset;
+                manifest.byteLength = f.byteLength;
+                
+                this.offset += f.byteLength;
+            }
         }
 
-        this.tuples = this._glBufferHandles.tuples = this.glBuffers.position.offset / 12;
+        this.handle.tuples = this.offset / 12;
         this._copyFrom = {};
         this._fill = {};
         this.shuffle = false;
     }
-
     cleanup(gl) {
         // delete glBuffer if necessary
-        if (this.glBuffers.position.glBuffer_delete) {
-            gl.deleteBuffer( this.glBuffers.position.glBuffer_delete );
-            this.glBuffers.position.glBuffer_delete = null;
-        }
-        if (this.glBuffers.texcoord.glBuffer_delete) {
-            gl.deleteBuffer( this.glBuffers.texcoord.glBuffer_delete );
-            this.glBuffers.texcoord.glBuffer_delete = null;
+        if (this.glBuffer.glBuffer_delete) {
+            gl.deleteBuffer( this.glBuffer.glBuffer_delete );
+            this.glBuffer.glBuffer_delete = null;
         }
     }
     handles() {
-        return this._glBufferHandles;
+        return this.handle;
+    }
+}
+
+
+class AtlasBuffer {
+    constructor(id, near, defaultSize) {
+        this.defaultSize = defaultSize || 16384;
+        this.id = id;
+        this.near = near;
+
+        this.position = new GlBuf(id, near, defaultSize);
+        this.texcoord = new GlBuf(id, near, defaultSize);
+    }
+    delete(chunkId) {
+        this.position.delete(chunkId);
+        this.texcoord.delete(chunkId);
+    }
+    getLocations(chunkId) {
+        return {
+            position: this.position.getLocation(chunkId),
+            texcoord: this.texcoord.getLocation(chunkId)
+        };
+    }
+    fill(chunkId, data) {
+        this.position.fill(chunkId, data.position);
+        this.texcoord.fill(chunkId, data.texcoord);
+    }
+    copyFrom(chunkId, location) {
+        this.position.copyFrom(chunkId, location.position);
+        this.texcoord.copyFrom(chunkId, location.texcoord);
+    }
+    info() {
+        return [this.id, this.near].join(',');
+    }
+
+    debug() {
+        console.log(this.chunks, this._copyFrom, this._fill, this.info());
+    }
+
+    update(gl) {
+        this.position.update(gl);
+        this.texcoord.update(gl);
+    }
+
+    cleanup(gl) {
+        this.position.cleanup(gl);
+        this.texcoord.cleanup(gl);
+    }
+    buffers() {
+        return {
+            position: {
+                glBuffer: this.position.glBuffer,
+                offset: this.position.offset
+            },
+            texcoord: {
+                glBuffer: this.texcoord.glBuffer,
+                offset: this.texcoord.offset
+            },
+        }
+    }
+    handles() {
+        return {
+            position: this.position.handle,
+            texcoord: this.texcoord.handle
+        };
     }
 }
 
@@ -707,4 +720,4 @@ class Voxels extends Renderable {
     }
 }
 
-export { Voxels };
+export { Voxels, AtlasBuffer };

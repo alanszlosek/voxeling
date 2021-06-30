@@ -1,4 +1,4 @@
-import { Buf } from '../src/lib/voxels.mjs';
+import { AtlasBuffer } from '../src/lib/voxels.mjs';
 
 // testing new buffer copy code from src/lib/voxels.mjs
 
@@ -10,7 +10,7 @@ class GlStub {
     }
     createBuffer() {
         return {
-            data: null,
+            arrayBuffer: null,
             byteLength: 0
         };
     }
@@ -20,29 +20,37 @@ class GlStub {
     bindBuffer(bind1, target) {
         this.bound[bind1] = target;
     }
+    // size is in bytes
     bufferData(bind1, size, type) {
         let buffer = this.bound[bind1];
-        
-        // size is in bytes here, which the GPU expects
-        buffer.data = new Array(size);
-        // TODO: unsure whether we need to deal with bytes or not
+
+        // create Uint8, which allows us to manipulate bytes more directly
+        buffer.arrayBuffer = new ArrayBuffer(size);
         buffer.byteLength = size;
+
+        //console.log(this.bound);
     }
+    // data will be Float32Array, but size will be in bytes
+    // so we need to work around
     bufferSubData(bind1, writeOffset, data, readOffset, size) {
-        let buffer1 = this.bound[bind1];
-        //console.log('Coping into buffer', data, readOffset, size);
-        // treat float bytes as Int8 so we can copy each byte
-        data = new Int8Array(data);
-        for (let i = 0; i < size; i++) {
-            buffer1.data[ writeOffset + i ] = data[ readOffset + i ];
+        // Uint8Array over the Float32Array's underlying buffer
+        // so we can work with bytes directly
+        let buffer1 = new Uint8Array(this.bound[bind1].arrayBuffer);
+        let data1 = new Uint8Array( data.buffer );
+        let size1 = size * data.BYTES_PER_ELEMENT;
+
+        for (let i = 0; i < size1; i++) {
+            buffer1[ writeOffset + i ] = data1[ readOffset + i ];
         }
+        //console.log('input and final', data1, buffer1);
     }
     copyBufferSubData(readBind, writeBind, readOffset, writeOffset, size) {
-        let buffer1 = this.bound[readBind];
-        let buffer2 = this.bound[writeBind];
-        //console.log('Copying from to:', buffer1, buffer2.data);
+        let buffer1 = new Uint8Array(this.bound[readBind].arrayBuffer);
+        let buffer2 = new Uint8Array(this.bound[writeBind].arrayBuffer);
+        
+        // buffer1 and buffer2 should be Uint8Array, so we can work directly on bytes
         for (let i = 0; i < size; i++) {
-            buffer2.data[ writeOffset + i ] = buffer1.data[ readOffset + i ];
+            buffer2[ writeOffset + i ] = buffer1[ readOffset + i ];
         }
     }
 }
@@ -87,7 +95,7 @@ let chunks = {
 
 function compare(out, test) {
 
-    test = new Int8Array(test);
+    test = new Uint8Array(test);
 
     for (let i = 0; i < out.byteSize; i++) {
         //console.log(test[i]);
@@ -99,16 +107,172 @@ function compare(out, test) {
     }
     console.log('ok');
 }
+
+
+let verify = function(v, out) {
+    //console.log(out);
+    for (let key in v) {
+        let left = v[key];
+        if (!(left instanceof ArrayBuffer)) {
+            console.log('FAIL: Verify should be passed as first param');
+            return;
+        }
+        left = new Float32Array(left);
+        let right = new Float32Array(
+            out[key].glBuffer.arrayBuffer,
+            0,
+            // length needs to be in terms of elements type
+            out[key].offset / Float32Array.BYTES_PER_ELEMENT
+        );
+
+        //console.log( new Float32Array(out[key].glBuffer.arrayBuffer) );
+
+        //console.log(left, right);
+        if (!(key in out)) {
+            console.log(key + ' not found in out');
+        } else {
+            if ( JSON.stringify(left) != JSON.stringify(right)) {
+                console.log('oops');
+            } else {
+                console.log('ok');
+            }
+        }
+    }
+}
+
+
+let tests = [
+    {
+        description: 'Adding 0|0|0 chunk with 3 values',
+        fill: {
+            chunkId: '0|0|0',
+            mesh: {
+                position: floatData([1,2,3]),
+                texcoord: floatData([4,5])
+            }
+        },
+        verify: {
+            position: floatData([1,2,3]),
+            texcoord: floatData([4,5])
+        }
+    },
+
+    {
+        description: 'Replacing 0|0|0 with 3 diff values',
+        fill: {
+            chunkId: '0|0|0',
+            mesh: {
+                position: floatData([4,5,6]),
+                texcoord: floatData([6,7])
+            }
+        },
+        verify: {
+            position: floatData([4,5,6]),
+            texcoord: floatData([6,7])
+        }
+    },
+
+    {
+        description: 'Replacing 0|0|0 with 4 values',
+        fill: {
+            chunkId: '0|0|0',
+            mesh: {
+                position: floatData([4,5,6,7]),
+                texcoord: floatData([6,7,8])
+            }
+        },
+        verify: {
+            position: floatData([4,5,6,7]),
+            texcoord: floatData([6,7,8])
+        }
+    },
+    {
+        description: 'Replacing 0|0|0 again with 4 different values',
+        fill: {
+            chunkId: '0|0|0',
+            mesh: {
+                position: floatData([8, 9, 10, 11]),
+                texcoord: floatData([9, 10, 11])
+            }
+        },
+        verify: {
+            position: floatData([8, 9, 10, 11]),
+            texcoord: floatData([9, 10, 11])
+        }
+    },
+
+    {
+        description: 'Add 0|32|32 chunk with 3 values',
+        fill: {
+            chunkId: '0|32|32',
+            mesh: {
+                position: floatData([20, 21, 22]),
+                texcoord: floatData([20, 21])
+            }
+        },
+        verify: {
+            position: floatData([8, 9, 10, 11, 20, 21, 22]),
+            texcoord: floatData([9, 10, 11, 20, 21])
+        }
+    },
+
+    {
+        description: 'Replacing 0|0|0 chunk again with 5 different values',
+        fill: {
+            chunkId: '0|0|0',
+            mesh: {
+                position: floatData([8, 9, 10, 11, 12]),
+                texcoord: floatData([9, 10, 11, 12])
+            }
+        },
+        verify: {
+            position: floatData([20, 21, 22, 8, 9, 10, 11, 12]),
+            texcoord: floatData([20, 21, 9, 10, 11, 12])
+        }
+    },
+
+    {
+        description: 'Add 32|32|32 with 3 values',
+        fill: {
+            chunkId: '32|32|32',
+            mesh: {
+                position: floatData([30,31,32]),
+                texcoord: floatData([30,31])
+            }
+        },
+        verify: {
+            position: floatData([20, 21, 22, 8, 9, 10, 11, 12, 30, 31, 32]),
+            texcoord: floatData([20, 21, 9, 10, 11, 12, 30, 31])
+        }
+    }
+];
+
 let gl = new GlStub();
-
 // First test adding chunk data to Buf
-let b = new Buf(gl);
+let atlasBuffer = new AtlasBuffer(3, true, 6);
 
-let out;
 
-console.log('Adding first chunk');
-b.toShow('0|0|0', floatData([1,2,3]), 12);
-out = b.update();
+tests.forEach(function(test) {
+    let out;
+    console.log(test.description);
+    if (test.fill) {
+        atlasBuffer.fill( test.fill.chunkId, test.fill.mesh );
+        atlasBuffer.update(gl);
+        out = atlasBuffer.buffers();
+        verify( test.verify, out );
+    }
+})
+/*
+
+
+}
+b.fill('0|0|0', mesh);
+b.update(gl);
+out = b.glBuffers;
+verify(v, out);
+*/
+
+/*
 compare(out, floatData([1,2,3]));
 
 console.log('Adding another chunk (should copy to new buffer)');
@@ -137,3 +301,4 @@ console.log('Removing middle chunk');
 b.toDelete('-32|-32|-32');
 out = b.update();
 compare(out, floatData([4,5,6,13,14,15]));
+*/
