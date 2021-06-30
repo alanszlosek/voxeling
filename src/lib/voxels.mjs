@@ -150,7 +150,7 @@ class GlBuf {
     };
 
     debug(msg) {
-        // console.log(msg);
+        console.log(msg);
     }
 
     _info() {
@@ -379,13 +379,15 @@ class Voxels extends Renderable {
             */
         };
         this.visibleChunks = {};
-        this.nearBuffers = [];
-        this.farBuffers = [];
-        this.nearRenderBuffers = [];
-        this.farRenderBuffers = [];
+
+        this.currentBufferSet = 0;
+        this.buffers1 = [];
+        this.buffers2 = [];
+        this.renderBuffers1 = [];
+        this.renderBuffers2 = [];
 
         this.nearCutoff = 0;
-        this.nearPending = false;
+        this.pending = false;
 
     }
     init() {
@@ -405,8 +407,8 @@ class Voxels extends Renderable {
         // TODO: for now i've hardcoded texture atlas numbers
         // we group chunk mesh data by texture atlas/sampler integer
         for (let i = this.textureAtlasStart; i < this.textureAtlasEnd; i++) {
-            this.nearBuffers[i] = new AtlasBuffer(i, true);
-            this.farBuffers[i] = new AtlasBuffer(i, false);
+            this.buffers1[i] = new AtlasBuffer(i, true);
+            this.buffers2[i] = new AtlasBuffer(i, false);
         }
     }
 
@@ -415,6 +417,7 @@ class Voxels extends Renderable {
         return {
             chunkId: chunkId,
             near: this.visibleChunks[chunkId] < this.farDistance,
+            bufferSet: this.currentBufferSet,
             mesh: mesh,
             buffers: [
                 //points to item in nearBuffers or farBuffers
@@ -440,7 +443,7 @@ class Voxels extends Renderable {
         } else {
             this.chunks[chunkId] = this._newChunkInfo(chunkId, mesh);
         }
-        this.nearPending = true;
+        this.pending = true;
     }
     chunksToShow(chunks) {
         /*
@@ -452,9 +455,7 @@ class Voxels extends Renderable {
             
             '32|0|32': 1
         };
-    */
-
-
+        */
         this.visibleChunks = chunks;
     }
 
@@ -485,16 +486,9 @@ class Voxels extends Renderable {
                     if (!chunk.mesh[i]) {
                         // new data doesn't use this texture atlas
                         buffer.delete(chunkId);
-                    } else {
-                        if (chunk.near == buffer.near) {
-                            // we'll set fill below
-                        } else {
-                            // different region, need to delete so we can copy in to new region
-                            buffer.delete(chunkId);
-                        }
                     }
                 });
-                let bufs = chunk.near ? this.nearBuffers : this.farBuffers;
+                let bufs = chunk.bufferSet == 0 ? this.buffers1 : this.buffers2;
                 let chunkBuffers = [];
                 chunk.mesh.forEach(function(bufferData, i) {
                     bufs[i].fill(chunkId, bufferData);
@@ -506,50 +500,32 @@ class Voxels extends Renderable {
                 // clear mesh data since we've enqueued it
                 chunk.mesh = null;
 
-            } else {
-                // do we need to move to new region?
-                let near = this.visibleChunks[chunkId] < this.farDistance;
-                if (chunk.near == near) {
-                    // chunk still visible within same region, nothing to do?
-
-                } else {
-                    this.debug('chunk moved near/far');
-                    // chunk has moved near/far
-                    let target = near ? this.farBuffers : this.nearBuffers;
-                    let chunkBuffers = [];
-                    chunk.buffers.forEach(function(buffer, i) {
-                        target[i].copyFrom(chunkId, buffer.getLocations(chunkId));
-                        buffer.delete(chunkId);
-                        chunkBuffers[i] = target[i];
-                    });
-                    chunk.buffers = chunkBuffers;
-                }
             }
         }
 
         // TODO: try to reduce looping we do below
 
-        this.nearBuffers.forEach(function(buffer, id) {
+        this.buffers1.forEach(function(buffer, id) {
             buffer.update(gl);
         });
-        this.farBuffers.forEach(function(buffer, id) {
+        this.buffers2.forEach(function(buffer, id) {
             buffer.update(gl);
         });
 
         // now do deletes and get render handles
         let renderBuffers = [];
-        this.nearBuffers.forEach(function(buffer, id) {
+        this.buffers1.forEach(function(buffer, id) {
             buffer.cleanup(gl);
             renderBuffers[id] = buffer.handles();
         });
-        this.nearRenderBuffers = renderBuffers;
+        this.renderBuffers1 = renderBuffers;
 
         renderBuffers = [];
-        this.farBuffers.forEach(function(buffer, id) {
+        this.buffers2.forEach(function(buffer, id) {
             buffer.cleanup(gl);
             renderBuffers[id] = buffer.handles();
         });
-        this.farRenderBuffers = renderBuffers;
+        this.renderBuffers2 = renderBuffers;
 
 
         // we've removed them from AtlasBuffer instances,
@@ -557,7 +533,7 @@ class Voxels extends Renderable {
         for (let chunkId in toDelete) {
             delete this.chunks[chunkId];
         }
-        this.nearPending = false;
+        this.pending = false;
 
         /*
         - loop over buffers
@@ -588,6 +564,8 @@ class Voxels extends Renderable {
         - loop over chunksToRemove
             - delete from global chunks manifest
         */
+
+        this.currentBufferSet = this.currentBufferSet == 0 ? 1 : 0;
     }
 
     releaseMesh(mesh) {
@@ -611,7 +589,7 @@ class Voxels extends Renderable {
     tick(ts) {
         if (ts > this.nearCutoff) {
             this.nearCutoff = ts + 50;
-            if (this.nearPending) {
+            if (this.pending) {
                 this.update();
             }
         }
@@ -653,7 +631,7 @@ class Voxels extends Renderable {
 
 
         for (let i = this.textureAtlasStart; i < this.textureAtlasEnd; i++) {
-            var bufferBundle = this.nearRenderBuffers[ i ];
+            var bufferBundle = this.renderBuffers1[ i ];
             if (!bufferBundle || bufferBundle.tuples == 0) {
                 continue;
             }
@@ -676,7 +654,7 @@ class Voxels extends Renderable {
         }
 
         for (let i = this.textureAtlasStart; i < this.textureAtlasEnd; i++) {
-            var bufferBundle = this.farRenderBuffers[ i ];
+            var bufferBundle = this.renderBuffers2[ i ];
             if (!bufferBundle) {
                 continue;
             }
