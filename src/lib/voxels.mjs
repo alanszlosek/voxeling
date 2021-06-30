@@ -49,10 +49,7 @@ class GlBuf {
         // so we can delete old glBuffer after all copies are done
         this.glBuffer_delete = null;
         this.byteLength = 0;
-        this.handle = {
-            glBuffer: null,
-            tuples: 0
-        };
+        this.tuples = 0;
 
         this.shuffle = false;
         // intent: to provide a manifest of which chunks are in this AtlasBuffer and where
@@ -91,7 +88,7 @@ class GlBuf {
             let chunk = this.chunks[chunkId];
             
             if (data.byteLength != chunk.byteLength) {
-                //console.log('filling with diff sized data, need to shuffle')
+                //this.debug('filling with diff sized data, need to shuffle')
                 this.shuffle = true;
             }
         }
@@ -142,7 +139,7 @@ class GlBuf {
             newByteLength *= 2;
         }
 
-        console.log('creating new GL buffer for ' + newByteLength + ' bytes. ' + this.info());
+        this.debug('creating new GL buffer for ' + newByteLength + ' bytes. ' + this._info());
 
         this.glBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.glBuffer);
@@ -150,16 +147,17 @@ class GlBuf {
         gl.bufferData(gl.ARRAY_BUFFER, newByteLength, gl.DYNAMIC_DRAW);
         this.byteLength = newByteLength;
         this.offset = 0; // doubles as "used bytes"
-
-        this.handle.glBuffer = this.glBuffer;
     };
 
-    info() {
-        return [this.id, this.near].join(',');
+    debug(msg) {
+        // console.log(msg);
     }
 
-    debug() {
-        console.log(this.chunks, this._copyFrom, this._fill, this.info());
+    _info() {
+        return [this.id, this.near].join(',');
+    }
+    info() {
+        console.log(this.chunks, this._copyFrom, this._fill, this._info());
     }
 
     update(gl) {
@@ -184,7 +182,7 @@ class GlBuf {
         if (this.shuffle) {
             let sz = Object.keys(this.chunks).length;
             if (sz > 0) {
-                console.log('shuffling ' + sz + ' chunks to new GL buffer ' + this.info());
+                this.debug('shuffling ' + sz + ' chunks to new GL buffer ' + this._info());
             }
             for (let chunkId in this.chunks) {
                 let chunk = this.chunks[chunkId];
@@ -204,7 +202,7 @@ class GlBuf {
             this.chunks = {};
         }
 
-        //console.log(this._copyFrom, this._fill, this.info());
+        //this.debug(this._copyFrom, this._fill, this.info());
 
         let newManifest = function() {
             return {
@@ -215,7 +213,7 @@ class GlBuf {
         }
 
         if (Object.keys(this._copyFrom).length > 0) {
-            console.log('copying between glBuffers ' + this.info());
+            this.debug('copying between glBuffers ' + this._info());
         }
         for (let chunkId in this._copyFrom) {
             let manifest = newManifest();
@@ -227,7 +225,7 @@ class GlBuf {
             gl.bindBuffer(gl.COPY_READ_BUFFER, source.glBuffer);
             // TODO: errors here
             if (this.byteLength < (this.offset  + source.byteLength)) {
-                console.log('likely copyBufferSubData overflow ' + self.info());
+                this.debug('likely copyBufferSubData overflow ' + self._info());
             }
             gl.copyBufferSubData(gl.COPY_READ_BUFFER, gl.ARRAY_BUFFER, source.offset, this.offset, source.byteLength);
 
@@ -239,7 +237,7 @@ class GlBuf {
         }
 
         if (Object.keys(this._fill).length > 0) {
-            console.log('filling glBuffers ' + this.info());
+            this.debug('filling glBuffers ' + this._info());
         }
         for (let chunkId in this._fill) {
             let source = this._fill[chunkId];
@@ -262,14 +260,14 @@ class GlBuf {
             // bufferSubData wants length in items, not bytes
             if (inPlace) {
                 if (this.byteLength < (manifest.offset  + source.byteLength)) {
-                    console.log('likely bufferSubData overflow ' + self.info());
+                    this.debug('likely bufferSubData overflow ' + self._info());
                 }
-                console.log('COPYING DATA TO SAME SPOT IN BUFFER');
+                this.debug('COPYING DATA TO SAME SPOT IN BUFFER');
                 gl.bufferSubData(gl.ARRAY_BUFFER, manifest.offset, f, 0, f.length);
 
             } else {
                 if (this.byteLength < (this.offset  + source.byteLength)) {
-                    console.log('likely bufferSubData overflow ' + self.info());
+                    this.debug('likely bufferSubData overflow ' + self._info());
                 }
                 gl.bufferSubData(gl.ARRAY_BUFFER, this.offset, f, 0, f.length);
 
@@ -281,20 +279,17 @@ class GlBuf {
             }
         }
 
-        this.handle.tuples = this.offset / 12;
+        this.tuples = this.offset / 12;
         this._copyFrom = {};
         this._fill = {};
         this.shuffle = false;
     }
     cleanup(gl) {
         // delete glBuffer if necessary
-        if (this.glBuffer.glBuffer_delete) {
-            gl.deleteBuffer( this.glBuffer.glBuffer_delete );
-            this.glBuffer.glBuffer_delete = null;
+        if (this.glBuffer_delete) {
+            gl.deleteBuffer( this.glBuffer_delete );
+            this.glBuffer_delete = null;
         }
-    }
-    handles() {
-        return this.handle;
     }
 }
 
@@ -357,8 +352,10 @@ class AtlasBuffer {
     }
     handles() {
         return {
-            position: this.position.handle,
-            texcoord: this.texcoord.handle
+            position: this.position.glBuffer,
+            texcoord: this.texcoord.glBuffer,
+            tuples: this.position.tuples,
+            sampler: this.id
         };
     }
 }
@@ -402,9 +399,12 @@ class Voxels extends Renderable {
         this.nearTimestamp = 0;
         this.farTimestamp = 0;
 
+        this.textureAtlasStart = 3;
+        this.textureAtlasEnd = this.textureAtlasStart + this.game.textureOffsets['numAtlases'];
+
         // TODO: for now i've hardcoded texture atlas numbers
         // we group chunk mesh data by texture atlas/sampler integer
-        for (let i = 3; i < 10 + 3; i++) {
+        for (let i = this.textureAtlasStart; i < this.textureAtlasEnd; i++) {
             this.nearBuffers[i] = new AtlasBuffer(i, true);
             this.farBuffers[i] = new AtlasBuffer(i, false);
         }
@@ -456,16 +456,20 @@ class Voxels extends Renderable {
 
 
         this.visibleChunks = chunks;
+    }
 
+    debug(msg) {
+        //console.log(msg);
     }
     update() {
+        let self = this;
         let gl = this.gl;
         let toDelete = {};
         for (let chunkId in this.chunks) {
             let chunk = this.chunks[ chunkId ];
             if (!(chunkId in this.visibleChunks)) {
                 // remove this chunk from all buffers
-                console.log('removing chunk from buffers');
+                this.debug('removing chunk from buffers');
                 chunk.buffers.forEach(function(buffer, i) {
                     // delete from manifest
                     buffer.delete(chunkId);
@@ -475,9 +479,9 @@ class Voxels extends Renderable {
 
             } else if (chunk.mesh) { // we have new data to draw
                 // check existing buffers
-                console.log('new mesh ' + chunkId);
+                this.debug('new mesh ' + chunkId);
                 chunk.buffers.forEach(function(buffer, i) {
-                    console.log('checking whether to remove from old buffers');
+                    self.debug('checking whether to remove from old buffers');
                     if (!chunk.mesh[i]) {
                         // new data doesn't use this texture atlas
                         buffer.delete(chunkId);
@@ -509,7 +513,7 @@ class Voxels extends Renderable {
                     // chunk still visible within same region, nothing to do?
 
                 } else {
-                    console.log('chunk moved near/far');
+                    this.debug('chunk moved near/far');
                     // chunk has moved near/far
                     let target = near ? this.farBuffers : this.nearBuffers;
                     let chunkBuffers = [];
@@ -536,14 +540,14 @@ class Voxels extends Renderable {
         let renderBuffers = [];
         this.nearBuffers.forEach(function(buffer, id) {
             buffer.cleanup(gl);
-            renderBuffers[id] = buffer._glBufferHandles;
+            renderBuffers[id] = buffer.handles();
         });
         this.nearRenderBuffers = renderBuffers;
 
         renderBuffers = [];
         this.farBuffers.forEach(function(buffer, id) {
             buffer.cleanup(gl);
-            renderBuffers[id] = buffer._glBufferHandles;
+            renderBuffers[id] = buffer.handles();
         });
         this.farRenderBuffers = renderBuffers;
 
@@ -648,7 +652,7 @@ class Voxels extends Renderable {
         // so we can disable face culling when rendering that atlas
 
 
-        for (let i = 0; i < 13; i++) {
+        for (let i = this.textureAtlasStart; i < this.textureAtlasEnd; i++) {
             var bufferBundle = this.nearRenderBuffers[ i ];
             if (!bufferBundle || bufferBundle.tuples == 0) {
                 continue;
@@ -671,7 +675,7 @@ class Voxels extends Renderable {
             gl.drawArrays(gl.TRIANGLES, 0, bufferBundle.tuples);
         }
 
-        for (let i = 0; i < 13; i++) {
+        for (let i = this.textureAtlasStart; i < this.textureAtlasEnd; i++) {
             var bufferBundle = this.farRenderBuffers[ i ];
             if (!bufferBundle) {
                 continue;
