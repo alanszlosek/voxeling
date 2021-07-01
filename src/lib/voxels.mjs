@@ -25,20 +25,6 @@ let normals = [
 ];
 
 
-/*
-- currentChunksInBuffer
-- desiredChunksInBuffer
-- shuffle between group's buffer1 and buffer2
-    - after we calculate desired
-    - after deciding which to add, which to delete
-- copy into group's buffer1 or buffer2
-- how to handle chunks/meshes that need updating?
-    - we should NOT copy them to the other buffer during shuffling
-    - but copy in from RAM afterwards
-
-*/
-
-
 class GlBuf {
     constructor(id, near, defaultSize) {
         this.defaultSize = defaultSize || 16384;
@@ -516,14 +502,14 @@ class Voxels extends Renderable {
         let renderBuffers = [];
         this.buffers1.forEach(function(buffer, id) {
             buffer.cleanup(gl);
-            renderBuffers[id] = buffer.handles();
+            renderBuffers.push( buffer.handles() );
         });
         this.renderBuffers1 = renderBuffers;
 
         renderBuffers = [];
         this.buffers2.forEach(function(buffer, id) {
             buffer.cleanup(gl);
-            renderBuffers[id] = buffer.handles();
+            renderBuffers.push( buffer.handles() );
         });
         this.renderBuffers2 = renderBuffers;
 
@@ -568,6 +554,7 @@ class Voxels extends Renderable {
         this.currentBufferSet = this.currentBufferSet == 0 ? 1 : 0;
     }
 
+    // NOT USED ANYMORE
     releaseMesh(mesh) {
         // Release old mesh
         var transferList = [];
@@ -588,7 +575,7 @@ class Voxels extends Renderable {
 
     tick(ts) {
         if (ts > this.nearCutoff) {
-            this.nearCutoff = ts + 50;
+            this.nearCutoff = ts + 25;
             if (this.pending) {
                 this.update();
             }
@@ -630,9 +617,9 @@ class Voxels extends Renderable {
         // so we can disable face culling when rendering that atlas
 
 
-        for (let i = this.textureAtlasStart; i < this.textureAtlasEnd; i++) {
+        for (let i = 0; i < this.renderBuffers1.length; i++) {
             var bufferBundle = this.renderBuffers1[ i ];
-            if (!bufferBundle || bufferBundle.tuples == 0) {
+            if (bufferBundle.tuples == 0) {
                 continue;
             }
             // dont do faces with transparency yet
@@ -653,11 +640,8 @@ class Voxels extends Renderable {
             gl.drawArrays(gl.TRIANGLES, 0, bufferBundle.tuples);
         }
 
-        for (let i = this.textureAtlasStart; i < this.textureAtlasEnd; i++) {
+        for (let i = 0; i < this.renderBuffers2.length; i++) {
             var bufferBundle = this.renderBuffers2[ i ];
-            if (!bufferBundle) {
-                continue;
-            }
             if (bufferBundle.tuples == 0) {
                 continue;
             }

@@ -24,15 +24,18 @@ width = 128
 height = width
 numTextures = len(config['textures'])
 
-# let's try thin strip of 10 pix above and below repeat region
-gutter = 10
+# let's try thin strip above and below repeat region
+# however, if the gutter is too small, there are mipmapping artifacts
+# change to 32 and see what i mean
+gutter = 64
 repeatCount = 32
 regionWidth = width
-regionHeight = (repeatCount * width) + (gutter * 2)
+# 4116
+regionHeight = (repeatCount * height) + (gutter * 2)
 atlasWidth = width
 atlasHeight = 16384
 atlasCols = 1
-atlasRows = math.ceil(atlasHeight / regionHeight)
+atlasRows = math.floor(atlasHeight / regionHeight)
 
 numAtlases = math.ceil(numTextures / atlasRows)
 

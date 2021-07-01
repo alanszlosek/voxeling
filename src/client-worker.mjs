@@ -326,17 +326,9 @@ var worker = {
 
                 // We pass data.buffer, the underlying ArrayBuffer
                 transfer[bufferGroupId] = {
-                    position: {
-                        buffer: bufferGroup.position.data.buffer,
-                        offset: bufferGroup.position.offset,
-                        offsetBytes: bufferGroup.position.offset * 4,
-                        tuples: bufferGroup.position.offset / 3
-                    },
-                    texcoord: {
-                        buffer: bufferGroup.texcoord.data.buffer,
-                        offset: bufferGroup.texcoord.offset,
-                        offsetBytes: bufferGroup.texcoord.offset * 4
-                    },
+                    tuples: bufferGroup.position.offset / 3,
+                    position: bufferGroup.position.data.buffer,
+                    texcoord: bufferGroup.texcoord.data.buffer,
                     sampler: bufferGroup.sampler
                 };
                 transferList.push(bufferGroup.position.data.buffer);
