@@ -136,7 +136,7 @@ class GlBuf {
     };
 
     debug(msg) {
-        console.log(msg);
+        //console.log(msg);
     }
 
     _info() {
