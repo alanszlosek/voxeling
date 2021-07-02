@@ -617,7 +617,8 @@ class Voxels extends Renderable {
         // so we can disable face culling when rendering that atlas
 
 
-        for (let i = 0; i < this.renderBuffers1.length; i++) {
+        // save transparent atlas for last
+        for (let i = 0; i < this.renderBuffers1.length - 1; i++) {
             var bufferBundle = this.renderBuffers1[ i ];
             if (bufferBundle.tuples == 0) {
                 continue;
@@ -640,7 +641,7 @@ class Voxels extends Renderable {
             gl.drawArrays(gl.TRIANGLES, 0, bufferBundle.tuples);
         }
 
-        for (let i = 0; i < this.renderBuffers2.length; i++) {
+        for (let i = 0; i < this.renderBuffers2.length - 1; i++) {
             var bufferBundle = this.renderBuffers2[ i ];
             if (bufferBundle.tuples == 0) {
                 continue;
@@ -659,15 +660,16 @@ class Voxels extends Renderable {
             gl.drawArrays(gl.TRIANGLES, 0, bufferBundle.tuples);
         }
 
-        // now render near meshes with transparency
-        /*
-        for (let bufferGroupId = 120; bufferGroupId < 240; bufferGroupId++) {
-            var bufferBundle = this.nearRenderBuffersByGroup[ bufferGroupId ];
+        for (let i = this.renderBuffers1.length -1 ; i > 0 && i < this.renderBuffers1.length; i++) {
+            var bufferBundle = this.renderBuffers1[ i ];
             if (bufferBundle.tuples == 0) {
                 continue;
             }
+            // dont do faces with transparency yet
 
             // set normals
+            // TODO: this might be the source of the weird GPU stuff i was seeing
+            //gl.uniform3fv(shader.uniforms.normal, normals[bufferGroupId]);
             gl.uniform1i(shader.uniforms.sampler, bufferBundle.sampler);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, bufferBundle.position);
@@ -680,7 +682,25 @@ class Voxels extends Renderable {
 
             gl.drawArrays(gl.TRIANGLES, 0, bufferBundle.tuples);
         }
-        */
+
+        for (let i = this.renderBuffers2.length - 1; i > 0 && i < this.renderBuffers2.length; i++) {
+            var bufferBundle = this.renderBuffers2[ i ];
+            if (bufferBundle.tuples == 0) {
+                continue;
+            }
+
+            gl.uniform1i(shader.uniforms.sampler, bufferBundle.sampler);
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, bufferBundle.position);
+            gl.enableVertexAttribArray(shader.attributes.position);
+            gl.vertexAttribPointer(shader.attributes.position, 3, gl.FLOAT, false, 0, 0);
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, bufferBundle.texcoord);
+            gl.enableVertexAttribArray(shader.attributes.texcoord);
+            gl.vertexAttribPointer(shader.attributes.texcoord, 2, gl.FLOAT, false, 0, 0);
+
+            gl.drawArrays(gl.TRIANGLES, 0, bufferBundle.tuples);
+        }
 
         //console.log('Voxels.render ms', Date.now() - start);
     }

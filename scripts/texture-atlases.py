@@ -39,11 +39,32 @@ atlasRows = math.floor(atlasHeight / regionHeight)
 
 numAtlases = math.ceil(numTextures / atlasRows)
 
-print("Atlases: %d Rows: %d" % (numAtlases, atlasRows))
+def split_list(arr, size):
+     arrs = []
+     while len(arr) > size:
+         pice = arr[:size]
+         arrs.append(pice)
+         arr   = arr[size:]
+     arrs.append(arr)
+     return arrs
+atlases = []
 
+allTextureValues = list(config['textures'].keys())
+allTextureValues.sort()
+opaque = []
+transparent = []
+# textures with transparency should be in their own atlas
+for v in allTextureValues:
+    if v in config['texturesWithTransparency']:
+        transparent.append(v)
+    else:
+        opaque.append(v)
 
-textureValues = list(config['textures'].keys())
-textureValues.sort()
+atlases = split_list(opaque, atlasRows)
+atlases.append( transparent )
+
+print( len(atlases) )
+
 
 # out becomes texture-offsets.json
 out = {
@@ -60,32 +81,25 @@ out = {
     # offsets for material picker UI
     "pixelOffsets": {},
     "textureToTextureUnit": {},
-    "numAtlases": 0
+    "numAtlases": len(atlases)
 }
 i = 0
 pixelOffset = 0 # for the material picker UI
 materialPickerAtlas = Image.new('RGBA', (width, width * numTextures), )
 
-atlasIndex = 0
-while atlasIndex < numAtlases:
-    
-    # create new atlas
-    out['numAtlases'] += 1
-    combined = Image.new('RGBA', (atlasWidth, atlasHeight), )
 
+for atlasIndex,textureValues in enumerate(atlases):
+    # create new atlas
+    combined = Image.new('RGBA', (atlasWidth, atlasHeight), )
 
     # how many pixels are in a repeated texture region?
     chunkStep = (width * repeatCount) + (2 * gutter)
-    row = 0
-    while row < atlasRows:
+
+    textures = atlases[atlasIndex]
+    for row,textureValue in enumerate(textureValues):
         offsetY = row * chunkStep
         col = 0
-        row += 1
         while col < atlasCols:
-            if not textureValues:
-                break
-            textureValue = textureValues.pop()
-
             offsetX = col * chunkStep
 
             # for now, we reserve 0-2 for character textures, so don't use those
