@@ -314,32 +314,35 @@ var worker = {
             //var mesh = mesher.mesh(chunk.position, chunk.voxels);
             var mesh = this.mesher.run(chunk.position, chunk.voxels);
 
-            // transferring work with a sparse array?
-            var transfer = [];
-            var transferList = [];
+            if (Object.keys(mesh).length == 0) {
+                // don't burden the client by sending empty meshes
+            } else {
+                // transferring work with a sparse array?
+                var transfer = [];
+                var transferList = [];
 
-            // TODO: is there any way i can optimize this?
-            // in terms of reducing GC, nesting, something?
-            // points are meshed into a buffer group per faceIndex
-            for (var bufferGroupId in mesh) {
-                var bufferGroup = mesh[bufferGroupId];
+                // TODO: is there any way i can optimize this?
+                // in terms of reducing GC, nesting, something?
+                for (var bufferGroupId in mesh) {
+                    var bufferGroup = mesh[bufferGroupId];
 
-                // We pass data.buffer, the underlying ArrayBuffer
-                transfer[bufferGroupId] = {
-                    tuples: bufferGroup.position.offset / 3,
-                    position: bufferGroup.position.data.buffer,
-                    texcoord: bufferGroup.texcoord.data.buffer,
-                    sampler: bufferGroup.sampler
-                };
-                transferList.push(bufferGroup.position.data.buffer);
-                transferList.push(bufferGroup.texcoord.data.buffer);
+                    // We pass data.buffer, the underlying ArrayBuffer
+                    transfer[bufferGroupId] = {
+                        tuples: bufferGroup.position.offset / 3,
+                        position: bufferGroup.position.data.buffer,
+                        texcoord: bufferGroup.texcoord.data.buffer,
+                        sampler: bufferGroup.sampler
+                    };
+                    transferList.push(bufferGroup.position.data.buffer);
+                    transferList.push(bufferGroup.texcoord.data.buffer);
+                }
+
+                // specially list the ArrayBuffer object we want to transfer
+                postMessage(
+                    ['chunkMesh', chunkId, transfer],
+                    transferList
+                );
             }
-
-            // specially list the ArrayBuffer object we want to transfer
-            postMessage(
-                ['chunkMesh', chunkId, transfer],
-                transferList
-            );
             delete self.clientMissingMeshes[chunkId];
             self.sentClientMeshes[chunkId] = true;
 
