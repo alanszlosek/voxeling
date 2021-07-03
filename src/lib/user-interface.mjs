@@ -60,7 +60,8 @@ var states = {
             }
             element.value = value;
             config.drawDistance = value;
-            config.removeDistance = value + 1;
+
+            // trigger drawDistance event after 2 seconds on load?
         },
         from: function() {
             if (debug) {
@@ -84,8 +85,8 @@ var states = {
                     localStorage.setItem('drawDistance', value);
 
                     config.drawDistance = value;
-                    config.removeDistance = value + 1;
 
+                    // TODO: this shouldn't be here
                     gameGlobal.voxels.hazeDistance = (value * 32.0) - 4.0;
 
                     gameGlobal.clientWorkerHandle.regionChange();
