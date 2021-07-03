@@ -38,7 +38,7 @@ let scaleIndex = 0;
 
 let speeds = [
     vec3.fromValues(1.0, 1.0, 1.0),
-    vec3.fromValues(0.3, 0.6, 0.3),
+    vec3.fromValues(0.3, 1.0, 0.3),
     vec3.fromValues(0.6, 1.0, 0.6)
 ];
 
@@ -88,15 +88,6 @@ class Snowflake extends Tickable {
         this.respawn();
     }
 
-    getScale() {
-        let scaleVector = scales[ scaleIndex ];
-        scaleIndex++;
-        if (scaleIndex >= scales.length) {
-            scaleIndex = 0;
-        }
-        return scaleVector;
-    }
-
     respawn() {
         let playerPosition = this.game.player.getPosition();
         this.scale = this.getScale();
@@ -108,6 +99,15 @@ class Snowflake extends Tickable {
         this.position[2] = getRandomInt(playerPosition[2] - spread, playerPosition[2] + spread) + 0.5;
 
         this.collisionCheck = 0;
+    }
+
+    getScale() {
+        let scaleVector = scales[ scaleIndex ];
+        scaleIndex++;
+        if (scaleIndex >= scales.length) {
+            scaleIndex = 0;
+        }
+        return scaleVector;
     }
 
     updateVelocity(velocity) {
@@ -157,7 +157,7 @@ class Snow extends Renderable {
         this.snowflakes = {};
         this.velocity = vec3.create();
         this.velocityChangeCutoff = 0; // we update velocity after N seconds
-        this.enabled = true;
+        this.enabled = false;
     }
     init() {
         for (let i = 0; i < this.numSnowflakes; i++) {
@@ -265,7 +265,8 @@ class Snow extends Renderable {
 
     tick(ts) {
         // update snowflake velocity
-        let vel = function() {
+        let val = function() {
+            // TODO: don't vary this with fps ...
             return (Math.random() - 0.5) / 10;
         };
         if (ts > this.velocityChangeCutoff) {
@@ -274,9 +275,9 @@ class Snow extends Renderable {
                 -0.04,
                 -0.08
             ];
-            this.velocity[0] = vel();
+            this.velocity[0] = val();
             this.velocity[1] = fallSpeeds[ Math.floor(Math.random() * fallSpeeds.length) ];
-            this.velocity[2] = vel();
+            this.velocity[2] = val();
 
             for (let _tickableId in this.snowflakes) {
                 let sf = this.snowflakes[ _tickableId ];
@@ -331,6 +332,8 @@ class Snow extends Renderable {
         gl.useProgram(shader.program);
         gl.uniformMatrix4fv(shader.uniforms.projection, false, this.game.camera.projectionMatrix);
         gl.uniformMatrix4fv(shader.uniforms.view, false, this.game.camera.viewMatrix);
+
+        gl.disable(gl.CULL_FACE);
         
         // Render the same snowflake mesh for each snowflake, using a different view matrix
         for (let _tickableId in this.snowflakes) {

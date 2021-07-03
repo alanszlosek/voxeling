@@ -24,24 +24,54 @@ width = 128
 height = width
 numTextures = len(config['textures'])
 
-repeatCount = 16
-regionWidth = repeatCount * width
-atlasWidth = 16384
-atlasCols = atlasWidth / regionWidth
-atlasRows = math.ceil(numTextures / atlasCols)
-atlasHeight = atlasRows * regionWidth
+# let's try thin strip above and below repeat region
+# however, if the gutter is too small, there are mipmapping artifacts
+# change to 32 and see what i mean
+gutter = 64
+repeatCount = 32
+regionWidth = width
+# 4116
+regionHeight = (repeatCount * height) + (gutter * 2)
+atlasWidth = width
+atlasHeight = 16384
+atlasCols = 1
+atlasRows = math.floor(atlasHeight / regionHeight)
 
-print("Atlas cols/rows: %d %d" % (atlasCols, atlasRows))
+numAtlases = math.ceil(numTextures / atlasRows)
 
+def split_list(arr, size):
+     arrs = []
+     while len(arr) > size:
+         pice = arr[:size]
+         arrs.append(pice)
+         arr   = arr[size:]
+     arrs.append(arr)
+     return arrs
+atlases = []
 
-textureValues = list(config['textures'].keys())
-textureValues.sort()
+allTextureValues = list(config['textures'].keys())
+allTextureValues.sort()
+opaque = []
+transparent = []
+# textures with transparency should be in their own atlas
+for v in allTextureValues:
+    if v in config['texturesWithTransparency']:
+        transparent.append(v)
+    else:
+        opaque.append(v)
+
+atlases = split_list(opaque, atlasRows)
+atlases.append( transparent )
+
+print( len(atlases) )
+
 
 # out becomes texture-offsets.json
 out = {
-     # dims of a single texture within the atlas, normalized to 0-1.0
-    "textureDimensions": [width / atlasWidth, width / atlasHeight],
-    "textureRowPixels": width,
+    # dims of a single texture within the atlas, normalized to 0-1.0
+    # i dont' need this anymore
+    #"normalizedTextureDimensions": [width / atlasWidth, height / atlasHeight],
+    'textureRowHeight': width / atlasHeight,
     # rename this
     "offsets": {
         # texture value
@@ -51,37 +81,29 @@ out = {
     # offsets for material picker UI
     "pixelOffsets": {},
     "textureToTextureUnit": {},
-    "numAtlases": 0
+    "numAtlases": len(atlases)
 }
 i = 0
 pixelOffset = 0 # for the material picker UI
 materialPickerAtlas = Image.new('RGBA', (width, width * numTextures), )
 
-atlasIndex = 0
-numAtlases = 1
-while atlasIndex < numAtlases:
-    atlasIndex += 1
+
+for atlasIndex,textureValues in enumerate(atlases):
     # create new atlas
-    out['numAtlases'] += 1
     combined = Image.new('RGBA', (atlasWidth, atlasHeight), )
 
-
     # how many pixels are in a repeated texture region?
-    chunkStep = width * repeatCount
-    row = 0
-    while row < atlasRows:
+    chunkStep = (width * repeatCount) + (2 * gutter)
+
+    textures = atlases[atlasIndex]
+    for row,textureValue in enumerate(textureValues):
         offsetY = row * chunkStep
         col = 0
-        row += 1
         while col < atlasCols:
-            if not textureValues:
-                break
-            textureValue = textureValues.pop()
-
             offsetX = col * chunkStep
 
             # for now, we reserve 0-2 for character textures, so don't use those
-            out['textureToTextureUnit'][ textureValue ] = i + 3 # so we know which WebGL texture unit to use within the shader
+            out['textureToTextureUnit'][ textureValue ] = atlasIndex + 3 # so we know which WebGL texture unit to use within the shader
             # if no more, bail and save image
 
             path = config['textures'][textureValue]
@@ -100,29 +122,44 @@ while atlasIndex < numAtlases:
                 # Now flip image and copy into the texture atlas file for GPU rendering
                 image = image.transpose(Image.FLIP_TOP_BOTTOM)
 
-                # 16 x 16
-                x = 0
-                while x < repeatCount:
-                    y = 0
-                    while y < repeatCount:
-                        combined.paste(image, (offsetX + (x * width), offsetY + (y * width)))
-                        y += 1
-                    x += 1
-
                 # we only log the offset of the second row of this block
                 # because the first row is only there to ensure mipmapping doesn't
                 # result in artifacts
-                out['offsets'][textureValue] = [ (offsetX + width) / atlasWidth, (offsetY + width) / atlasHeight ]
+                #out['offsets'][textureValue] = [ (offsetX + width) / atlasWidth, (offsetY + width) / atlasHeight ]
+                out['offsets'][textureValue] = (offsetY + gutter) / atlasHeight
+
+                offsetY2 = offsetY
                 
+                #thin strip above for mip-mapping
+                bottomStrip = image.crop( (0, width - gutter, width, width))
+                combined.paste(bottomStrip, (offsetX, offsetY))
+                offsetY2 += gutter
+
+                x = 0
+                while x < 1: # only 1 texture wide
+                    y = 0
+                    while y < repeatCount:
+                        combined.paste(image, (offsetX + (x * width), offsetY2 + (y * width)))
+                        y += 1
+                    x += 1
+
+                # helps us draw the next strip correctly                
+                offsetY3 = offsetY + chunkStep - gutter
+                topStrip = image.crop( (0, 0, width, gutter))
+                combined.paste(topStrip, (offsetX, offsetY3))
+
+
 
             col += 1
+    
             
     
     # save
     # do we really need to flip, if we need to flip again on the webgl side?
     #flipped = combined.transpose(Image.FLIP_TOP_BOTTOM)
     # let's try not to flip ... but make sure coordinates map to bottom, since GPU draws bottom up
-    combined.save('../www/textures%d.png' % i, quality=100.0)
+    combined.save('../www/textures%d.png' % atlasIndex, quality=100.0)
+    atlasIndex += 1
 
 
 materialPickerAtlas.save('../www/materials.png', quality=100.0)

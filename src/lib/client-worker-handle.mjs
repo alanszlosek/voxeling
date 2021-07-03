@@ -60,11 +60,11 @@ class ClientWorkerHandle {
                     case 'chunkMesh':
                         var chunkID = message[1];
                         var mesh = message[2];
-                        self.game.voxels.showMesh(chunkID, mesh);
+                        self.game.voxels.showChunk(chunkID, mesh);
                         break;
-                    case 'meshesToShow':
-                        var meshDistances = message[1];
-                        self.game.voxels.meshesToShow(meshDistances);
+                    case 'chunksToShow':
+                        var chunkDistances = message[1];
+                        self.game.voxels.chunksToShow(chunkDistances);
                         break;
         
                     // Worker relays voxel changes from the server to us
