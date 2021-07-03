@@ -25,7 +25,20 @@ class Camera extends Movable {
         this.verticalFieldOfView = Math.PI / 4;
         this.ratio;
         // 32 * 20 = 640 ... 20 chunks away
-        this.farDistance = 640;
+        this.farDistance = 640; //2000; // three.JS uses 2000, not 640
+
+        // values from three.js
+        /*
+        constructor( fov = 50, aspect = 1, near = 0.1, far = 2000 ) {
+        this.fov = fov;
+		this.zoom = 1;
+
+		this.near = near;
+		this.far = far;
+		this.focus = 10;
+
+		this.aspect = aspect;
+        */
     }
 
     init() {
@@ -50,9 +63,16 @@ class Camera extends Movable {
         
         // Adjusts coordinates for the screen's aspect ration
         // Not sure to set near and far to ... seems arbitrary. Surely those values should match the frustum
+
+        // I used to use Math.PI / 4 for vertical FOV
+        // Three.JS defaults to 50 degrees = 0.87 radians
+        // A demo defaulted to 30
+        // for some reason everything feels abnormal today
+        this.verticalFieldOfView = Math.PI / 5;
         mat4.perspective(this.projectionMatrix, this.verticalFieldOfView, this.ratio, 0.1, this.farDistance);
     }
 
+    // TODO: rename this method?
     updateProjection() {
         let delta = 0.25;
 
@@ -64,6 +84,8 @@ class Camera extends Movable {
                 vec3.transformQuat(scratch.vec3, this.desiredOffset, this.follow.rotationQuatY);
                 vec3.add(this.position, this.follow.position, scratch.vec3);
                 vec3.transformQuat(this.direction, this.baseDirection, this.follow.rotationQuat);
+
+                this.game.voxels.discardDepth = 0.0;
                 break;
             case 1:
                 this.desiredOffset = this.shoulderOffset;
@@ -71,6 +93,9 @@ class Camera extends Movable {
                 vec3.transformQuat(scratch.vec3, this.desiredOffset, this.follow.rotationQuat);
                 vec3.add(this.position, this.follow.eyePosition, scratch.vec3);
                 vec3.transformQuat(this.direction, this.baseDirection, this.follow.rotationQuat);
+
+                // discard pixels between player and screen 
+                this.game.voxels.discardDepth = 2.0;
                 break;
             case 2:
                 this.desiredOffset = this.thirdPersonOffset;

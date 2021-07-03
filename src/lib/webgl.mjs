@@ -246,8 +246,8 @@ class WebGL {
 
                 //"vec3 temp;" +
 
-                //"if(texelColor.a < 0.5) " +
-                //    "discard;" +
+                "if(texelColor.a < 0.5) " +
+                    "discard;" +
 
                 //"float distance = length(v_position.xyz);" +
                 //"vec3 lightDirection = normalize(u_directionalLightPosition - v_position.xyz);" +
