@@ -167,13 +167,11 @@ var states = {
                 return;
             }
             // C - toggle cursor?
-            /*
             if (event.which == 67) {
                 // toggle cursor
                 gameGlobal.cursor.enabled = !gameGlobal.cursor.enabled;
                 return;
             }
-            */
             // Escape
             if (code == 27) {
                 console.log('escape');

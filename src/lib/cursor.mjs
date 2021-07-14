@@ -10,7 +10,8 @@ class Cursor extends Tickable {
     constructor(game) {
         super();
         this.game = game;
-        this.visible = true;
+        this.enabled = true;
+        this.cutoff = 0.00; // don't fire raycasting on every frame
         // shortcuts
 
         // helpers to track input state changes (button presses)
@@ -41,7 +42,18 @@ class Cursor extends Tickable {
         return Promise.resolve();
     }
 
+    // we don't need this to fire on every frame
     tick(ts) {
+        // cursor can be toggled with "c"
+        if (!this.enabled) {
+            this.lines.skip(true);
+            return;
+        }
+        if (ts < this.cutoff) {
+            return;
+        }
+        // ten times a second
+        this.cutoff = ts + 100;
         let distance = 5.0;
         let f64VoxelHit = scratch.f64vec3_0;
         let i32VoxelHit = scratch.i32vec3_0;
@@ -119,6 +131,7 @@ class Cursor extends Tickable {
             linesHigh[0] = Math.max(selectStart[0] + 1, i32VoxelHit[0] + 1);
             linesHigh[1] = Math.max(selectStart[1] + 1, i32VoxelHit[1] + 1);
             linesHigh[2] = Math.max(selectStart[2] + 1, i32VoxelHit[2] + 1);
+            // TODO: optimize this
             this.lines.fill(Shapes.wire.cube(linesLow, linesHigh));
             this.lines.skip(false);
 
