@@ -654,11 +654,11 @@ let shapes = {
 
         },
 
-        rectangle3: function(width, height, depth, uv) {
+        rectangle3: function(width, height, depth, uv, center) {
             var w = width / 2;
             var h = height / 2;
             var d = depth / 2;
-            let centerPosition = [0,0,0];
+            let centerPosition = center || [0,0,0];
 
             let x1 = centerPosition[0] - w;
             let x2 = centerPosition[0] + w;

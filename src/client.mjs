@@ -22,6 +22,7 @@ import { VoxelCache } from './lib/voxel-cache';
 import { Voxels } from './lib/voxels';
 import { World } from './lib/world.mjs';
 import { Exploration } from './lib/models/exploration.mjs';
+import { Dragon } from './lib/models/dragon.mjs';
 
 
 //import randomName from 'sillyname';
@@ -45,6 +46,7 @@ game.camera = new Camera(game);
 game.clientWorkerHandle = new ClientWorkerHandle(game);
 game.cursor = new Cursor(game);
 game.exploration = new Exploration(game);
+game.dragon = new Dragon(game);
 game.multiplayer = new Multiplayer(game);
 game.physics = new Physics(game);
 game.player = new Player(game);
@@ -117,6 +119,8 @@ game.userInterface.init()
 }).then(function() {
     return game.exploration.init();
     return Promise.resolve();
+}).then(function() {
+    return game.dragon.init();
 
 }).then(function() {
     return game.userInterface.webgl.init();
