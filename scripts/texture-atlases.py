@@ -80,6 +80,7 @@ out = {
     },
     # offsets for material picker UI
     "pixelOffsets": {},
+    "textureRowPixels": width,
     "textureToTextureUnit": {},
     "numAtlases": len(atlases)
 }
