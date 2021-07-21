@@ -7,7 +7,6 @@
     "hat": "0.0.3",
     "mysql": "^2.18.1",
     "perlin": "~1.0.0",
-    "rollup": "^2.48.0",
     "sillyname": "^0.1.0",
     "voxel-raycast": "^0.2.1",
     "voxel-trees": "^0.1.0",
@@ -17,8 +16,6 @@
     "node": ">14.0.0"
   },
   "devDependencies": {
-    "@rollup/plugin-commonjs": "^19.0.0",
-    "@rollup/plugin-node-resolve": "^13.0.0",
     "esbuild": "^0.12.15"
   }
 }
