@@ -103,8 +103,8 @@ vim config.mjs
 vim config-server.mjs
 
 # Build the app and web worker JS bundles
-# This forks 2 npm rollup processes
-./build.sh 
+# This uses esbuild to build into www/client.js and www/client-worker.js
+./esb.sh
 
 # start server
 node src/server.mjs
