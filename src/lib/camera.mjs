@@ -1,7 +1,7 @@
 import { mat4, quat, vec3 } from 'gl-matrix';
 
-import { Movable } from './entities/movable';
-import scratch from './scratch';
+import { Movable } from './entities/movable.mjs';
+import scratch from './scratch.mjs';
 
 class Camera extends Movable {
     constructor(game) {

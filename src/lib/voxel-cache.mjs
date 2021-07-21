@@ -1,4 +1,4 @@
-import Log from './log';
+import Log from './log.mjs';
 
 let log = Log('voxel-cache');
 

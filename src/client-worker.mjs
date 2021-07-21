@@ -1,12 +1,12 @@
-import config from '../config';
-import { Coordinates } from './lib/coordinates';
+import config from '../config.mjs';
+import { Coordinates } from './lib/coordinates.mjs';
 //import mesher from './lib/meshers/horizontal-merge2';
 import { RectangleMesher } from '../src/lib/meshers/rectangle12.mjs';
-import Log from './lib/log';
-import MC from './lib/max-concurrent';
-import textureOffsets from '../texture-offsets';
+import Log from './lib/log.mjs';
+import MC from './lib/max-concurrent.js';
+import textureOffsets from '../texture-offsets.js';
 import pool from './lib/object-pool.mjs';
-import timer from './lib/timer';
+//import timer from './lib/timer';
 
 // Note: Increasing concurrent fetching here won't change initial world load speed
 // since the meshing is most-likely the bottleneck

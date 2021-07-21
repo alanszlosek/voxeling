@@ -3,7 +3,7 @@ import { Lines } from './lines.mjs';
 import raycast from 'voxel-raycast';
 import scratch from './scratch.mjs';
 import Shapes from './shapes.mjs';
-import { Tickable } from './entities/tickable';
+import { Tickable } from './entities/tickable.mjs';
 
 
 class Cursor extends Tickable {

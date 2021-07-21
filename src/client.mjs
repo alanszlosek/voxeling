@@ -3,23 +3,23 @@
 import { default as config } from '../config.mjs';
 import textureOffsets from '../texture-offsets.js'
 
-import { Camera } from './lib/camera'
+import { Camera } from './lib/camera.mjs'
 //import { Physics } from './lib/physics.mjs'
 
 
-import { Coordinates } from './lib/coordinates';
-import { ClientWorkerHandle } from './lib/client-worker-handle';
-import { Cursor } from './lib/cursor';
-import { Multiplayer } from './lib/multiplayer'
+import { Coordinates } from './lib/coordinates.mjs';
+import { ClientWorkerHandle } from './lib/client-worker-handle.mjs';
+import { Cursor } from './lib/cursor.mjs';
+import { Multiplayer } from './lib/multiplayer.mjs'
 import { Physics } from './lib/physics.mjs';
-import { Player } from './lib/models/player';
-import { Sky } from './lib/models/sky';
+import { Player } from './lib/models/player.mjs';
+import { Sky } from './lib/models/sky.mjs';
 import { Snow } from './lib/models/snow.mjs';
 import Stats from './lib/stats.mjs';
-import { TextureAtlas } from './lib/texture-atlas';
-import { UserInterface } from './lib/user-interface';
-import { VoxelCache } from './lib/voxel-cache';
-import { Voxels } from './lib/voxels';
+import { TextureAtlas } from './lib/texture-atlas.mjs';
+import { UserInterface } from './lib/user-interface.mjs';
+import { VoxelCache } from './lib/voxel-cache.mjs';
+import { Voxels } from './lib/voxels.mjs';
 import { World } from './lib/world.mjs';
 import { Exploration } from './lib/models/exploration.mjs';
 import { Dragon } from './lib/models/dragon.mjs';

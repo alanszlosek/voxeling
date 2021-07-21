@@ -1,7 +1,7 @@
 import { quat, vec3 } from 'gl-matrix';
-import { Tickable } from './entities/tickable';
+import { Tickable } from './entities/tickable.mjs';
 import raycast from 'voxel-raycast';
-import scratch from './scratch';
+import scratch from './scratch.mjs';
 
 var debug = false;
 // ticks per second

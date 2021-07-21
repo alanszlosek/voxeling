@@ -1,6 +1,6 @@
 import { mat4, quat, vec3 } from 'gl-matrix';
-import { Renderable, renderables, tickables } from './renderable';
-import scratch from '../scratch';
+import { Renderable, renderables, tickables } from './renderable.mjs';
+import scratch from '../scratch.mjs';
 
 // TODO: fix these
 var tempQuat = scratch.quat;

@@ -1,8 +1,8 @@
 import { mat4, vec3 } from 'gl-matrix';
-import scratch from '../scratch';
-import Shapes from '../shapes2';
-import { Model } from '../model2';
-import { Node } from '../scene-graph';
+import scratch from '../scratch.mjs';
+import Shapes from '../shapes2.mjs';
+import { Model } from '../model2.mjs';
+import { Node } from '../scene-graph.mjs';
 
 function Sun(gl, shader, textures, player) {
     var self = this;

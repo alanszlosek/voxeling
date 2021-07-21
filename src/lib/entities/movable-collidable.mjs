@@ -1,4 +1,4 @@
-import { Movable } from './movable';
+import { Movable } from './movable.mjs';
 
 class MovableCollidable extends Movable {
     constructor() {

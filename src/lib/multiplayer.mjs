@@ -1,6 +1,6 @@
 import { quat, vec3 } from 'gl-matrix';
-import { Player } from './models/player';
-import { Tickable } from './entities/tickable';
+import { Player } from './models/player.mjs';
+import { Tickable } from './entities/tickable.mjs';
 
 
 // This class holds the player objects, updates their positions

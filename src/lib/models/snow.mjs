@@ -1,8 +1,8 @@
 import { mat4, vec3, vec4, quat } from 'gl-matrix';
-import { Renderable } from '../entities/renderable';
-import scratch from '../scratch';
+import { Renderable } from '../entities/renderable.mjs';
+import scratch from '../scratch.mjs';
 import Shapes from '../shapes.mjs';
-import { Tickable } from '../entities/tickable';
+import { Tickable } from '../entities/tickable.mjs';
 
 
 import { getRandomInt, getRandomArbitrary } from '../util.mjs';

@@ -1,4 +1,4 @@
-import { Tickable } from './entities/tickable';
+import { Tickable } from './entities/tickable.mjs';
 
 class World extends Tickable {
     constructor(game) {

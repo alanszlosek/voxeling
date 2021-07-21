@@ -1,6 +1,6 @@
 import { mat4, vec3, vec4, quat } from 'gl-matrix';
-import { Renderable } from '../entities/renderable';
-import scratch from '../scratch';
+import { Renderable } from '../entities/renderable.mjs';
+import scratch from '../scratch.mjs';
 import Shapes from '../shapes.mjs';
 
 

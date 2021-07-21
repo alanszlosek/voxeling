@@ -1,8 +1,8 @@
 import { mat4, quat, vec3 } from 'gl-matrix';
 import scratch from '../scratch.mjs';
-import Shapes from '../shapes';
-import { MovableCollidable } from '../entities/movable-collidable';
-import { Model } from '../entities/model';
+import Shapes from '../shapes.mjs';
+import { MovableCollidable } from '../entities/movable-collidable.mjs';
+import { Model } from '../entities/model.mjs';
 
 class Player extends MovableCollidable {
     constructor(game) {

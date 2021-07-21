@@ -1,5 +1,5 @@
 import { mat4, vec3 } from 'gl-matrix';
-import scratch from './scratch';
+import scratch from './scratch.mjs';
 
 // Only contains the stuff we need for WebGL drawing
 

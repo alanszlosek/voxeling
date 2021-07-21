@@ -388,11 +388,10 @@ class Voxels extends Renderable {
         this.farTimestamp = 0;
 
         this.textureAtlasStart = 3;
-        this.textureAtlasEnd = this.textureAtlasStart + this.game.textureOffsets['numAtlases'];
 
         // TODO: for now i've hardcoded texture atlas numbers
         // we group chunk mesh data by texture atlas/sampler integer
-        for (let i = this.textureAtlasStart; i < this.textureAtlasEnd; i++) {
+        for (let i = this.textureAtlasStart, j = 0; j < this.textureOffsets['numAtlases']; i++, j++) {
             this.buffers1[i] = new AtlasBuffer(i, true);
             this.buffers2[i] = new AtlasBuffer(i, false);
         }
@@ -659,6 +658,9 @@ class Voxels extends Renderable {
 
             gl.drawArrays(gl.TRIANGLES, 0, bufferBundle.tuples);
         }
+
+        // now transparent
+        gl.disable(gl.CULL_FACE);
 
         for (let i = this.renderBuffers1.length -1 ; i > 0 && i < this.renderBuffers1.length; i++) {
             var bufferBundle = this.renderBuffers1[ i ];

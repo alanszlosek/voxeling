@@ -1,6 +1,6 @@
 
 import { quat, vec3 } from 'gl-matrix';
-import { Tickable } from './tickable';
+import { Tickable } from './tickable.mjs';
 
 // TODO: optimize this ...
 /*
