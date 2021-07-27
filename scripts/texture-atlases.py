@@ -20,7 +20,7 @@ with open('../config.mjs', 'r') as f:
 # thus we need 16x16 copies of a texture
 # the max dimensions that a texture can be are 16384 x 16384
 
-width = 128
+width = 64
 height = width
 numTextures = len(config['textures'])
 

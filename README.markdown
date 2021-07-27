@@ -3,9 +3,9 @@ voxeling
 
 ## The Latest News
 
-Rewrite in progress! We've moved to ES Modules and are refactoring all the things. I've moved everything to a branch called "main". Check the "master" branch for the old code.
+Refactoring into ES Modules is done. Current branch is "main", check "master" for the old code.
 
-As of 2021 I've hired a graphic designer to create new textures. Soon I will be able to phase out bdcraft (http://bdcraft.net/purebdcraft-minetest) and distribute my own textures so you can more-easily set up your own instances with less headache.
+We have a new set of textures that I'm free to distribute. Some were created by a graphic designer (the good ones), others were created by me to finish the job (the not-so-good ones). Previously I recommended using bdcraft (http://bdcraft.net/purebdcraft-minetest) which we didn't create and could not distribute. Now that we have our own I can streamline the setup and installation.
 
 If you want to see what I'm working on, I occasionally make videos at [Relaxing With Code](https://www.youtube.com/channel/UCtuuC26V9NnEcdSKpIP15hw) on YouTube. Specifically in the [Voxeling playlist](https://www.youtube.com/playlist?list=PLGonE3T1sorRgdHNBGhpjUojdChc5CSD0).
 
@@ -39,7 +39,8 @@ Player skins from:
 
 ## Currently
 
-* Finishing port to ES modules
+* Dragon model
+* Physics+collision detection re-work in preparation for NPC animals
 * Optimizations, always and forever
 
 ## Perhaps in the Future 
@@ -73,12 +74,12 @@ In terminal 1:
 ```
 # git clone the repo into voxeling folder
 cd /path/to/voxeling
-# Download textures from http://bdcraft.net/purebdcraft-minetest (256x256 version). I can't distribute these textures, but I've commisioned my own textures and should be switching to them some time in 2021.
-# Extract to www/testbdcraft
+# Download textures from https://alanszlosek.com/voxeling/textures-20210727.zip
+# Extract to www/textures/*.png
 
 # Generate combined texture file (cuts down on WebGL bindTexture calls)
 cd scripts
-# This generates www/textures.png and texture-offsets.js
+# This generates texture atlases (www/textures[0-9].png) and texture-offsets.js
 python3 -m venv ./venv
 source venv/bin/activate
 pip3 install pillow
