@@ -35,6 +35,7 @@ class GlBuf {
         // so we can delete old glBuffer after all copies are done
         this.glBuffer_delete = null;
         this.byteLength = 0;
+        this.offset = 0;
         this.tuples = 0;
 
         this.shuffle = false;
@@ -618,7 +619,7 @@ class Voxels extends Renderable {
 
         // save transparent atlas for last
         for (let i = 0; i < this.renderBuffers1.length - 1; i++) {
-            var bufferBundle = this.renderBuffers1[ i ];
+            let bufferBundle = this.renderBuffers1[ i ];
             if (bufferBundle.tuples == 0) {
                 continue;
             }
@@ -641,7 +642,7 @@ class Voxels extends Renderable {
         }
 
         for (let i = 0; i < this.renderBuffers2.length - 1; i++) {
-            var bufferBundle = this.renderBuffers2[ i ];
+            let bufferBundle = this.renderBuffers2[ i ];
             if (bufferBundle.tuples == 0) {
                 continue;
             }
@@ -663,7 +664,7 @@ class Voxels extends Renderable {
         gl.disable(gl.CULL_FACE);
 
         for (let i = this.renderBuffers1.length -1 ; i > 0 && i < this.renderBuffers1.length; i++) {
-            var bufferBundle = this.renderBuffers1[ i ];
+            let bufferBundle = this.renderBuffers1[ i ];
             if (bufferBundle.tuples == 0) {
                 continue;
             }
@@ -686,7 +687,7 @@ class Voxels extends Renderable {
         }
 
         for (let i = this.renderBuffers2.length - 1; i > 0 && i < this.renderBuffers2.length; i++) {
-            var bufferBundle = this.renderBuffers2[ i ];
+            let bufferBundle = this.renderBuffers2[ i ];
             if (bufferBundle.tuples == 0) {
                 continue;
             }
