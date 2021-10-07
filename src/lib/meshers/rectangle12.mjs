@@ -276,7 +276,7 @@ class RectangleMesher {
         for (let textureValue = 0; textureValue < contiguous.length; textureValue++) {
             if (!contiguous[textureValue]) continue;
             let textureSampler = this.textureOffsets['textureToTextureUnit'][ textureValue ];
-            if (!(textureSampler  in addPointsCalls)) {
+            if (!(textureSampler in addPointsCalls)) {
                 addPointsCalls[ textureSampler ] = 0;
             }
             //face order: top, back, front, left, right, bottom

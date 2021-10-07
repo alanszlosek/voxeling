@@ -119,9 +119,11 @@ class Dragon extends Renderable {
             gl.enableVertexAttribArray(shader.attributes.texcoord);
             gl.vertexAttribPointer(shader.attributes.texcoord, 2, gl.FLOAT, false, 8, 0);
 
+            /*
             gl.bindBuffer(gl.ARRAY_BUFFER, bufferBundle.normals);
             gl.enableVertexAttribArray(shader.attributes.normal);
             gl.vertexAttribPointer(shader.attributes.normal, 3, gl.FLOAT, false, 12, 0);
+            */
 
             /*
             gl.bindBuffer(gl.ARRAY_BUFFER, bufferBundle.translations);

@@ -234,8 +234,8 @@ class Snow extends Renderable {
         gl.bindBuffer(gl.ARRAY_BUFFER, buffers.vertices);
         gl.bufferData(gl.ARRAY_BUFFER, this.snowpackMesh.vertices, gl.STATIC_DRAW);
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, buffers.normals);
-        gl.bufferData(gl.ARRAY_BUFFER, this.snowpackMesh.normals, gl.STATIC_DRAW);
+        //gl.bindBuffer(gl.ARRAY_BUFFER, buffers.normals);
+        //gl.bufferData(gl.ARRAY_BUFFER, this.snowpackMesh.normals, gl.STATIC_DRAW);
 
         gl.bindBuffer(gl.ARRAY_BUFFER, buffers.texcoords);
         gl.bufferData(gl.ARRAY_BUFFER, this.snowpackMesh.texcoords, gl.STATIC_DRAW);
@@ -358,9 +358,11 @@ class Snow extends Renderable {
             gl.enableVertexAttribArray(shader.attributes.position);
             gl.vertexAttribPointer(shader.attributes.position, 3, gl.FLOAT, false, 0, 0);
 
+            /*
             gl.bindBuffer(gl.ARRAY_BUFFER, buffers.normals);
             gl.enableVertexAttribArray(shader.attributes.normal);
             gl.vertexAttribPointer(shader.attributes.normal, 3, gl.FLOAT, false, 0, 0);
+            */
 
             gl.bindBuffer(gl.ARRAY_BUFFER, buffers.texcoords);
             gl.enableVertexAttribArray(shader.attributes.texcoord);
@@ -397,9 +399,11 @@ class Snow extends Renderable {
         gl.vertexAttribPointer(shader.attributes.texcoord, 2, gl.FLOAT, false, 8, 0);
         //gl.vertexAttribDivisor(shader.attributes.texcoords, 1);
 
+        /*
         gl.bindBuffer(gl.ARRAY_BUFFER, bufferBundle.normals);
         gl.enableVertexAttribArray(shader.attributes.normal);
         gl.vertexAttribPointer(shader.attributes.normal, 3, gl.FLOAT, false, 12, 0);
+        */
         //gl.vertexAttribDivisor(shader.attributes.normals, 1);
 
 

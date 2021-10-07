@@ -105,7 +105,7 @@ class WebGL {
             "uniform float u_hazeDistance;" +
 
             "varying vec4 v_position;" +
-            "varying vec3 v_normal;" +
+            //"varying vec3 v_normal;" +
             "varying vec2 v_texcoord;" +
 
             "vec3 fogColor;" +
@@ -141,16 +141,16 @@ class WebGL {
             "uniform mat4 u_model;" +
 
             "attribute vec4 a_position;" +
-            "attribute vec3 a_normal;" +
+            //"attribute vec3 a_normal;" +
             "attribute vec2 a_texcoord;" +
 
             "varying vec4 v_position;" +
-            "varying vec3 v_normal;" +
+            //"varying vec3 v_normal;" +
             "varying vec2 v_texcoord;" +
 
             "void main() {" +
                 "v_position = u_projection * u_view * u_model * a_position;" +
-                "v_normal = a_normal;" +
+                //"v_normal = a_normal;" +
                 "v_texcoord = a_texcoord;" +
 
                 "gl_Position = v_position;" +
@@ -161,7 +161,7 @@ class WebGL {
             vertexShaderCode,
             fragmentShaderCode,
             // attributes
-            ['position', 'normal', 'texcoord'],
+            ['position', 'texcoord'], // 'normal'
             // uniforms
             ['projection', 'view', 'model', 'texture', 'textureOffset', 'ambientLightColor', 'directionalLightColor', 'directionalLightPosition', 'hazeDistance']
         );
