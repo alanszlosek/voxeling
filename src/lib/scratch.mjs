@@ -7,6 +7,7 @@ let scratch = {
     identityQuat: glm.quat.create(),
 
     zeroVec3: glm.vec3.fromValues(0,0,0),
+    zeroMat4: glm.mat4.create(),
 
 // scratch mat4. can use this as the destination for calulations
     mat4: glm.mat4.create(),

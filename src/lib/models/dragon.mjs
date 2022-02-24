@@ -29,7 +29,7 @@ class Dragon extends Renderable {
         // what if textures span multiple atlases? need to separate those buffer bundles
         let body = 0.5;
         let neck = 0.4;
-        let head = 0.45;
+        let head = 0.3;
         let tail = 0.3;
         let horns = 0.1;
 
@@ -60,8 +60,8 @@ class Dragon extends Renderable {
             Shapes.three.rectangle3(0.2, 0.4, 0.2, texcoords1, [-0.4, 0.1, 0.5]),
             Shapes.three.rectangle3(0.2, 0.4, 0.2, texcoords1, [0.4, 0.1, 0.5]),
 
-            // neck and head
-            Shapes.three.rectangle3(0.4, 0.6, 0.4, texcoords1, [0, 0.75, -0.8]),
+            // neck
+            Shapes.three.rectangle3(0.3, 0.6, 0.3, texcoords1, [0, 0.75, -0.75]),
 
             // horns
             Shapes.three.rectangle3(horns, 0.4, horns, texcoords1, [-0.1, 1.45, -1.2]),
@@ -69,7 +69,7 @@ class Dragon extends Renderable {
 
             // tail
             Shapes.three.rectangle3(0.4, 0.3, 0.6, texcoords1, [0, 0.4, 0.9]),
-            Shapes.three.rectangle3(0.3, 0.2, 0.6, texcoords1, [0, 0.6, 1.5]),
+            Shapes.three.rectangle3(0.25, 0.2, 0.6, texcoords1, [0, 0.6, 1.5]),
         ];
 
         // pink
@@ -83,11 +83,11 @@ class Dragon extends Renderable {
             Shapes.three.rectangle3(0.8, 0.1, 0.6, texcoords2, [0.5, 0.8, 0]),
 
             // head
-            Shapes.three.rectangle3(head, head, 0.5, texcoords2, [0, 1.1, -1.25])
+            Shapes.three.rectangle3(head, head, 0.5, texcoords2, [0, 1.1, -1.15])
         );
         this.buffers[ textureUnit ] = this.meshesToBuffers(this.game.gl, meshes);
 
-        mat4.translate(this.modelMatrix, scratch.identityMat4, [16, 2, 5]);
+        //mat4.translate(this.modelMatrix, scratch.identityMat4, [16, 2, 5]);
         
     }
 
@@ -99,6 +99,16 @@ class Dragon extends Renderable {
         }
 
         let shader = this.game.userInterface.webgl.shaders.mvp;
+        let speed = 6000;
+        let orbit = 20;
+
+        vec3.rotateY(scratch.vec3, [orbit, 0, 0], [0,0,0], ts / speed);
+        scratch.vec3[1] = 15
+
+        mat4.copy(scratch.mat4_0, scratch.zeroMat4, 0.2);
+        mat4.translate(scratch.mat4_1, scratch.mat4_0, scratch.vec3);
+        mat4.rotateY(this.modelMatrix, scratch.mat4_1, ts / speed);
+
 
         gl.useProgram(shader.program);
         gl.uniformMatrix4fv(shader.uniforms.projection, false, this.game.camera.projectionMatrix);
