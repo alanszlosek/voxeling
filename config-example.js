@@ -260,6 +260,10 @@ module.exports = {
         "303": "/textures/treestump.png",
         "304": "/textures/treetrunk.png"
     },
+    "texturesWithTransparency": {
+        "6": true,
+        "100": true
+    },
     players: {
         1001: {
             name: 'player',
