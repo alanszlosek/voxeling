@@ -12,10 +12,10 @@ module.exports = {
         database: 'voxeling',
         host: 'localhost'
     },
-    server: 'ws://127.0.0.1:10005',
-    httpServer: 'ws://127.0.0.1:10005',
+    httpServer: 'http://127.0.0.1:10005',
     websocketBindAddress: '127.0.0.1',
     websocketBindPort: 10005,
+    websocketServer: 'ws://127.0.0.1:10005',
     maxPlayers: 10,
 
     voxelRemap: {
@@ -225,7 +225,7 @@ module.exports = {
         "2": "/textures/bricks2.png",
         "3": "/textures/dirtside1.png",
         "4": "/textures/coal2.png",
-        "5": "/textures/color_beige2.png",
+        "5": "/textures/color_beige.png",
         "6": "/textures/water.png",
         "7": "/textures/lava.png",
         "9": "/textures/bricks2.png",
@@ -240,9 +240,9 @@ module.exports = {
         "21": "/textures/color_yellow.png",
         "22": "/textures/planks_64x64.png",
         "27": "/textures/color_black.png",
-        "28": "/textures/color_blue.png",
+        "28": "/textures/color_darkblue.png",
         "29": "/textures/color_brown.png",
-        "30": "/textures/color_cyan.png",
+        "30": "/textures/color_lightblue.png",
         "31": "/textures/color_darkgreen.png",
         "32": "/textures/color_darkgrey.png",
         "33": "/textures/color_green.png",

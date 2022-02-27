@@ -74,7 +74,7 @@ In terminal 1:
 ```
 # git clone the repo into voxeling folder
 cd /path/to/voxeling
-# Download textures from https://alanszlosek.com/voxeling/textures-20210727.zip
+# Download textures from https://alanszlosek.com/voxeling/textures-20220227.zip
 # Extract to www/textures/*.png
 
 # Generate combined texture file (cuts down on WebGL bindTexture calls)
