@@ -1,4 +1,5 @@
 {
+    debug
     email alan.szlosek@gmail.com
     admin off
     auto_https off
@@ -8,15 +9,17 @@ http://192.168.1.128:9966 {
     root * /home/user/Documents/voxeling/www
     file_server
     #timeouts 2h
+    log
 
-    route /ws/* {
-        #uri strip_prefix /ws
+    route /ws {
         reverse_proxy http://localhost:10005
     }
     route /chunk/* {
         reverse_proxy http://localhost:10005
     }
 }
+
+
 
 #0.0.0.0:9966/js {
 #    root /home/user/Documents/voxeling/src
