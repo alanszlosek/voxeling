@@ -1,4 +1,4 @@
-import config from '../config.mjs';
+import config from '../config-client.mjs';
 import { Coordinates } from './lib/coordinates.mjs';
 //import mesher from './lib/meshers/horizontal-merge2';
 import { RectangleMesher } from '../src/lib/meshers/rectangle12.mjs';

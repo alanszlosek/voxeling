@@ -1,6 +1,6 @@
 // imports
 
-import { default as config } from '../config.mjs';
+import { default as config } from '../config-client.mjs';
 import textureOffsets from '../texture-offsets.js'
 
 import { Camera } from './lib/camera.mjs'

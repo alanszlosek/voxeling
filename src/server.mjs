@@ -1,59 +1,56 @@
 import chunkGenerator from './lib/generators/server-terraced.mjs';
-import { MysqlChunkStore } from './lib/chunk-stores/mysql.mjs';
-import config from '../config.mjs';
+
+
+import config from '../config-client.mjs';
 import configServer from '../config-server.mjs';
 import { Coordinates } from './lib/coordinates.mjs';
 import HLRU from 'hashlru';
 import http from 'http';
-import mysql from 'mysql';
 import url from 'url';
 import uuid from 'hat';
 import WebSocket from 'websocket';
 import zlib from 'zlib';
 
-let coordinates = new Coordinates(config.chunkSize);
 
+// UNCOMMENT ONE OF THESE DURING SETUP
+//import mysql from 'mysql';
+import { MongoDbChunkStore } from './lib/chunk-stores/mongodb.mjs';
+// import { ChunkStore } from '../chunk-store.mjs';
+
+
+let coordinates = new Coordinates(config.chunkSize);
 
 
 //var stats = require('./lib/voxel-stats');
 var debug = false;
 
-// This only gets filled by require if config.mysql isn't empty
-var mysqlPool;
+let chunkStore;
+let mysqlPool;
 
 
-/*
-var chunkStore = new chunkStore(
-    new chunkGenerator(config.chunkSize),
-    config.chunkFolder
-);
-*/
-
-// Use mysql chunk storage if the mysql module is installed
-/*
-var useMysql = false;
-try {
-    require.resolve('mysql');
-    useMysql = true;
-} catch(e){}
-if (useMysql) {
-    */
-    if (!('mysql' in configServer)) {
-        throw new Error('Attempted to use mysql for chunk storage, but no mysql params found in configServer');
-    }
+if ('mysql' in configServer && mysql) {
+    console.log('Using MySQL Chunk Store');
     mysqlPool = mysql.createPool(configServer.mysql);
-    var chunkStore = new MysqlChunkStore(
+    chunkStore = new MysqlChunkStore(
         configServer.mysql,
         new chunkGenerator(config.chunkSize)
     );
-    /*
+} else if ('mongo' in configServer && MongoDbChunkStore) {
+    console.log('Using MongoDB Chunk Store');
+    chunkStore = new MongoDbChunkStore(
+        configServer.mongo,
+        new chunkGenerator(config.chunkSize)
+    );
+    chunkStore.connect();
+
 } else {
-    var chunkStore = new chunkStore(
+    log('Using file-based Chunk Store');
+    chunkStore = new chunkStore(
         new chunkGenerator(config.chunkSize),
         config.chunkFolder
     );
 }
-*/
+
 
 
 
@@ -117,7 +114,6 @@ class Server {
 
         // Handle requests for chunk voxels
         httpServer.on('request', function(request, response) {
-            self.log('HTTPRequest');
             var parsedUrl = url.parse(request.url);
             var path = decodeURIComponent(parsedUrl.path);
             if (request.method.toUpperCase() != 'GET') {
@@ -127,6 +123,7 @@ class Server {
                 response.end();
                 return;
             }
+            // TODO: fix this deprecation
             if (path.substr(0, 7) == '/chunk/') {
                 var chunkId = path.substr(7);
                 if (!chunkId) {
@@ -140,7 +137,7 @@ class Server {
                     response.end();
                     return;
                 }
-                console.log('Fetching chunk: ' + chunkId);
+                console.log('HTTP, fetch chunk: ' + chunkId);
                 chunkStore.get(chunkId, function(error, chunk) {
                     if (error) {
                         console.log(error);
@@ -171,6 +168,8 @@ class Server {
                         response.end( chunk.voxels );
                     }
                 });
+            } else {
+                self.log('HTTP path: ' + path);
             }
         });
 
