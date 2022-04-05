@@ -190,8 +190,6 @@ class MongoDbChunkStore extends ChunkStore {
                 voxels: new mongo.Binary(buffer),
                 updated_ms: Date.now()
             };
-            console.log('saving');
-            console.log(data);
             // https://www.mongodb.com/docs/manual/reference/method/db.collection.updateOne/
             self.chunks.updateOne(
                 // find this doc
