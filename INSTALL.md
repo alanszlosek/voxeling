@@ -43,6 +43,8 @@ Now set chunkFolder in config-server.mjs accordingly.
 
 ### Option 2: Store world state in MySQL/MariaDB
 
+Note: These instructions are currently incomplete. Need to add schema creation steps.
+
 Install the mysql module.
 
 ```shell
