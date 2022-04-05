@@ -1,4 +1,8 @@
 export default {
+    // node http+websocket server will bind to these:
+    "httpBindAddress": "127.0.0.1",
+    "httpBindPort": 10005,
+
     "chunkFolder": "chunks/test/",
     // Uncomment if using mysql to store world chunks
     /*

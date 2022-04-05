@@ -3,7 +3,7 @@ INSTALLATION INSTRUCTIONS
 
 ## Prerequisites
 
-* Linux or MacOS (haven't testing on Windows)
+* Linux or MacOS (haven't tested on Windows)
 * Git
 * unzip command for extracting zip archives
 * Python3
@@ -41,7 +41,25 @@ mkdir -p chunks/FOLDER_FOR_YOUR_DATA
 
 Now set chunkFolder in config-server.mjs accordingly.
 
-### Option 2: Store world state in MySQL
+### Option 2: Store world state in MySQL/MariaDB
+
+Install the mysql module.
+
+```shell
+npm install mysql
+```
+
+Open `config-server.mjs`, uncomment the following block and adjust the values to match your MySQL/MariaDB server configuration.
+
+```
+mysql: {
+    connectionLimit: 10,
+    user: 'voxeling',
+    password: 'voxeling',
+    database: 'voxeling',
+    host: 'localhost'
+}
+```
 
 ### Option 3: Store world state in MongoDB
 
@@ -62,13 +80,20 @@ Open `config-server.mjs`, uncomment the following block and adjust the values to
 
 ## Configure the remaining parameters
 
-Open configure-client.mjs and adjust the first 4 parameters.
+Open `config-client.mjs` and adjust the following parameters.
+
+The browser will connect to `httpServer` to fetch chunks. It will connect to `websocketServer` to send and receive voxel changes as players build. Use `ws://` for unsecure websocket connections, and `wss://` if your websocket server is configured for SSL.
 
 ```
 "httpServer": "http://192.168.1.128:9966",
-"websocketBindAddress": "127.0.0.1",
-"websocketBindPort": 10005,
 "websocketServer": "ws://192.168.1.128:9966/ws",
+```
+
+Open `config-server.mjs` and adjust these parameters.
+
+```
+"httpBindAddress": "127.0.0.1",
+"httpBindPort": 10005,
 ```
 
 * Change websocketBindAddress to the address of the interface you want to listen on

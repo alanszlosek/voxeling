@@ -6,10 +6,13 @@ cp config-server-example.mjs config-server.mjs
 
 
 echo "Downloading textures into third-party"
-wget https://alanszlosek.com/voxeling/textures-20220227.zip -o third-party/textures.zip
+TS=textures-20220405
+wget https://alanszlosek.com/voxeling/${TS}.zip -O third-party/textures.zip
 echo "Extracing textures into www/textures"
 cd www/textures
 unzip ../../third-party/textures.zip
+# rename textures-YYYYMMDD folder to voxels
+mv ${TS} voxels
 
 cd ../../scripts
 echo "Setting up python3 virtual environment for generating texture atlases"

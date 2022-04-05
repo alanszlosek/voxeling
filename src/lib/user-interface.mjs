@@ -1,5 +1,5 @@
 // TODO: refactor this so we don't have to include config again
-import { default as config } from '../../config.mjs';
+import { default as config } from '../../config-client.mjs';
 import randomName from 'sillyname';
 import { Tickable } from './entities/tickable.mjs';
 import { WebGL } from './webgl.mjs';

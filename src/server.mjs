@@ -4,6 +4,7 @@ import chunkGenerator from './lib/generators/server-terraced.mjs';
 import config from '../config-client.mjs';
 import configServer from '../config-server.mjs';
 import { Coordinates } from './lib/coordinates.mjs';
+import { existsSync, readFileSync } from 'fs';
 import HLRU from 'hashlru';
 import http from 'http';
 import url from 'url';
@@ -66,8 +67,9 @@ function clientUsernames() {
 
 
 class Server {
-    constructor(config, chunkStore) {
+    constructor(config, configServer, chunkStore) {
         this.config = config;
+        this.configServer = configServer;
         this.chunkStore = chunkStore;
         this.encodedChunkCache = new HLRU(10);
         // SERVER SETUP
@@ -169,7 +171,39 @@ class Server {
                     }
                 });
             } else {
-                self.log('HTTP path: ' + path);
+                // We don't need to serve many files ... 
+                // this is a bit manual but express would be overkill
+                let contentType;
+                if (path == '/' || path == '/index.html') {
+                    if (path == '/') {
+                        path = '/index.html';
+                    }
+                    contentType = 'text/html';
+
+                } else if (path == '/client.js' || '/client-worker.js') {
+                    contentType = 'application/javascript';
+                // TODO: fix these .. bad mime?
+                } else if( path.match(/^\/[a-zA-Z0-9\/]+\.(png)$/) ) {
+                    contentType = 'image/png';
+
+                } else {
+                    self.log('HTTP path: ' + path);
+                    response.writeHead(404, 'Not Found');
+                    response.end();
+                    return;
+                }
+                path = 'www' + path;
+                console.log('path: ' + path);
+                if (existsSync(path)) {
+                    // TODO: gzip
+                    response.writeHead(200, {
+                        'Content-type': contentType
+                    });
+                    response.end(readFileSync(path));
+                } else {
+                    response.writeHead(404, 'Not Found');
+                    response.end();
+                }
             }
         });
 
@@ -330,7 +364,7 @@ class Server {
             self.log('WebSocket error: ' + error);
         });
 
-        httpServer.listen(self.config.websocketBindPort, self.config.websocketBindAddress);
+        httpServer.listen(self.configServer.httpBindPort, self.configServer.httpBindAddress);
 
         setInterval(function() {
             self.sendPlayers();
@@ -416,5 +450,5 @@ class Server {
 
 
 
-let s = new Server(config, chunkStore);
+let s = new Server(config, configServer, chunkStore);
 s.init();

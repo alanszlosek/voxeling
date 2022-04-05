@@ -7,7 +7,7 @@ from PIL import Image
 # python3 textures.py
 
 # read json file
-with open('../config.mjs', 'r') as f:
+with open('../config-client.mjs', 'r') as f:
     j = f.read()
 
     # remove comments and ESM stuff
