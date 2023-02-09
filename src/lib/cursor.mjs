@@ -107,7 +107,6 @@ class Cursor extends Tickable {
                     vec3.copy(this.selectStart, i32VoxelHit);
                 } else {
                     // destroy to current voxelHit
-                    console.log('destroy');
                     destroying = true;
                 }
                 this.previousAction1 = userInterface.state.action1;
@@ -116,7 +115,6 @@ class Cursor extends Tickable {
                     vec3.copy(this.selectStart, i32VoxelHit);
                 } else {
                     // create
-                    console.log('create');
                     creating = true;
                 }
                 this.previousAction2 = userInterface.state.action2;
