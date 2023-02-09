@@ -5,6 +5,8 @@
     "gl-matrix": "^3.3.0",
     "hashlru": "^2.3.0",
     "hat": "0.0.3",
+    "mongodb": "^4.5.0",
+    "mysql": "^2.18.1",
     "perlin": "~1.0.0",
     "sillyname": "^0.1.0",
     "voxel-raycast": "^0.2.1",
