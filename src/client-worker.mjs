@@ -187,33 +187,31 @@ var worker = {
 
         var requestClosure = function(chunkId, position) {
             return function(done) {
-                var req = new XMLHttpRequest();
-                req.open("GET", config.httpServer + "/chunk/" + chunkId, true);
-                req.responseType = "arraybuffer";
-                req.onload = function (oEvent) {
-                    delete self.requestedChunks[chunkId];
+                fetch(config.httpServer + "/chunk/" + chunkId)
+                    .then(function(response) {
+                        delete self.requestedChunks[chunkId];
 
-                    if (!req.response) {
+                        if (!response.ok) {
+                            done();
+                            return;
+                        }
+                        return response.arrayBuffer();
+                    })
+                
+                    .then(function(body) {
+                        if (!(chunkId in self.chunkDistances)) {
+                            // No longer care about this chunk
+                            done();
+                            return;
+                        }
+
+                        chunkCache[chunkId] = {
+                            chunkID: chunkId,
+                            position: position,
+                            voxels: new Uint8Array(body)
+                        };
                         done();
-                        return;
-                    } // Note: not oReq.responseText
-
-                    // No longer care about this chunk
-                    if (!(chunkId in self.chunkDistances)) {
-                        done();
-                        return;
-                    }
-
-                    chunkCache[chunkId] = {
-                        chunkID: chunkId,
-                        position: position,
-                        voxels: new Uint8Array(req.response)
-                    };
-                    done();
-                };
-                // Handle error
-                req.send(null);
-                return req;
+                    });
             };
         };
 
