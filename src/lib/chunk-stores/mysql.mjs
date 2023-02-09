@@ -203,9 +203,9 @@ class MysqlChunkStore extends ChunkStore {
     };
 
     end() {
-        this.mysqlPool.end();
         clearInterval(this.applyChangesHandle);
         clearInterval(this.saveHandle);
+        this.mysqlPool.end();
     }
 }
 
