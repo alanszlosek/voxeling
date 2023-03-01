@@ -25,12 +25,7 @@ class MysqlChunkStore extends ChunkStore {
             },
             500
         );
-        this.saveHandle = setInterval(
-            function() {
-                self.save();
-            },
-            5000
-        );
+        this.save();
     }
 
 
@@ -160,28 +155,30 @@ class MysqlChunkStore extends ChunkStore {
 
 
     // Call this on a timeout
-    // Callback gets triggered on success or failure
     // Schedule the next timeout afterwards
     save() {
-        var i = 0;
-        for (var chunkID in this.toSave) {
-            if (i > 10) {
-                break;
-            }
-            var chunk = this.toSave[chunkID];
-            this.saveVoxels(chunkID, chunk);
+        let keys = Object.keys(this.toSave);
+        if (keys.length > 0) {
+            let chunkID = keys[0];
+            let chunk = this.toSave[chunkID];
+            this.saveVoxels(chunkID, chunk, this.save.bind(this));
             delete this.toSave[chunkID];
-            i++;
+        } else {
+            setTimeout(
+                this.save.bind(this),
+                5000
+            );
         }
     };
 
 
-    saveVoxels(chunkID, chunk) {
+    saveVoxels(chunkID, chunk, next) {
         var self = this;
         let cache = self.cache;
         zlib.gzip(Buffer.from(chunk.voxels), function(error, buffer) {
             if (error) {
                 console.log('Error compressing voxels', error);
+                next();
                 return;
             }
             self.mysqlPool.query(
@@ -197,6 +194,7 @@ class MysqlChunkStore extends ChunkStore {
                     if (error) {
                         console.log('MysqlChunkStore::saveVoxels', error);
                     }
+                    next();
                 }
             );
         });
