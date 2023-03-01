@@ -15,9 +15,12 @@ import zlib from 'zlib';
 
 // UNCOMMENT ONE OF THESE DURING SETUP
 //import mysql from 'mysql';
-import { MongoDbChunkStore } from './lib/chunk-stores/mongodb.mjs';
+//import { MysqlChunkStore } from './lib/chunk-stores/mysql.mjs';
+
+//import { MongoDbChunkStore } from './lib/chunk-stores/mongodb.mjs';
 // import { ChunkStore } from '../chunk-store.mjs';
 
+import { SqliteChunkStore } from './lib/chunk-stores/sqlite.mjs';
 
 let coordinates = new Coordinates(config.chunkSize);
 
@@ -43,6 +46,13 @@ if ('mysql' in configServer && mysql) {
         new chunkGenerator(config.chunkSize)
     );
     chunkStore.connect();
+
+} else if ('sqlite3' in configServer && SqliteChunkStore) {
+    console.log('Using Sqlite3 Chunk Store');
+    chunkStore = new SqliteChunkStore(
+        configServer.sqlite3,
+        new chunkGenerator(config.chunkSize)
+    );
 
 } else {
     log('Using file-based Chunk Store');

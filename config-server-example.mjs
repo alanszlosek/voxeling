@@ -21,4 +21,8 @@ export default {
         "database": "voxeling"
     }
     */
+    // Uncomment if using Sqlite3
+    "sqlite3": {
+        "filename": "/path/to/sqlite3/database"
+    }
 }
