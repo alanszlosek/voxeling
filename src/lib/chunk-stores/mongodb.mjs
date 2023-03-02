@@ -30,6 +30,7 @@ class MongoDbChunkStore extends ChunkStore {
             },
             1000
         );
+        log('Using MongoDbChunkStore');
     }
 
     async connect() {

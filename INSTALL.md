@@ -29,7 +29,7 @@ cd voxeling
 
 ## Configure data storage
 
-Now decide whether you want to store world state in files, mysql or in mongodb. Visit the appopriate sub-section below.
+Now decide whether you want to store world state in Sqlite3, MongoDB, MySQL, or files. Visit the appopriate sub-section below.
 
 ### Option 1: Store world state in files
 
@@ -41,17 +41,19 @@ mkdir -p chunks/FOLDER_FOR_YOUR_DATA
 
 Now set chunkFolder in config-server.mjs accordingly.
 
-### Option 2: Store world state in MySQL/MariaDB
+### Option 2: Store world state in MariaDB/MySQL
 
-Note: These instructions are currently incomplete. Need to add schema creation steps.
+Create a database and user account in your MariaDB/MySQL server.
 
-Install the mysql module.
+Apply the schema from `src/lib/chunk-stores/schema-mariadb.sql` to create the required tables.
+
+Install the npm module for mysql.
 
 ```shell
 npm install mysql
 ```
 
-Open `config-server.mjs`, uncomment the following block and adjust the values to match your MySQL/MariaDB server configuration.
+Open `config-server.mjs` and uncomment the `mysql`. Adjust the values to match your MariaDB/MySQL server configuration.
 
 ```
 mysql: {
@@ -65,18 +67,40 @@ mysql: {
 
 ### Option 3: Store world state in MongoDB
 
-Install the node module.
+Install the npm module for MongoDB.
 
 ```shell
 npm install mongodb
 ```
 
-Open `config-server.mjs`, uncomment the following block and adjust the values to match your MongoDB server configuration.
+Open `config-server.mjs` and uncomment the `mongo` block. Adjust the values to match your MongoDB server configuration.
 
 ```
 "mongo": {
     "uri": "mongodb://192.168.1.100",
     "database": "voxeling"
+}
+```
+
+### Option 4: Store world state in Sqlite3
+
+Create an sqlite3 database and apply the schema.
+
+```shell
+cat src/lib/chunk-stores/schema-sqlite.sql | sqlite3 voxeling.db
+```
+
+Install the npm module for Sqlite3.
+
+```shell
+npm install sqlite3
+```
+
+Open `config-server.mjs` and uncomment the `sqlite3` block. Set `filename` to the full path to your sqlite3 database file.
+
+```
+"sqlite3": {
+    "filename": "/path/to/sqlite3/voxeling.db"
 }
 ```
 

@@ -4,7 +4,7 @@ import Log from '../log.mjs';
 import sqlite3 from 'sqlite3';
 import zlib from 'zlib';
 
-var log = Log('SqlitelChunkStore', true);
+var log = Log('SqliteChunkStore', false);
 
 var worldId = 1;
 
@@ -27,6 +27,7 @@ class SqliteChunkStore extends ChunkStore {
         );
         // to initialize the save timeout
         this.save();
+        log('Using SqliteChunkStore');
     }
 
 

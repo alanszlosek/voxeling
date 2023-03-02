@@ -26,6 +26,8 @@ class MysqlChunkStore extends ChunkStore {
             500
         );
         this.save();
+
+        log('Using MysqlChunkStore');
     }
 
 

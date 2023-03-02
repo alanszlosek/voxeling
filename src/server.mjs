@@ -13,15 +13,6 @@ import WebSocket from 'websocket';
 import zlib from 'zlib';
 
 
-// UNCOMMENT ONE OF THESE DURING SETUP
-//import mysql from 'mysql';
-//import { MysqlChunkStore } from './lib/chunk-stores/mysql.mjs';
-
-//import { MongoDbChunkStore } from './lib/chunk-stores/mongodb.mjs';
-// import { ChunkStore } from '../chunk-store.mjs';
-
-import { SqliteChunkStore } from './lib/chunk-stores/sqlite.mjs';
-
 let coordinates = new Coordinates(config.chunkSize);
 
 
@@ -29,34 +20,31 @@ let coordinates = new Coordinates(config.chunkSize);
 var debug = false;
 
 let chunkStore;
-let mysqlPool;
 
-
-if ('mysql' in configServer && mysql) {
-    console.log('Using MySQL Chunk Store');
-    mysqlPool = mysql.createPool(configServer.mysql);
-    chunkStore = new MysqlChunkStore(
+if ('mysql' in configServer) {
+    let cs = await import('./lib/chunk-stores/mysql.mjs');
+    chunkStore = new cs.MysqlChunkStore(
         configServer.mysql,
         new chunkGenerator(config.chunkSize)
     );
-} else if ('mongo' in configServer && MongoDbChunkStore) {
-    console.log('Using MongoDB Chunk Store');
-    chunkStore = new MongoDbChunkStore(
+} else if ('mongo' in configServer) {
+    let cs = await import('./lib/chunk-stores/mongodb.mjs');
+    chunkStore = new cs.MongoDbChunkStore(
         configServer.mongo,
         new chunkGenerator(config.chunkSize)
     );
     chunkStore.connect();
 
-} else if ('sqlite3' in configServer && SqliteChunkStore) {
-    console.log('Using Sqlite3 Chunk Store');
-    chunkStore = new SqliteChunkStore(
+} else if ('sqlite3' in configServer) {
+    let cs = await import('./lib/chunk-stores/sqlite.mjs');
+    chunkStore = new cs.SqliteChunkStore(
         configServer.sqlite3,
         new chunkGenerator(config.chunkSize)
     );
 
 } else {
-    log('Using file-based Chunk Store');
-    chunkStore = new chunkStore(
+    let cs = await import('./lib/chunk-stores/file.mjs');
+    chunkStore = new cs.FileChunkStore(
         new chunkGenerator(config.chunkSize),
         config.chunkFolder
     );
@@ -282,6 +270,7 @@ class Server {
 
                         // save message to database
                         // stats.count('chat.messages.sent');
+                        /*
                         if (mysqlPool) {
                             var row = {
                                 created_ms: Date.now(),
@@ -290,6 +279,7 @@ class Server {
                             };
                             mysqlPool.query('insert into chat SET ?', row);
                         }
+                        */
 
                         break;
 

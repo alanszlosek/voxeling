@@ -4,7 +4,10 @@ export default {
     "httpBindPort": 10005,
 
     "chunkFolder": "chunks/test/",
-    // Uncomment if using mysql to store world chunks
+
+    // UNCOMMENT ONLY ONE OF THE FOLLOWING BLOCKS
+
+    // Uncomment to store world state in MySQL
     /*
     mysql: {
         connectionLimit: 10,
@@ -14,15 +17,17 @@ export default {
         host: 'localhost'
     },
     */
-    // Uncomment if using mongo to store world chunks
+    // Uncomment to store world state in MongoDB
     /*
     "mongo": {
         "uri": "mongodb://192.168.1.100",
         "database": "voxeling"
     }
     */
-    // Uncomment if using Sqlite3
+    // Uncomment to store world state in Sqlite3
+    /*
     "sqlite3": {
         "filename": "/path/to/sqlite3/database"
     }
+    */
 }
