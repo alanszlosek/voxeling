@@ -1,7 +1,7 @@
 export default {
     // node http+websocket server will bind to these:
-    "httpBindAddress": "127.0.0.1",
-    "httpBindPort": 10005,
+    "httpBindAddress": "0.0.0.0",
+    "httpBindPort": 11000,
 
     "chunkFolder": "chunks/test/",
 

@@ -41,6 +41,7 @@ var sendMessage = function(websocket, name, payload) {
     websocket.send( JSON.stringify([name, payload]) );
 };
 
+let workerLocation = self.location;
 
 var worker = {
     coordinates: null,
@@ -81,10 +82,25 @@ var worker = {
         config.chunkSize * config.worldRadius
     ],
 
+    prepareURL: function(loc, overrides) {
+        let u = new URL(loc);
+        // Copy in overrides
+        for (let p of ["hostname", "pathname", "protocol"]) {
+            if (p in overrides) {
+                u[p] = overrides[p];
+            }
+        }
+        return u.toString();
+    },
 
     connect: function() {
         var self = this;
         var coordinates = this.coordinates = new Coordinates(config.chunkSize);
+
+        // Prepare server URLs using worker location and overrides from config
+        config.websocketServer = this.prepareURL(workerLocation, config.websocketServerOverrides);
+        config.httpServer = this.prepareURL(workerLocation, config.httpServerOverrides);
+
         var websocket = this.connection = new WebSocket(config.websocketServer);
 
         //mesher.config(config, config.voxels, textureOffsets, coordinates, chunkCache);
@@ -187,7 +203,8 @@ var worker = {
 
         var requestClosure = function(chunkId, position) {
             return function(done) {
-                fetch(config.httpServer + "/chunk/" + chunkId)
+                // assume config.httpServer has trailing slash
+                fetch(config.httpServer + "chunk/" + chunkId)
                     .then(function(response) {
                         delete self.requestedChunks[chunkId];
 

@@ -1,9 +1,13 @@
 export default {
-    // controls where webworker fetches chunks from
-    "httpServer": "http://127.0.0.1:9966",
-    "websocketBindAddress": "127.0.0.1",
-    "websocketBindPort": 10005,
-    "websocketServer": "ws://127.0.0.1:9966/ws",
+    // Control where webworker connects to for world state data
+    // Code starts with the URL the browser loaded the webworker from,
+    // but you can override by specifying URL Object parameter
+    // overrides below
+    // (https://developer.mozilla.org/en-US/docs/Web/API/URL)
+    "websocketServer": {
+        "protocol": "ws:", // non-SSL for now
+        "pathname": "/ws"
+    },
 
     // TODO: some of these are WIP, related to the "double density" effort
     "chunkWidth": 32, // N units of the coordinate system
