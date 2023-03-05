@@ -43,7 +43,7 @@ Create an sqlite3 database and apply the schema.
 cat src/lib/chunk-stores/schema-sqlite.sql | sqlite3 voxeling.db
 ```
 
-Install the npm module for Sqlite3.
+Install the npm module for Sqlite3 if running locally.
 
 ```shell
 npm install sqlite3
@@ -66,7 +66,7 @@ Create a database and user account in your MariaDB/MySQL server.
 
 In that database, run the SQL from `src/lib/chunk-stores/schema-mariadb.sql` to create the required tables.
 
-Install the npm module for mysql.
+Install the npm module for mysql if running locally.
 
 ```shell
 npm install mysql
@@ -88,7 +88,7 @@ Adjust the values in the `mysql` block to match your MariaDB/MySQL server config
 
 ### Option 3: Store world state in MongoDB
 
-Install the npm module for MongoDB.
+Install the npm module for MongoDB if running locally.
 
 ```shell
 npm install mongodb
