@@ -24,8 +24,4 @@ python3 texture-atlases.py
 
 cd ..
 
-echo "Installing node dependencies"
-npm install
-
-
 echo "Done with setup.sh. Follow the rest of the instructions in INSTALL.md"

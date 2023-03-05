@@ -3,9 +3,15 @@ export default {
     "httpBindAddress": "0.0.0.0",
     "httpBindPort": 11000,
 
-    "chunkFolder": "chunks/test/",
-
+    
     // UNCOMMENT ONLY ONE OF THE FOLLOWING BLOCKS
+
+    // Uncomment to store world state in Sqlite3
+    /*
+    "sqlite3": {
+        "filename": "/path/to/sqlite3/database"
+    }
+    */
 
     // Uncomment to store world state in MySQL
     /*
@@ -17,6 +23,7 @@ export default {
         host: 'localhost'
     },
     */
+
     // Uncomment to store world state in MongoDB
     /*
     "mongo": {
@@ -24,10 +31,8 @@ export default {
         "database": "voxeling"
     }
     */
-    // Uncomment to store world state in Sqlite3
-    /*
-    "sqlite3": {
-        "filename": "/path/to/sqlite3/database"
-    }
-    */
+
+    // Uncomment to store world state in files
+    //"chunkFolder": "chunks/test/",
+
 }

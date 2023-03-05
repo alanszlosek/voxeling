@@ -4,7 +4,11 @@ export default {
     // but you can override by specifying URL Object parameter
     // overrides below
     // (https://developer.mozilla.org/en-US/docs/Web/API/URL)
-    "websocketServer": {
+    "httpServerOverrides": {
+        "protocol": "http:",
+        "pathname": ""
+    },
+    "websocketServerOverrides": {
         "protocol": "ws:", // non-SSL for now
         "pathname": "/ws"
     },
