@@ -1,5 +1,5 @@
-import { Generator } from '../generator';
-import { noise } from 'perlin';
+import { Generator } from '../generator.mjs';
+import Simplex from 'perlin-simplex';
 
 var debug = true;
 
@@ -10,9 +10,9 @@ var floor = 0;
 var ceiling = 20;
 // minecraft's limit
 var divisor = 50;
-var seed = 8484747474747;
 
-noise.seed(seed);
+//var seed = 8484747474747;
+let simplex = new Simplex(); // =  perlin(seed);
 
 function pointsInside(startX, startY, width, func) {
     for (var x = startX; x < startX + width; x++) for (var y = startY; y < startY + width; y++) func(x, y);
@@ -30,8 +30,9 @@ class ServerPerlinGenerator extends Generator {
         var startY = position[1];
         var startZ = position[2];
         var voxels = chunk.voxels;
+        let width = this.chunkSize;
         pointsInside(startX, startZ, width, function(x, z) {
-            var n = noise.simplex2(x / divisor, z / divisor);
+            var n = simplex.noise(x / divisor, z / divisor);
             var y = ~~scale(n, -1, 1, floor, ceiling);
             if (y === floor || startY < y && y < startY + width) {
                 var xidx = Math.abs((width + x % width) % width);
@@ -50,4 +51,4 @@ class ServerPerlinGenerator extends Generator {
 }
 
 
-export { ServerPerlinGenerator };
+export default ServerPerlinGenerator;
