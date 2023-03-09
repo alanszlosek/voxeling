@@ -7,7 +7,6 @@ RUN apk add sqlite
 RUN npm install
 RUN npm install sqlite3
 
-COPY esb.sh .
 COPY www www
 COPY src src
 COPY config-server.mjs .
@@ -18,6 +17,5 @@ COPY texture-offsets.js .
 RUN mkdir -p database # fail gracefully if already exists
 RUN cat src/lib/chunk-stores/schema-sqlite.sql | sqlite3 database/voxeling.sqlite3
 
-RUN /bin/sh /app/esb.sh
-CMD ["npm", "start"]
-EXPOSE 9966
+RUN npm run build
+CMD ["npm", "run", "server"]
