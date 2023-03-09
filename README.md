@@ -1,7 +1,9 @@
 voxeling
 ====
 
-See INSTALL.md for installation instructions. **You can now build and run using Docker!**
+Want to use docker? See `INSTALL-DOCKER.md`.
+
+Want to run outside of a container? See `INSTALL.md`.
 
 ## The Latest News
 
