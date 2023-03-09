@@ -1,18 +1,4 @@
 export default {
-    // Control where webworker connects to for world state data
-    // Code starts with the URL the browser loaded the webworker from,
-    // but you can override by specifying URL Object parameter
-    // overrides below
-    // (https://developer.mozilla.org/en-US/docs/Web/API/URL)
-    "httpServerOverrides": {
-        "protocol": "http:",
-        "pathname": ""
-    },
-    "websocketServerOverrides": {
-        "protocol": "ws:", // non-SSL for now
-        "pathname": "/ws"
-    },
-
     // TODO: some of these are WIP, related to the "double density" effort
     "chunkWidth": 32, // N units of the coordinate system
     "chunkElements": 32768, // 32 * 32 * 32

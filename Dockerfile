@@ -15,7 +15,8 @@ COPY config-client.mjs .
 COPY texture-offsets.js .
 
 # Configure sqlite database
-RUN cat src/lib/chunk-stores/schema-sqlite.sql | sqlite3 voxeling.db
+RUN mkdir -p database # fail gracefully if already exists
+RUN cat src/lib/chunk-stores/schema-sqlite.sql | sqlite3 database/voxeling.sqlite3
 
 RUN /bin/sh /app/esb.sh
 CMD ["npm", "start"]

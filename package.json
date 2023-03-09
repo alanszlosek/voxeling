@@ -20,6 +20,8 @@
     "esbuild": "^0.12.15"
   },
   "scripts": {
-    "start": "node src/server.mjs"
+    "server": "node src/server.mjs",
+    "build": "esbuild src/client.mjs src/client-worker.mjs --bundle --outdir=www",
+    "watch": "esbuild src/client.mjs src/client-worker.mjs --bundle --outdir=www --watch"
   }
 }

@@ -1,4 +1,5 @@
 import chunkGenerator from './lib/generators/server-terraced.mjs';
+//import chunkGenerator from './lib/generators/server-perlin.mjs';
 
 
 import config from '../config-client.mjs';
@@ -11,6 +12,7 @@ import url from 'url';
 import uuid from 'hat';
 import WebSocket from 'websocket';
 import zlib from 'zlib';
+import 'process';
 
 
 let coordinates = new Coordinates(config.chunkSize);
@@ -364,7 +366,10 @@ class Server {
             self.log('WebSocket error: ' + error);
         });
 
-        httpServer.listen(self.configServer.httpBindPort, self.configServer.httpBindAddress);
+        httpServer.listen(
+            process.env.PORT || 3000,
+            process.env.BIND_INTERFACE || '0.0.0.0',
+        );
 
         setInterval(function() {
             self.sendPlayers();

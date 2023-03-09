@@ -1,10 +1,5 @@
 #!/bin/bash
 
-echo "Copying example configuration so you can customize later"
-cp config-client-example.mjs config-client.mjs
-cp config-server-example.mjs config-server.mjs
-
-
 echo "Downloading textures into third-party"
 TS=textures-20220405
 wget https://alanszlosek.com/voxeling/${TS}.zip -O third-party/textures.zip
@@ -24,4 +19,4 @@ python3 texture-atlases.py
 
 cd ..
 
-echo "Done with setup.sh. Follow the rest of the instructions in INSTALL.md"
+echo "Done with textures.sh."

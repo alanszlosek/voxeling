@@ -82,24 +82,21 @@ var worker = {
         config.chunkSize * config.worldRadius
     ],
 
-    prepareURL: function(loc, overrides) {
-        let u = new URL(loc);
-        // Copy in overrides
-        for (let p of ["hostname", "pathname", "protocol"]) {
-            if (p in overrides) {
-                u[p] = overrides[p];
-            }
-        }
-        return u.toString();
-    },
-
     connect: function() {
         var self = this;
         var coordinates = this.coordinates = new Coordinates(config.chunkSize);
 
-        // Prepare server URLs using worker location and overrides from config
-        config.websocketServer = this.prepareURL(workerLocation, config.websocketServerOverrides);
-        config.httpServer = this.prepareURL(workerLocation, config.httpServerOverrides);
+        // Prepare server URLs using worker location 
+        config.websocketServer = new URL(workerLocation);
+        if (workerLocation.protocol == 'https:') {
+            config.websocketServer.protocol = 'wss:';
+        } else {
+            config.websocketServer.protocol = 'ws:';
+        }
+        config.websocketServer.pathname = '/ws';
+        config.httpServer = new URL(workerLocation);
+        config.httpServer.pathname = '';
+        
 
         var websocket = this.connection = new WebSocket(config.websocketServer);
 
