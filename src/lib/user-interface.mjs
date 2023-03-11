@@ -566,6 +566,9 @@ class UserInterface extends Tickable {
     }
 
     tick(ts) {
+        if (!navigator.getGamepads) {
+            return;
+        }
         let gamepad = navigator.getGamepads()[0];
         if (gamepad == null) {
             return;
