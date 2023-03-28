@@ -2,7 +2,7 @@ import { Renderable } from './entities/renderable.mjs';
 import uuid from 'hat';
 import { tickables } from './entities/renderable.mjs';
 
-let debug = false;
+let debug = true;
 /*
 WebGL stuff that pertains only to voxels
 */
@@ -443,6 +443,7 @@ class Voxels extends Renderable {
         };
         */
         this.visibleChunks = chunks;
+        this.pending = true;
     }
 
     debug(msg) {
