@@ -5,11 +5,12 @@ let debug = false;
 
 
 class ServerGeneratorTerraced extends Generator {
-    fillChunkVoxels(chunk, chunkSize) {
+    fillChunkVoxels(chunk) {
+        let self = this;
         let lo = chunk.position;
-        let ii = lo[0] + chunkSize;
-        let jj = lo[1] + chunkSize;
-        let kk = lo[2] + chunkSize;
+        let ii = lo[0] + self.chunkSize;
+        let jj = lo[1] + self.chunkSize;
+        let kk = lo[2] + self.chunkSize;
         let index = 0;
 
         // 1 block rise, each ring of chunks out from center
@@ -52,7 +53,7 @@ class ServerGeneratorTerraced extends Generator {
         for(let k = lo[2]; k < kk; k++) {
             for (let j = lo[1]; j < jj; j++) {
                 for (let i = lo[0]; i < ii; i++, index++) {
-                    chunk.voxels[index] = generateVoxel(i, j, k, chunkSize);
+                    chunk.voxels[index] = generateVoxel(i, j, k, self.chunkSize);
                 }
             }
         }

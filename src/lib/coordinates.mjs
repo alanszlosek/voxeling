@@ -13,6 +13,12 @@ class Coordinates {
         this.chunkMask = ~this.voxelMask;
     }
 
+    chunkIdToPosition(chunkId) {
+        return chunkId.split('|').map(function(value) {
+            return Number(value);
+        });
+    }
+
     nearbyChunkIDsEach(position, maxDistance, callback) {
         let current = this.positionToChunk(position);
         let x = current[0];

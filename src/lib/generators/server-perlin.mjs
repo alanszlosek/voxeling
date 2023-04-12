@@ -7,9 +7,9 @@ var debug = true;
 
 // Perlin stuff
 var floor = 0;
-var ceiling = 20;
+var ceiling = 30;
 // minecraft's limit
-var divisor = 50;
+var divisor = 200;
 
 //var seed = 8484747474747;
 let simplex = new Simplex(); // =  perlin(seed);
@@ -24,7 +24,7 @@ function scale(x, fromLow, fromHigh, toLow, toHigh) {
 
 class ServerPerlinGenerator extends Generator {
 
-    fillChunkVoxels(chunk, chunkSize) {
+    fillChunkVoxels(chunk) {
         var position = chunk.position;
         var startX = position[0];
         var startY = position[1];
@@ -39,11 +39,15 @@ class ServerPerlinGenerator extends Generator {
                 var yidx = Math.abs((width + y % width) % width);
                 var zidx = Math.abs((width + z % width) % width);
                 var idx = xidx + yidx * width + zidx * width * width;
-                voxels[idx] = 1;
-                // now that we've set the crust, loop down and create earth underneath
-                for (var i = y; i >= startY; i--) {
-                    var idx = xidx + Math.abs((width + i % width) % width) * width + zidx * width * width;
+                if (y > (ceiling - 4)) {
+                    voxels[idx] = 5;
+                } else {
                     voxels[idx] = 1;
+                }
+                // now that we've set the crust, loop down and create dirt underneath
+                for (var i = y - 1; i >= startY; i--) {
+                    var idx = xidx + Math.abs((width + i % width) % width) * width + zidx * width * width;
+                    voxels[idx] = 3;
                 }
             }
         });

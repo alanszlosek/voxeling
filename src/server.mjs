@@ -4,6 +4,7 @@ import chunkGenerator from './lib/generators/server-terraced.mjs';
 
 import config from '../config-client.mjs';
 import configServer from '../config-server.mjs';
+import { Chunk } from './lib/chunk.mjs';
 import { Coordinates } from './lib/coordinates.mjs';
 import { existsSync, readFileSync } from 'fs';
 import HLRU from 'hashlru';
@@ -15,9 +16,6 @@ import zlib from 'zlib';
 import 'process';
 
 
-let coordinates = new Coordinates(config.chunkSize);
-
-
 //var stats = require('./lib/voxel-stats');
 var debug = false;
 
@@ -26,30 +24,23 @@ let chunkStore;
 if ('mysql' in configServer) {
     let cs = await import('./lib/chunk-stores/mysql.mjs');
     chunkStore = new cs.MysqlChunkStore(
-        configServer.mysql,
-        new chunkGenerator(config.chunkSize)
+        configServer.mysql
     );
 } else if ('mongo' in configServer) {
     let cs = await import('./lib/chunk-stores/mongodb.mjs');
     chunkStore = new cs.MongoDbChunkStore(
-        configServer.mongo,
-        new chunkGenerator(config.chunkSize)
+        configServer.mongo
     );
-    chunkStore.connect();
 
 } else if ('sqlite3' in configServer) {
     let cs = await import('./lib/chunk-stores/sqlite.mjs');
     chunkStore = new cs.SqliteChunkStore(
-        configServer.sqlite3,
-        new chunkGenerator(config.chunkSize)
+        configServer.sqlite3
     );
 
-} else {
-    let cs = await import('./lib/chunk-stores/file.mjs');
-    chunkStore = new cs.FileChunkStore(
-        new chunkGenerator(config.chunkSize),
-        config.chunkFolder
-    );
+} else if ('memory' in configServer) {
+    let cs = await import('./lib/chunk-stores/memory.mjs');
+    chunkStore = new cs.MemoryChunkStore();
 }
 
 
@@ -70,7 +61,11 @@ class Server {
     constructor(config, configServer, chunkStore) {
         this.config = config;
         this.configServer = configServer;
+
         this.chunkStore = chunkStore;
+        this.coordinates = new Coordinates(config.chunkSize);
+        this.generator = new chunkGenerator(config.chunkSize);
+        this.chunk = new Chunk(config, chunkStore, this.generator);
         this.encodedChunkCache = new HLRU(10);
         // SERVER SETUP
         // Create WebSocket and HTTP Servers separately so you can customize...
@@ -125,51 +120,57 @@ class Server {
                 response.end();
                 return;
             }
-            // TODO: fix this deprecation
-            if (path.substr(0, 7) == '/chunk/') {
-                var chunkId = path.substr(7);
+            if (path.substring(0, 7) == '/chunk/') {
+                var chunkId = path.substring(7);
                 if (!chunkId) {
                     response.end();
                     return;
                 }
                 // Bail if someone requested a chunk outside our world radius
-                if (!self.isChunkInBounds(chunkId)) {
+                let chunkPosition = self.coordinates.chunkIdToPosition(chunkId);
+                if (!self.isChunkPositionValid(chunkPosition)) {
                     console.log('Chunk out of bounds: ' + chunkId);
                     response.writeHead(404, 'Not Found');
                     response.end();
                     return;
                 }
                 console.log('HTTP, fetch chunk: ' + chunkId);
-                chunkStore.get(chunkId, function(error, chunk) {
-                    if (error) {
-                        console.log(error);
-                        return;
-                    }
-                    var acceptEncoding = request.headers['accept-encoding'] || '';
+                // Try to fetch from chunk store first
+                self.chunk.read(chunkId, chunkPosition).then(
+                    function(chunk) {
+                        var acceptEncoding = request.headers['accept-encoding'] || '';
 
-                    // Note: This is not a conformant accept-encoding parser.
-                    // See https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.3
-                    if (/\bgzip\b/.test(acceptEncoding)) {
-                        response.writeHead(
-                            200,
-                            {
-                                'Content-Type': 'application/octet-stream',
-                                'Content-Encoding': 'gzip',
-                                // TODO: fix this to lock it down
-                                'Access-Control-Allow-Origin': '*',
-                                'Cache-Control': 'no-cache'
+                        // Note: This is not a conformant accept-encoding parser.
+                        // See https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.3
+                        if (/\bgzip\b/.test(acceptEncoding)) {
+                            response.writeHead(
+                                200,
+                                {
+                                    'Content-Type': 'application/octet-stream',
+                                    'Content-Encoding': 'gzip',
+                                    // TODO: fix this to lock it down
+                                    'Access-Control-Allow-Origin': '*',
+                                    'Cache-Control': 'no-cache'
+                                }
+                            );
+                            if ('compressedVoxels' in chunk && chunk.compressedVoxels) {
+                                response.end( chunk.compressedVoxels );
+                            } else {
+                                response.end( zlib.gzipSync(chunk.voxels) );
                             }
-                        );
-                        if ('compressedVoxels' in chunk && chunk.compressedVoxels) {
-                            response.end( chunk.compressedVoxels );
                         } else {
-                            response.end( zlib.gzipSync(chunk.voxels) );
+                            response.writeHead(200, {});
+                            response.end( chunk.voxels );
                         }
-                    } else {
-                        response.writeHead(200, {});
-                        response.end( chunk.voxels );
+                    },
+                    function(error) {
+                        console.log('Server: ' + error);
+                        response.writeHead(404, {});
+                        response.end();
+
+
                     }
-                });
+                );
             } else {
                 // We don't need to serve many files ... 
                 // this is a bit manual but express would be overkill
@@ -267,7 +268,7 @@ class Server {
                             return;
                         }
                         // limit chat message length
-                        if (payload.text.length > 255) payload.text = payload.text.substr(0, 140);
+                        if (payload.text.length > 255) payload.text = payload.text.substring(0, 140);
                         self.broadcast(null, 'chat', payload);
 
                         // save message to database
@@ -299,16 +300,22 @@ class Server {
 
                     // Client sent us voxel changes for one or more chunks
                     case 'chunkVoxelIndexValue':
-                        var changes = payload;
+                        let changes = payload;
                         // Update our chunk store
-                        self.chunkStore.gotChunkChanges(changes);
+                        self.chunk.changeBlocks(changes);
 
                         // Re-broadcast this to the other players, too
                         for (var chunkId in changes) {
-                            var chunkChanges = {};
-                            if (!self.isChunkInBounds(chunkId)) {
+                            let chunkPosition = self.coordinates.chunkIdToPosition(chunkId);
+
+                            if (!self.isChunkPositionValid(chunkPosition)) {
                                 continue;
                             }
+
+                            // trigger read to apply chunk changes to DB and save
+                            self.chunk.read(chunkId, chunkPosition);
+
+                            var chunkChanges = {};
                             chunkChanges[chunkId] = changes[chunkId];
 
                             self.encodedChunkCache.remove(chunkId);
@@ -437,6 +444,17 @@ class Server {
         var position = chunkID.split('|').map(function(value) {
             return Number(value);
         });
+        if (position.length != 3) {
+            return false;
+        }
+        if (position[0] < self.lastWorldChunks[0] || position[1] < self.lastWorldChunks[1] || position[2] < self.lastWorldChunks[2] || position[0] > self.lastWorldChunks[3] || position[1] > self.lastWorldChunks[4] || position[2] > self.lastWorldChunks[5]) {
+            return false;
+        }
+        return position;
+    }
+
+    isChunkPositionValid(position) {
+        var self = this;
         if (position.length != 3) {
             return false;
         }
