@@ -1,7 +1,7 @@
 export default {
     // TODO: some of these are WIP, related to the "double density" effort
     "chunkWidth": 32, // N units of the coordinate system
-    "chunkElements": 32768, // 32 * 32 * 32
+    "chunkArraySize": 32768, // 32 * 32 * 32
     "textureUnits": 16, // wonder whether max texture units varies by computer
     "meshedTriangleMaxRowSpan": 32,
     "chunkSize": 32, // number of blocks in a chunk
