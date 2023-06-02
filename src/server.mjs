@@ -181,7 +181,7 @@ class Server {
                     }
                     contentType = 'text/html';
 
-                } else if (path == '/client.js' || '/client-worker.js') {
+                } else if (path == '/client.js' || path == '/client-worker.js') {
                     contentType = 'application/javascript';
                 // TODO: fix these .. bad mime?
                 } else if( path.match(/^\/[a-zA-Z0-9\/]+\.(png)$/) ) {
