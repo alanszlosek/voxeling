@@ -12,7 +12,7 @@ import { performance } from 'perf_hooks';
 // override some config values just for testing ease
 config.chunkWidth = 32;
 config.chunkWidth2 = 32 * 32;
-config.chunkElements = 32*32*32;
+config.chunkArraySize = 32*32*32;
 
 
 let coordinates = new Coordinates(config);
