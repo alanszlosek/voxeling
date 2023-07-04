@@ -3,3 +3,4 @@ config-server.mjs
 chunks
 node_modules
 www/textures*.png
+tests/
