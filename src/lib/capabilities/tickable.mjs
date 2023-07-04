@@ -2,6 +2,18 @@ import uuid from 'hat';
 
 var tickables = {};
 
+let last_ts = Date.now();
+setInterval(
+    function() {
+        let ts = Date.now();
+        for (let id in tickables) {
+            tickables[id].tick(ts, ts - last_ts);
+        }
+        last_ts = ts;
+    },
+    1000/30
+);
+
 class Tickable {
     constructor() {
         // unique id so we only tick() and item once

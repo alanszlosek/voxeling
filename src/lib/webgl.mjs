@@ -319,10 +319,6 @@ class WebGL {
         let gl = this.gl;
         let r = function(ts) {
             //this.gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-            for (let id in tickables) {
-                tickables[id].tick(ts, ts - self.ts);
-            }
             for (let id in renderables) {
                 renderables[id].render(gl, ts);
             }

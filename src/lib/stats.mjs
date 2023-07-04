@@ -1,5 +1,5 @@
-import { Tickable } from './capabilities/tickable.mjs';
-class Stats extends Tickable {
+import { Renderable } from './capabilities/renderable.mjs';
+class Stats extends Renderable {
     constructor() {
         super();
         let self = this;
@@ -32,7 +32,7 @@ class Stats extends Tickable {
 
         
     }
-    tick(ts) {
+    render(gl, ts) {
         this.frameCount++;
 
         if (ts - this.frameTimestamp >= 1000.0) {
