@@ -1,6 +1,6 @@
-import { Renderable } from './entities/renderable.mjs';
+import { Renderable } from './capabilities/renderable.mjs';
 import uuid from 'hat';
-import { tickables } from './entities/renderable.mjs';
+import { tickables } from './capabilities/renderable.mjs';
 
 let debug = true;
 /*

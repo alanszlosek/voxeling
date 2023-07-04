@@ -1,4 +1,4 @@
-import { Tickable } from './entities/tickable.mjs';
+import { Tickable } from './capabilities/tickable.mjs';
 class Stats extends Tickable {
     constructor() {
         super();

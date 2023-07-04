@@ -1,6 +1,6 @@
 import { mat4, quat, vec3 } from 'gl-matrix';
 
-import { Movable } from './entities/movable.mjs';
+import { Movable } from './capabilities/movable.mjs';
 import scratch from './scratch.mjs';
 
 class Camera extends Movable {
@@ -44,7 +44,7 @@ class Camera extends Movable {
     init() {
         let game = this.game;
         this.canvas = game.userInterface.webgl.canvas;
-        this.follow = game.player;
+        this.follow = game.player.movable;
 
         this.firstPersonOffset = game.player.eyeOffset; //vec3.fromValues(game.player.eyeOffset[0], 1.0, game.player.eyeOffset[2]);
         this.shoulderOffset = vec3.fromValues(0.0, 0.0, 3.0);

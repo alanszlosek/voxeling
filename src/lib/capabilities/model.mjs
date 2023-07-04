@@ -91,8 +91,6 @@ class Model extends Renderable {
         //mat4.translate(model, scratch.identityMat4, this.movable.getPosition());
         //mat4.rotateY(model, model, this.movable.getYaw());
 
-        // TODO: test whether this really does translate first, then rotate at that translation position
-        mat4.fromRotationTranslation(model, this.movable.rotationQuatY, this.movable.getPosition());
 
         // rotate light source
         quat.rotateY(tempQuat, scratch.identityQuat, this.movable.getYaw());
@@ -123,7 +121,7 @@ class Model extends Renderable {
             mat4.multiply(view, rotation1, mesh.view);
             mat4.rotateX(view, view, mesh.rotation[0]);
             mat4.multiply(view, view, rotation2);
-            mat4.multiply(view, model, view);
+            mat4.multiply(view, this.movable.matrix, view);
 
             gl.uniformMatrix4fv(this.shader.uniforms.model, false, view);
             //gl.uniform1i(this.shaderUniforms.part, false, mesh.part);

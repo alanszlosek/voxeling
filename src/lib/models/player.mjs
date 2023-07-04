@@ -1,26 +1,21 @@
 import { mat4, quat, vec3 } from 'gl-matrix';
 import scratch from '../scratch.mjs';
 import Shapes from '../shapes.mjs';
-import { MovableCollidable } from '../entities/movable-collidable.mjs';
-import { Model } from '../entities/model.mjs';
+import { Tickable } from '../capabilities/tickable.mjs';
+import { Model } from '../capabilities/model.mjs';
 
-class Player extends MovableCollidable {
-    constructor(game) {
-        super();
+class Player {
+    constructor(game, movable) {
         this.game = game;
         this.currentVelocityLength = 0;
-    }
 
-    setup() {
         let gl = this.game.userInterface.webgl.gl;
         let shader = this.game.userInterface.webgl.shaders.mvp; //2;
         let texture = this.game.textureAtlas.byName['player'];
         let avatar = 'player';
 
         var self = this;
-        // TODO: this really should respond like a head tilt
-        this.eyeOffset = vec3.fromValues(0, 1.25, -0.5);
-        this.eyePosition = vec3.create();
+        this.movable = movable;
 
         var uvCoordinates = {
             head: [
@@ -158,9 +153,7 @@ class Player extends MovableCollidable {
         mat4.translate(shape.view, shape.view, [0.09, 0.2, 0]);
         meshes.push(shape);
 
-        this.model = new Model(this.game, gl, shader, meshes, texture, this, this);
-
-        this.translate(this.game.config.initialPosition);
+        this.model = new Model(this.game, gl, shader, meshes, texture, movable);
     }
 
     init() {
@@ -198,22 +191,6 @@ class Player extends MovableCollidable {
             this.model.setTextureUnit( textures[texture] );
             this.avatar = texture;
         }
-    }
-
-    constrainPitch() {
-        if (this.pitch > 90) {
-            this.pitch = 90;
-
-        } else if (this.pitch < -90) {
-            this.pitch = -90;
-        }
-    }
-
-    tick() {
-        this.constrainPitch();
-        this.updateQuat();
-        vec3.transformQuat(this.eyePosition, this.eyeOffset, this.rotationQuatY);
-        vec3.add(this.eyePosition, this.eyePosition, this.position);
     }
 
     destroy() {

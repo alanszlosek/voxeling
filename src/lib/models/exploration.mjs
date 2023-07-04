@@ -1,5 +1,5 @@
 import { mat4, vec3, vec4, quat } from 'gl-matrix';
-import { Renderable } from '../entities/renderable.mjs';
+import { Renderable } from '../capabilities/renderable.mjs';
 import scratch from '../scratch.mjs';
 import Shapes from '../shapes.mjs';
 

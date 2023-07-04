@@ -1,5 +1,5 @@
 
-import { quat, vec3 } from 'gl-matrix';
+import { mat4, quat, vec3 } from 'gl-matrix';
 import { Tickable } from './tickable.mjs';
 
 // TODO: optimize this ...
@@ -31,6 +31,8 @@ class Movable extends Tickable {
         this.direction = vec3.create();
 
         this.position = vec3.create();
+
+        this.matrix = mat4.create();
     }
 
     translate(vector) {
@@ -110,10 +112,23 @@ class Movable extends Tickable {
         return this.yaw;
     }
 
+    constrainPitch() {
+        if (this.pitch > 90) {
+            this.pitch = 90;
+
+        } else if (this.pitch < -90) {
+            this.pitch = -90;
+        }
+    }
+
     updateQuat() {
         quat.fromEuler(this.rotationQuat, this.pitch, this.yaw, this.bank);
         quat.fromEuler(this.rotationQuatY, 0, this.yaw, 0);
         vec3.transformQuat(this.direction, this.baseDirection, this.rotationQuat);
+    }
+
+    updateMatrix() {
+        mat4.fromRotationTranslation(this.matrix, this.rotationQuatY, this.position);
     }
 
     getRotationQuat() {

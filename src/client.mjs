@@ -12,7 +12,7 @@ import { ClientWorkerHandle } from './lib/client-worker-handle.mjs';
 import { Cursor } from './lib/cursor.mjs';
 import { Multiplayer } from './lib/multiplayer.mjs'
 import { Physics } from './lib/physics.mjs';
-import { Player } from './lib/models/player.mjs';
+import { Player } from './lib/characters/player.mjs';
 import { Sky } from './lib/models/sky.mjs';
 import { Snow } from './lib/models/snow.mjs';
 import Stats from './lib/stats.mjs';
@@ -22,7 +22,7 @@ import { VoxelCache } from './lib/voxel-cache.mjs';
 import { Voxels } from './lib/voxels.mjs';
 import { World } from './lib/world.mjs';
 import { Exploration } from './lib/models/exploration.mjs';
-import { Dragon } from './lib/models/dragon.mjs';
+import { Dragon } from './lib/characters/dragon.mjs';
 
 
 //import randomName from 'sillyname';

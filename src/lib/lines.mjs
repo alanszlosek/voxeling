@@ -1,4 +1,4 @@
-import { Renderable } from './entities/renderable.mjs';
+import { Renderable } from './capabilities/renderable.mjs';
 
 /*
 LineBuffer to hold all the lines we want to draw

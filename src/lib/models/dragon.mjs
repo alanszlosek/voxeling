@@ -1,28 +1,17 @@
-import { mat4, vec3, vec4, quat } from 'gl-matrix';
-import { Renderable } from '../entities/renderable.mjs';
-import scratch from '../scratch.mjs';
+import { Renderable } from '../capabilities/renderable.mjs';
 import Shapes from '../shapes.mjs';
 
 
-import { getRandomInt, getRandomArbitrary } from '../util.mjs';
-
 class Dragon extends Renderable {
-    constructor(game) {
+    constructor(game, modelMatrix) {
         super();
         this.game = game;
+        this.modelMatrix = modelMatrix;
         this.enabled = true;
-    }
-    init() {
-        this.modelMatrix = mat4.create();
-
-        this.cutoff = 0;
-        this.stage = 0;
 
         // nested, indexed by textureUnit / textureAtlas
         this.buffers = {};
         this.initMeshes();
-
-        return Promise.resolve();
     }
 
     initMeshes() {
@@ -99,21 +88,12 @@ class Dragon extends Renderable {
         }
 
         let shader = this.game.userInterface.webgl.shaders.mvp;
-        let speed = 6000;
-        let orbit = 20;
-
-        vec3.rotateY(scratch.vec3, [orbit, 0, 0], [0,0,0], ts / speed);
-        scratch.vec3[1] = 15
-
-        mat4.copy(scratch.mat4_0, scratch.zeroMat4, 0.2);
-        mat4.translate(scratch.mat4_1, scratch.mat4_0, scratch.vec3);
-        mat4.rotateY(this.modelMatrix, scratch.mat4_1, ts / speed);
-
 
         gl.useProgram(shader.program);
         gl.uniformMatrix4fv(shader.uniforms.projection, false, this.game.camera.projectionMatrix);
         gl.uniformMatrix4fv(shader.uniforms.view, false, this.game.camera.viewMatrix);
         gl.uniformMatrix4fv(shader.uniforms.model, false, this.modelMatrix);
+
 
         for (let textureUnit in this.buffers) {
             let bufferBundle = this.buffers[textureUnit];

@@ -1,7 +1,7 @@
 // TODO: refactor this so we don't have to include config again
 import { default as config } from '../../config-client.mjs';
 import randomName from 'sillyname';
-import { Tickable } from './entities/tickable.mjs';
+import { Tickable } from './capabilities/tickable.mjs';
 import { WebGL } from './webgl.mjs';
 
 
@@ -149,10 +149,7 @@ var states = {
         mousemove: function(ev) {
             // do bitwise op to remove lower 8 bits or so to clamp to consistent intervals
             //let mask = 128 + 64 + 32 + 16 + 8 + 4;
-
-            gameGlobal.player.yaw -= ev.movementX / 6;
-            gameGlobal.player.pitch -= ev.movementY / 6;
-            //gameGlobal.player.updateQuat();
+            gameGlobal.player.updateYawPitch(ev.movementX, ev.movementY);
         },
         keydown: function(event) {
             if (debug) console.log(event);
@@ -614,8 +611,10 @@ class UserInterface extends Tickable {
         }
         if (deltaX || deltaY) {
             console.log(deltaX);
-            gameGlobal.player.yaw -= deltaX;
-            gameGlobal.player.pitch -= deltaY;
+            gameGlobal.updateYawPitch(deltaX, deltaY);
+            //gameGlobal.player.yaw -= deltaX;
+            //gameGlobal.player.pitch -= deltaY;
+            // TODO: is this necessary?
             gameGlobal.player.updateQuat();
         }
     

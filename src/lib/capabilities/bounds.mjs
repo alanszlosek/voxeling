@@ -1,9 +1,6 @@
-import { Movable } from './movable.mjs';
 
-class MovableCollidable extends Movable {
+class Bounds {
     constructor() {
-        super();
-
         this.bounds = {
             bottomFrontLeft: [ 0, 0, 0 ],
             bottomFrontRight: [ 0, 0, 0 ],
@@ -96,4 +93,4 @@ class MovableCollidable extends Movable {
     }
 }
 
-export { MovableCollidable };
+export { Bounds };

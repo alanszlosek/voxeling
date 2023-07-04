@@ -1,7 +1,7 @@
 import { quat, vec3 } from 'gl-matrix';
 import scratch from '../scratch.mjs';
 import { Sun } from './sun.mjs';
-import { Tickable } from '../entities/tickable.mjs';
+import { Tickable } from '../capabilities/tickable.mjs';
 
 class Sky extends Tickable {
     constructor(game) {

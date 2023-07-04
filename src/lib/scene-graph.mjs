@@ -1,5 +1,5 @@
 import { mat4 } from 'gl-matrix';
-import { Renderable } from './entities/renderable.mjs';
+import { Renderable } from './capabilities/renderable.mjs';
 
 // http://webglfundamentals.org/webgl/lessons/webgl-scene-graph.html
 

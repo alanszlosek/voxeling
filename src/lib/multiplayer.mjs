@@ -1,6 +1,6 @@
 import { quat, vec3 } from 'gl-matrix';
 import { Player } from './models/player.mjs';
-import { Tickable } from './entities/tickable.mjs';
+import { Tickable } from './capabilities/tickable.mjs';
 
 
 // This class holds the player objects, updates their positions
@@ -44,9 +44,9 @@ class Multiplayer extends Tickable {
             this.cutoff = ts + 99;
             this.game.clientWorkerHandle.send([
                 'myPosition',
-                this.game.player.position,
-                this.game.player.yaw,
-                this.game.player.pitch,
+                this.game.player.movable.position,
+                this.game.player.movable.yaw,
+                this.game.player.movable.pitch,
                 this.game.player.avatar
             ]);
         }

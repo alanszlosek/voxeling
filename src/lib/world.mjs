@@ -1,4 +1,4 @@
-import { Tickable } from './entities/tickable.mjs';
+import { Tickable } from './capabilities/tickable.mjs';
 
 class World extends Tickable {
     constructor(game) {
@@ -29,7 +29,7 @@ class World extends Tickable {
 
     tick(ts) {
         // compare player position with chunk boundaries to trigger regionChange
-        var thisRegion = this.game.coordinates.positionToChunk(this.game.player.position);
+        var thisRegion = this.game.coordinates.positionToChunk(this.game.player.getPosition());
         var lastRegion = this.lastRegion;
         if (thisRegion[0] !== lastRegion[0] || thisRegion[1] !== lastRegion[1] || thisRegion[2] !== lastRegion[2]) {
             //console.log('region change');

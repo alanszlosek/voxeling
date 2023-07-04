@@ -1,5 +1,5 @@
 import { quat, vec3 } from 'gl-matrix';
-import { Tickable } from './entities/tickable.mjs';
+import { Tickable } from './capabilities/tickable.mjs';
 import raycast from 'voxel-raycast';
 import scratch from './scratch.mjs';
 
@@ -56,7 +56,9 @@ class Physics extends Tickable {
     init() {
         let game = this.game;
         this.controlState = game.userInterface.state;
-        this.movable = game.player;
+        this.movable = game.player.movable;
+        this.player = game.player;
+
         
         return Promise.resolve();
     }
@@ -187,7 +189,7 @@ class Physics extends Tickable {
 
     handleCollision(movementVector) {
         var self = this;
-        var currentPosition = this.movable.getPosition();
+        var currentPosition = this.player.getPosition();
         var testPosition = vec3.create();
         var hit = vec3.create();
         var normals = vec3.create();
@@ -220,24 +222,24 @@ class Physics extends Tickable {
             ) {
                 currentPosition[1] += 1.2;
 
-                this.movable.updateBounds(currentPosition);
+                this.player.updateBounds(currentPosition);
                 vec3.copy(scratch.vec3_1, scratch.vec3_0);
 
                 // Did we have any significant collisions? If so, roll back the Y-axis change
-                if (this.haggle(this.movable.bounds.all, currentPosition, scratch.vec3_1)) {
+                if (this.haggle(this.player.bounds.bounds.all, currentPosition, scratch.vec3_1)) {
                     currentPosition[1] -= 1.2;
                 } else {
                     vec3.copy(this.previousVelocity, scratch.vec3_1);
-                    self.movable.translate(scratch.vec3_1);
+                    self.player.translate(scratch.vec3_1);
                     return;
                 }
             }
         }
 
-        this.movable.updateBounds(currentPosition);
-        this.haggle(this.movable.bounds.all, currentPosition, scratch.vec3_0);
+        this.player.updateBounds(currentPosition);
+        this.haggle(this.player.bounds.bounds.all, currentPosition, scratch.vec3_0);
         vec3.copy(this.previousVelocity, scratch.vec3_0);
-        self.movable.translate(scratch.vec3_0);
+        self.player.translate(scratch.vec3_0);
     };
 
     // Haggle for a stable, non-colliding position

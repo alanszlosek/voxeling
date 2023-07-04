@@ -3,7 +3,7 @@ import { Lines } from './lines.mjs';
 import raycast from 'voxel-raycast';
 import scratch from './scratch.mjs';
 import Shapes from './shapes.mjs';
-import { Tickable } from './entities/tickable.mjs';
+import { Tickable } from './capabilities/tickable.mjs';
 
 
 class Cursor extends Tickable {
@@ -34,6 +34,7 @@ class Cursor extends Tickable {
         let game = this.game;
         this.camera = game.camera;
         this.player = game.player;
+
         // TODO: fix this ... might end up being controls, or userInterface.state
         this.userInterface = game.userInterface;
         this.voxelCache = game.voxelCache;
@@ -80,7 +81,7 @@ class Cursor extends Tickable {
         // TODO: now that we have the cursor actually living in the 3d world, we can show and hide it whenever we want
         // Logic for in-game cursor ... small green wire cube
         // NOTE: thing working from quat here and working from direction on 95 is giving us mismatch
-        vec3.transformQuat(scratch.vec3, baseDirection, this.player.rotationQuat);
+        vec3.transformQuat(scratch.vec3, baseDirection, this.player.movable.rotationQuat);
         
         // First param is expected to have getBlock()
         let hit = raycast(this.voxelCache, this.player.eyePosition, scratch.vec3, distance, f64VoxelHit, f64VoxelNormal);
