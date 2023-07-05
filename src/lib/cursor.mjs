@@ -9,8 +9,9 @@ import { Tickable } from './capabilities/tickable.mjs';
 class Cursor extends Tickable {
     constructor(game) {
         super();
+        let self = this;
         this.game = game;
-        this.enabled = true;
+        this.enabled = false;
         this.cutoff = 0.00; // don't fire raycasting on every frame
         // shortcuts
 
@@ -28,18 +29,25 @@ class Cursor extends Tickable {
         // If these two are Float32Arrays, it leads to casting, loses precision, and results in incorrect hit coords
         this.low = vec3.create();
         this.high = vec3.create();
+
+        this.game.pubsub.subscribe('player', function(player) {
+            self.playerCache = {
+                rotationQuat: player.rotationQuat,
+                eyePosition: player.eyePosition
+            };
+            self.enabled = true;
+        });
+        this.lines = new Lines(this.game);
     }
 
     init() {
         let game = this.game;
         this.camera = game.camera;
-        this.player = game.player;
 
         // TODO: fix this ... might end up being controls, or userInterface.state
         this.userInterface = game.userInterface;
         this.voxelCache = game.voxelCache;
 
-        this.lines = new Lines(this.game);
         return Promise.resolve();
     }
 
@@ -81,10 +89,10 @@ class Cursor extends Tickable {
         // TODO: now that we have the cursor actually living in the 3d world, we can show and hide it whenever we want
         // Logic for in-game cursor ... small green wire cube
         // NOTE: thing working from quat here and working from direction on 95 is giving us mismatch
-        vec3.transformQuat(scratch.vec3, baseDirection, this.player.movable.rotationQuat);
+        vec3.transformQuat(scratch.vec3, baseDirection, this.playerCache.rotationQuat);
         
         // First param is expected to have getBlock()
-        let hit = raycast(this.voxelCache, this.player.eyePosition, scratch.vec3, distance, f64VoxelHit, f64VoxelNormal);
+        let hit = raycast(this.voxelCache, this.playerCache.eyePosition, scratch.vec3, distance, f64VoxelHit, f64VoxelNormal);
         if (hit > 0) {
             // If pressing shift, convert to normal of the hit
             // preserve precision of voxelHit, so copy out

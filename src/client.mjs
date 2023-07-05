@@ -13,6 +13,7 @@ import { Cursor } from './lib/cursor.mjs';
 import { Multiplayer } from './lib/multiplayer.mjs'
 import { Physics } from './lib/physics.mjs';
 import { Player } from './lib/characters/player.mjs';
+import { PubSub } from './lib/pubsub.mjs';
 import { Sky } from './lib/models/sky.mjs';
 import { Snow } from './lib/models/snow.mjs';
 import Stats from './lib/stats.mjs';
@@ -22,7 +23,7 @@ import { VoxelCache } from './lib/voxel-cache.mjs';
 import { Voxels } from './lib/voxels.mjs';
 import { World } from './lib/world.mjs';
 import { Exploration } from './lib/models/exploration.mjs';
-import { Dragon } from './lib/characters/dragon.mjs';
+import { Dragon } from './lib/models/dragon.mjs';
 
 
 //import randomName from 'sillyname';
@@ -39,19 +40,12 @@ let game = {
     textureOffsets: textureOffsets,
     coordinates: new Coordinates(config),
     players: {},
+    pubsub: new PubSub(),
     settings: {}
 };
 // Passing game into constructor to give components access to each other
-game.camera = new Camera(game);
 game.clientWorkerHandle = new ClientWorkerHandle(game);
-game.cursor = new Cursor(game);
 game.exploration = new Exploration(game);
-game.dragon = new Dragon(game);
-game.multiplayer = new Multiplayer(game);
-game.physics = new Physics(game);
-game.player = new Player(game);
-game.sky = new Sky(game);
-game.snow = new Snow(game);
 game.stats = new Stats(game);
 game.textureAtlas = new TextureAtlas(game, textureOffsets);
 game.userInterface = new UserInterface(game);
@@ -62,10 +56,8 @@ game.world = new World(game);
 
 // Game startup
 game.userInterface.init()
-.then(function() {
-    return game.cursor.init();
 
-}).then(function() {
+.then(function() {
     return game.textureAtlas.init();
 
 }).then(function() {
@@ -98,36 +90,17 @@ game.userInterface.init()
         clientWorker.postMessage(['chat', out]);
     });
 
-}).then(function() {
-    return game.player.init();
-    // TODO: finish multipler player setup too
-
-}).then(function() {
-    // Sky
-    return Promise.resolve();
 
 }).then(function() {
     // Voxels
     return game.voxels.init();
 
 }).then(function() {
-    return game.camera.init();
-
-}).then(function() {
-    return game.snow.init();
-    return Promise.resolve();
-}).then(function() {
     return game.exploration.init();
     return Promise.resolve();
-}).then(function() {
-    return game.dragon.init();
 
 }).then(function() {
     return game.userInterface.webgl.init();
-
-}).then(function() {
-    // Physics
-    return game.physics.init();
 
     /*
 }).then(function() {
@@ -135,7 +108,30 @@ game.userInterface.init()
     */
 
 }).then(function() {
-    // render handlers
+    // things that need gl handle to init
+    game.cursor = new Cursor(game);
+    game.multiplayer = new Multiplayer(game);
+    game.player = new Player(game);
+    //game.dragon = new Dragon(game);
+    game.sky = new Sky(game);
+    game.snow = new Snow(game);
+
+    // TODO: call init() on the above?
+
+    return Promise.resolve();
+
+}).then(function() {
+    // Set active camera
+    game.camera = game.player.camera;
+    return Promise.resolve();
+
+}).then(function() {
+    return game.cursor.init();
+
+}).then(function() {
+    game.physics = new Physics(game);
+
+    return Promise.resolve();
 
 }).then(function() {
     // Also: currentMaterial, chat

@@ -414,10 +414,22 @@ var tag = function(tagName, attributes, children) {
 class UserInterface extends Tickable {
     constructor(game) {
         super();
+        let self = this;
 
         gameGlobal = this.game = game;
         this.state = controlStates;
         this.gamepad = null;
+
+        this.coordsElement = document.getElementById('coordinates');
+        this.game.pubsub.subscribe('player.updatePosition', function(position) {
+            // TODO: move this into user-interface
+            // Update coordinates shown at top-right every second
+            //if (ts - this.coordsTimestamp >= 1000.0) {
+                //this.coordsTimestamp = ts;
+                let pos = self.game.player.getPosition().map(Math.floor);
+                self.coordsElement.innerText = pos.join(', ');
+            //}
+        });
     }
 
     init() {

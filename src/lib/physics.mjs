@@ -51,14 +51,13 @@ class Physics extends Tickable {
         this.rotatedMovementVector = vec3.create();
         this.rotationQuat = quat.create();
         this.previousVelocity = vec3.create();
-    }
-    
-    init() {
-        let game = this.game;
+
         this.controlState = game.userInterface.state;
         this.movable = game.player.movable;
         this.player = game.player;
 
+    }
+    init() {
         
         return Promise.resolve();
     }

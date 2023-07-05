@@ -1,7 +1,7 @@
 import Log from './log.mjs';
 import zlib from 'zlib';
 
-var log = Log('Chunk', true);
+var log = Log('Chunk', false);
 
 class Chunk {
     constructor(config, chunkStore, generator) {

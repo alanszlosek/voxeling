@@ -11,9 +11,9 @@ Goal of this class:
 * hmm, why is this just not part of Model?
 
 */
-class Movable extends Tickable {
+class Movable {
     constructor() {
-        super();
+        //super();
         this.isMoving = false;
         this.yaw = 0.00;
         this.pitch = 0.00;

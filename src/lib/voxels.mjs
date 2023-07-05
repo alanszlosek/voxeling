@@ -382,8 +382,8 @@ class Voxels extends Renderable {
         let game = this.game;
         this.gl = game.userInterface.webgl.gl;
         this.shader = game.userInterface.webgl.shaders.projectionPosition;
-        this.ambientLight = game.sky.ambientLightColor;
-        this.directionalLight = game.sky.directionalLight;
+        this.ambientLight = null; //game.sky.ambientLightColor;
+        this.directionalLight = null; //game.sky.directionalLight;
 
         this.nearTimestamp = 0;
         this.farTimestamp = 0;

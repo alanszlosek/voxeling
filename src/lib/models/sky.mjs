@@ -48,7 +48,7 @@ class Sky extends Tickable {
 
     init() {
         let game = this.game;
-        this.gl = game.userInterface.webgl.gl;
+        this.gl = game.gl;
             
         this.projection = game.camera.inverse;
         this.shader = game.userInterface.webgl.shaders.projectionViewPosition;

@@ -11,22 +11,23 @@ class Exploration extends Renderable {
         super();
         this.game = game;
         this.enabled = false;
-    }
-    init() {
-
         this.textureValue = 6; // water
         let textureY = this.game.textureOffsets['offsets'][ this.textureValue ];
         let height = this.game.textureOffsets['textureRowHeight'];
         // lower left, upper right in texture map
         this.texcoords = [0, textureY, 1, textureY + height];
         this.textureUnit = this.game.textureOffsets['textureToTextureUnit'][ this.textureValue ]
-
-        this.initMeshes();
-
+    
+        
         this.modelMatrix = mat4.create();
-
         this.cutoff = 0;
         this.stage = 0;
+    }
+    
+    init() {
+
+
+        this.initMeshes();
 
         return Promise.resolve();
     }
