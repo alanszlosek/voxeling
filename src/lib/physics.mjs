@@ -44,6 +44,7 @@ var slowFall = false;
 class Physics extends Tickable {
     constructor(game) {
         super();
+        let self = this;
         this.game = game;
         this.running = false;
         this.currentVelocity = vec3.create();
@@ -55,6 +56,10 @@ class Physics extends Tickable {
         this.controlState = game.userInterface.state;
         this.movable = game.player.movable;
         this.player = game.player;
+
+        this.game.pubsub.subscribe('running', function() {
+            self.running = true;
+        });
 
     }
     init() {

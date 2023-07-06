@@ -1,6 +1,4 @@
-import { Renderable } from './capabilities/renderable.mjs';
-import uuid from 'hat';
-import { tickables } from './capabilities/renderable.mjs';
+import { Tickable } from './capabilities/tickable.mjs';
 
 let debug = true;
 /*
@@ -348,13 +346,13 @@ class AtlasBuffer {
 }
 
 
-class Voxels extends Renderable {
-    constructor(game, textureOffsets) {
+class Voxels extends Tickable {
+    constructor(game) {
         super();
         this.game = game;
         
         this.textures = game.textureAtlas;
-        this.textureOffsets = textureOffsets;
+        this.textureOffsets = game.textureOffsets;
         this.farDistance = 2;
         this.hazeDistance = 90.0;
 
@@ -376,12 +374,8 @@ class Voxels extends Renderable {
         this.nearCutoff = 0;
         this.pending = false;
 
-    }
-    init() {
-        let self = this;
-        let game = this.game;
-        this.gl = game.userInterface.webgl.gl;
-        this.shader = game.userInterface.webgl.shaders.projectionPosition;
+        this.gl = game.gl;
+        this.shader = game.webgl.shaders.voxel;
         this.ambientLight = null; //game.sky.ambientLightColor;
         this.directionalLight = null; //game.sky.directionalLight;
 
@@ -592,17 +586,16 @@ class Voxels extends Renderable {
     }
 
 
-    render(ts) {
+    render(parentMatrix, ts, delta) {
         var start = Date.now();
         var gl = this.gl;
         let ambientLight = this.ambientLight;
         let directionalLight = this.directionalLight;
 
-        let shader = this.game.userInterface.webgl.shaders.projectionPosition
+        let shader = this.shader;
 
         gl.useProgram(shader.program);
-        gl.uniformMatrix4fv(shader.uniforms.projection, false, this.game.camera.projectionMatrix);
-        gl.uniformMatrix4fv(shader.uniforms.view, false, this.game.camera.viewMatrix);
+        gl.uniformMatrix4fv(shader.uniforms.view, false, parentMatrix);
 
         //gl.uniform3fv(shader.uniforms.ambientLightColor, ambientLight);
         //gl.uniform3fv(shader.uniforms.directionalLightColor, directionalLight.color);

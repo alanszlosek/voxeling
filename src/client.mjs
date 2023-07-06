@@ -11,6 +11,7 @@ import { Coordinates } from './lib/coordinates.mjs';
 import { ClientWorkerHandle } from './lib/client-worker-handle.mjs';
 import { Cursor } from './lib/cursor.mjs';
 import { Multiplayer } from './lib/multiplayer.mjs'
+import { Node2 } from './lib/scene-graph.mjs'
 import { Physics } from './lib/physics.mjs';
 import { Player } from './lib/characters/player.mjs';
 import { PubSub } from './lib/pubsub.mjs';
@@ -23,19 +24,19 @@ import { VoxelCache } from './lib/voxel-cache.mjs';
 import { Voxels } from './lib/voxels.mjs';
 import { World } from './lib/world.mjs';
 import { Exploration } from './lib/models/exploration.mjs';
-import { Dragon } from './lib/models/dragon.mjs';
+import { Dragon } from './lib/characters/dragon.mjs';
+import { WebGL } from './lib/webgl.mjs';
+import scratch from './lib/scratch.mjs';
 
-
-//import randomName from 'sillyname';
-
-//import { tickables } from './lib/ecs/tickable.mjs'
-
-// let camera = new Camera(config);
-// let physics = new Physics(config);
-// let player = new Player(config);
-
+let canvas = document.getElementById('herewego');
+canvas.width = canvas.clientWidth;
+canvas.height = canvas.clientHeight;
+let webgl = new WebGL(canvas);
 
 let game = {
+    canvas: canvas,
+    webgl: webgl,
+    gl: webgl.gl,
     config: config,
     textureOffsets: textureOffsets,
     coordinates: new Coordinates(config),
@@ -43,6 +44,52 @@ let game = {
     pubsub: new PubSub(),
     settings: {}
 };
+
+game.clientWorkerHandle = new ClientWorkerHandle(game);
+game.stats = new Stats(game);
+// Need textureAtlas before models
+game.textureAtlas = new TextureAtlas(game, textureOffsets);
+game.userInterface = new UserInterface(game);
+game.voxelCache = new VoxelCache(game);
+
+
+//game.player = new Player(game);
+game.camera = new Camera(game); //game.player.camera;
+game.camera.setTranslation(16, 16, 16);
+game.camera.update();
+
+//game.voxels = new Voxels(game);
+
+// TODO: I don't know how I want this to work
+// Configure rendering hierarchy .. camera is at the top
+let dragon = new Dragon(game);
+game.scene = new Node2(game.camera, game.camera);
+game.scene.addChild(new Stats());
+game.scene.addChild(
+    new Node2(dragon.model, dragon.movable)
+);
+
+game.voxels = new Voxels(game);
+game.scene.addChild(
+    game.voxels
+);
+
+game.textureAtlas.init().then(function() {
+    return game.clientWorkerHandle.init();
+
+}).then(function() {
+    // TODO: trigger world loading, but need to decouple player and position
+    game.clientWorkerHandle.regionChange([0,0,0]);
+    // render function
+    webgl.start(function(ts) {
+        game.scene.render(scratch.identityMat4, ts);
+    });
+});
+
+
+/*
+
+
 // Passing game into constructor to give components access to each other
 game.clientWorkerHandle = new ClientWorkerHandle(game);
 game.exploration = new Exploration(game);
@@ -102,10 +149,10 @@ game.userInterface.init()
 }).then(function() {
     return game.userInterface.webgl.init();
 
-    /*
-}).then(function() {
-    return game.sky.init();
-    */
+
+//}).then(function() {
+//    return game.sky.init();
+
 
 }).then(function() {
     // things that need gl handle to init
@@ -141,3 +188,4 @@ game.userInterface.init()
 }).catch(function(error) {
     console.log('Received error', error);
 });
+*/

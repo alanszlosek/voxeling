@@ -51,7 +51,7 @@ class TextureAtlas {
     // Pass in handle to WebGL, callback is fired when textures are finished
     // TODO: add more error handling here ... if texture fails, we should tell the callback
     init() {
-        let gl = this.game.userInterface.webgl.gl;
+        let gl = this.game.gl;
         let self = this;
 
         console.log('Max texture units: ' + gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS));

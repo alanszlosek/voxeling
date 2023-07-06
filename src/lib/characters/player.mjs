@@ -10,6 +10,7 @@ import { Player as PlayerModel } from '../models/player.mjs';
 class Player extends Tickable {
     constructor(game) {
         super();
+        let self = this;
         this.game = game;
 
         this.camera = new Camera(game);
@@ -27,6 +28,10 @@ class Player extends Tickable {
         this.eyePosition = vec3.create();
     
         this.translate(this.game.config.initialPosition);
+
+        this.game.pubsub.subscribe('mousemove', function(x, y) {
+            self.updateYawPitch(x, y);
+        });
     }
 
     init() {
@@ -40,8 +45,7 @@ class Player extends Tickable {
 
 
     updateYawPitch(x, y) {
-        this.movable.yaw -= x / 6;
-        this.movable.pitch -= y / 6;
+        this.movable.setYawPitch(x,y);
     }
 
     // TODO: rework these movement methods
@@ -162,8 +166,7 @@ class Player extends Tickable {
 
     tick() {
         this.movable.constrainPitch();
-        this.movable.updateQuat();
-        this.movable.updateMatrix();
+        this.movable.update();
         vec3.transformQuat(this.eyePosition, this.eyeOffset, this.movable.rotationQuatY);
         vec3.add(this.eyePosition, this.eyePosition, this.movable.position);
 

@@ -15,7 +15,7 @@ class World {
             var lastRegion = self.lastRegion;
             if (thisRegion[0] !== lastRegion[0] || thisRegion[1] !== lastRegion[1] || thisRegion[2] !== lastRegion[2]) {
                 //console.log('region change');
-                self.game.clientWorkerHandle.regionChange();
+                self.game.clientWorkerHandle.regionChange(position);
             }
             self.lastRegion = thisRegion;
         })

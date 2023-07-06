@@ -93,7 +93,7 @@ class Model extends Renderable {
 
 
         // rotate light source
-        quat.rotateY(tempQuat, scratch.identityQuat, this.movable.getYaw());
+        quat.rotateY(tempQuat, scratch.identityQuat, this.movable.yaw);
         //vec3.transformQuat(tempVector, directionalLightVector, tempQuat);
         //gl.uniform3fv(this.shader.uniforms.directionalLightVector, tempVector);
 

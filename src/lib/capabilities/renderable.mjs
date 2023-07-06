@@ -2,9 +2,9 @@ import { Tickable, tickables } from './tickable.mjs';
 
 var renderables = {};
 
-class Renderable extends Tickable {
+class Renderable {
     constructor() {
-        super();
+        //super();
         // unique id so we only render() and item once
         // AND so when they come and go we can easily remove / add
         renderables[ this._tickableId ] = this;

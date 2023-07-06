@@ -6,6 +6,7 @@ class Dragon extends Renderable {
     constructor(game, modelMatrix) {
         super();
         this.game = game;
+        this.gl = game.gl;
         this.modelMatrix = modelMatrix;
         this.enabled = true;
 
@@ -82,16 +83,18 @@ class Dragon extends Renderable {
 
 
 
-    render(gl, ts, delta) {
+    render(parentMatrix, ts, delta) {
         if (!this.enabled) {
             return;
         }
+        let gl = this.game.gl;
 
-        let shader = this.game.userInterface.webgl.shaders.mvp;
+        //console.log(parentMatrix);
+
+        let shader = this.game.webgl.shaders.mvp2;
 
         gl.useProgram(shader.program);
-        gl.uniformMatrix4fv(shader.uniforms.projection, false, this.game.camera.projectionMatrix);
-        gl.uniformMatrix4fv(shader.uniforms.view, false, this.game.camera.viewMatrix);
+        gl.uniformMatrix4fv(shader.uniforms.view, false, parentMatrix);
         gl.uniformMatrix4fv(shader.uniforms.model, false, this.modelMatrix);
 
 

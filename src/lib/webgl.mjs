@@ -167,6 +167,38 @@ class WebGL {
         );
 
 
+        // projection * view * position vertex shader
+        var vertexShaderCode2 =
+            "uniform mat4 u_view;" +
+            "uniform mat4 u_model;" +
+
+            "attribute vec4 a_position;" +
+            //"attribute vec3 a_normal;" +
+            "attribute vec2 a_texcoord;" +
+
+            "varying vec4 v_position;" +
+            //"varying vec3 v_normal;" +
+            "varying vec2 v_texcoord;" +
+
+            "void main() {" +
+                "v_position = u_view * u_model * a_position;" +
+                //"v_normal = a_normal;" +
+                "v_texcoord = a_texcoord;" +
+
+                "gl_Position = v_position;" +
+            "}";
+
+        this.shaders.mvp2 = createShader(
+            this.gl,
+            vertexShaderCode2,
+            fragmentShaderCode,
+            // attributes
+            ['position', 'texcoord'], // 'normal'
+            // uniforms
+            ['view', 'model', 'texture', 'textureOffset', 'ambientLightColor', 'directionalLightColor', 'directionalLightPosition', 'hazeDistance']
+        );
+
+
         var vertexShaderCodeBillboard =
             "uniform mat4 u_projection;" +
             "uniform mat4 u_view;" +
@@ -212,7 +244,6 @@ class WebGL {
 
 
         var voxelVertexShader =
-            "uniform mat4 u_projection;" +
             "uniform mat4 u_view;" +
             "uniform sampler2D u_sampler;" +
 
@@ -223,7 +254,7 @@ class WebGL {
             "varying vec2 v_texcoord;" +
 
             "void main() {" +
-                "v_position = u_projection * u_view * a_position;" +
+                "v_position = u_view * a_position;" +
                 "v_texcoord = a_texcoord;" +
 
                 "gl_Position = v_position;" +
@@ -267,7 +298,7 @@ class WebGL {
                 //"gl_FragColor = texelColor;" +
                 //"gl_FragColor.a = texelColor.a;" +
             "}";
-        this.shaders.projectionPosition = createShader(
+        this.shaders.voxel = createShader(
             this.gl,
             voxelVertexShader,
             voxelFragmentShader,
@@ -275,7 +306,7 @@ class WebGL {
             ['position', 'texcoord'],
             // uniforms
             //['projection', 'view', 'texture', 'normal', 'ambientLightColor', 'directionalLightColor', 'directionalLightPosition', 'hazeDistance']
-            ['projection', 'view', 'sampler']
+            ['view', 'sampler']
         );
 
         var instancedVertexShader =
@@ -309,9 +340,8 @@ class WebGL {
         );
     }
 
-    init() {
-        this.render(0);
-        return Promise.resolve();
+    start(callback) {
+        this.render2(callback);
     }
 
     render(ts) {
@@ -322,6 +352,19 @@ class WebGL {
             for (let id in renderables) {
                 renderables[id].render(gl, ts);
             }
+            self.ts = ts;
+            requestAnimationFrame(r);
+        };
+        requestAnimationFrame(r);
+    }
+
+    render2(callback) {
+        let self = this;
+        let gl = this.gl;
+        let r = function(ts) {
+            //this.gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            //self.scene.render(ts, self.camera.matrix);
+            callback(ts);
             self.ts = ts;
             requestAnimationFrame(r);
         };

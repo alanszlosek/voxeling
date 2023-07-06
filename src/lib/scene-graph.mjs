@@ -101,4 +101,32 @@ class Node {
     };
 }
 
-export { RootNode, Node };
+
+
+class Node2 {
+    constructor(renderable, movable) {
+        this.children = [];
+        this.renderable = renderable;
+        this.movable = movable;
+
+        this.tempMatrix = mat4.create();
+    };
+
+    // Accepts anything with a render() method
+    addChild(node) {
+        this.children.push(node);
+    };
+
+    render(parentMatrix, ts, delta) {
+        mat4.multiply(this.tempMatrix, parentMatrix, this.movable.matrix);
+
+        this.renderable.render(this.tempMatrix, ts, delta);
+
+        for (var i = 0; i < this.children.length; i++) {
+            var child = this.children[i];
+            child.render(this.tempMatrix, ts, delta);
+        }
+    };
+}
+
+export { RootNode, Node, Node2 };

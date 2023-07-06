@@ -104,9 +104,9 @@ class ClientWorkerHandle {
         this.worker.postMessage(message);
     }
 
-    regionChange() {
+    regionChange(position) {
         let game = this.game;
-        this.worker.postMessage(['regionChange', game.player.getPosition(), game.config.drawDistance]);
+        this.worker.postMessage(['regionChange', position, game.config.drawDistance]);
     }
 
 }

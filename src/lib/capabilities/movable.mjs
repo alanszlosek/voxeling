@@ -12,27 +12,28 @@ Goal of this class:
 
 */
 class Movable {
+    isMoving = false;
+    yaw = 0.00;
+    pitch = 0.00;
+    bank = 0.00;
+
+    rotationQuat = quat.create();
+    // this helps us rotate the movement vector
+    // but we only want movement (walking) to rotate along the Y axis
+    // if player is looking down, we dont want that X rotation to affect
+    // the movement vector
+    rotationQuatY = quat.create();
+    baseDirection = vec3.create();
+    direction = vec3.create();
+
+    position = vec3.create();
+
+    matrix = mat4.create();
+
     constructor() {
         //super();
-        this.isMoving = false;
-        this.yaw = 0.00;
-        this.pitch = 0.00;
-        this.bank = 0.00;
-
-        this.rotationQuat = quat.create();
-        // this helps us rotate the movement vector
-        // but we only want movement (walking) to rotate along the Y axis
-        // if player is looking down, we dont want that X rotation to affect
-        // the movement vector
-        this.rotationQuatY = quat.create();
-
-        this.baseDirection = vec3.create();
         this.baseDirection[2] = -1.0;
-        this.direction = vec3.create();
 
-        this.position = vec3.create();
-
-        this.matrix = mat4.create();
     }
 
     translate(vector) {
@@ -88,10 +89,11 @@ class Movable {
         this.rotationQuatNeedsUpdate = true;
     }
 
-    getPosition() {
+    get position() {
         return this.position;
     }
 
+    /*
     getX() {
         return this.position[0];
     }
@@ -103,13 +105,35 @@ class Movable {
     getZ() {
         return this.position[2];
     }
+    */
 
-    getPitch() {
+    get pitch() {
         return this.pitch;
     }
 
-    getYaw() {
+    get yaw() {
         return this.yaw;
+    }
+
+    get bank() {
+        return this.bank;
+    }
+
+    get rotationQuat() {
+        return this.rotationQuat;
+    }
+
+    get rotationQuatY() {
+        return this.rotationQuatY;
+    }
+
+    get matrix() {
+        return this.matrix;
+    }
+
+    setYawPitch(x, y) {
+        this.yaw -= x;
+        this.pitch -= y;
     }
 
     constrainPitch() {
@@ -121,32 +145,34 @@ class Movable {
         }
     }
 
-    updateQuat() {
+    update() {
+        this._updateRotations();
+        this._updateDirection();
+        this._updateMatrix();
+    }
+    _updateRotations() {
         quat.fromEuler(this.rotationQuat, this.pitch, this.yaw, this.bank);
         quat.fromEuler(this.rotationQuatY, 0, this.yaw, 0);
+    }
+    _updateDirection() {
         vec3.transformQuat(this.direction, this.baseDirection, this.rotationQuat);
     }
-
-    updateMatrix() {
+    _updateMatrix() {
         mat4.fromRotationTranslation(this.matrix, this.rotationQuatY, this.position);
     }
 
-    getRotationQuat() {
-        console.log('SHOULDNT BE HERE');
-        if (this.rotationQuatNeedsUpdate) {
-            quat.identity(this.rotationQuat);
-            quat.rotateY(this.rotationQuat, this.rotationQuat, this.yaw);
-            quat.rotateX(this.rotationQuat, this.rotationQuat, this.pitch);
-            this.rotationQuatNeedsUpdate = false;
+    // getRotationQuat() {
+    //     console.log('SHOULDNT BE HERE');
+    //     if (this.rotationQuatNeedsUpdate) {
+    //         quat.identity(this.rotationQuat);
+    //         quat.rotateY(this.rotationQuat, this.rotationQuat, this.yaw);
+    //         quat.rotateX(this.rotationQuat, this.rotationQuat, this.pitch);
+    //         this.rotationQuatNeedsUpdate = false;
 
-            vec3.transformQuat(this.direction, this.baseDirection, this.rotationQuat);
-        }
-        return this.rotationQuat;
-    }
-
-    getBank() {
-        return this.bank;
-    }
+    //         vec3.transformQuat(this.direction, this.baseDirection, this.rotationQuat);
+    //     }
+    //     return this.rotationQuat;
+    // }
 
 }
 

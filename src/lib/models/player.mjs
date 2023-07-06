@@ -10,7 +10,7 @@ class Player {
         this.currentVelocityLength = 0;
 
         let gl = this.game.gl;
-        let shader = this.game.userInterface.webgl.shaders.mvp; //2;
+        let shader = this.game.webgl.shaders.mvp; //2;
         let texture = this.game.textureAtlas.byName['player'];
         let avatar = 'player';
 

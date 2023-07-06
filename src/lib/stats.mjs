@@ -1,7 +1,6 @@
-import { Renderable } from './capabilities/renderable.mjs';
-class Stats extends Renderable {
+
+class Stats {
     constructor() {
-        super();
         let self = this;
         this.frameCount = 0;
         this.history = [];
@@ -29,10 +28,9 @@ class Stats extends Renderable {
         }
         this.container.innerHTML = elements;
         this.minMax.innerText = min + ' - ' + max;
-
-        
     }
-    render(gl, ts) {
+    
+    render(parentMatrix, ts) {
         this.frameCount++;
 
         if (ts - this.frameTimestamp >= 1000.0) {
@@ -40,7 +38,7 @@ class Stats extends Renderable {
             this.history.push(this.frameCount);
             this.frameCount = 0;
     
-            this.draw();   
+            this.draw();
         }
     }
 }

@@ -108,7 +108,7 @@ var states = {
             document.getElementById('overlay').className = '';
 
             // Enable motion / physics
-            gameGlobal.physics.running = true;
+            gameGlobal.pubsub.publish('running', []);
         },
         from: function() {
             if (debug) {
@@ -149,7 +149,10 @@ var states = {
         mousemove: function(ev) {
             // do bitwise op to remove lower 8 bits or so to clamp to consistent intervals
             //let mask = 128 + 64 + 32 + 16 + 8 + 4;
-            gameGlobal.player.updateYawPitch(ev.movementX, ev.movementY);
+            //gameGlobal.player.updateYawPitch(ev.movementX, ev.movementY);
+
+            // TODO: finalize this
+            gameGlobal.pubsub.publish('mousemove', [ev.movementX, ev.movementY]);
         },
         keydown: function(event) {
             if (debug) console.log(event);
@@ -415,6 +418,7 @@ class UserInterface extends Tickable {
     constructor(game) {
         super();
         let self = this;
+        this.canvas = game.canvas;
 
         gameGlobal = this.game = game;
         this.state = controlStates;
@@ -430,17 +434,7 @@ class UserInterface extends Tickable {
                 self.coordsElement.innerText = pos.join(', ');
             //}
         });
-    }
-
-    init() {
-        let self = this;
-        let canvas = document.getElementById('herewego');
-        canvas.width = canvas.clientWidth;
-        canvas.height = canvas.clientHeight;
-        this.canvas = canvas;
-
-        this.webgl = new WebGL(canvas);
-        this.game.gl = this.webgl.gl; // shortcut handle that we'll need in other renderable objects (player model, creatures, etc)
+        
 
         this.bindToElement = document.body;
 
@@ -482,9 +476,6 @@ class UserInterface extends Tickable {
         this.drawTextures();
 
         this.transition('start');
-
-        // TODO: handle control change .... inventory gamepads whennew one is connected
-        return Promise.resolve();
     }
 
     drawTextures() {
