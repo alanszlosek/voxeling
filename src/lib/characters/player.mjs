@@ -22,6 +22,7 @@ class Player extends Tickable {
         this.movable = new Movable();
         this.bounds = new Bounds();
         this.model = new PlayerModel(this.game, this.movable);
+        this.movement = new PlayerMovement(this.movable);
 
         // camera stuff
         this.cameraMode = 2;
@@ -191,6 +192,28 @@ class Player extends Tickable {
     }
 
     inputChange(state) {
+        this.movement.inputChange(state);
+        this.updateCamera();
+        console.log(this.cameraPosition);
+    }
+
+    destroy() {
+        this.model.destroy();
+    }
+}
+
+class PlayerMovement {
+    constructor(movable) {
+        this.movable = movable;
+
+        this.acceleration = vec3.create();
+        this.currentVelocity = vec3.create();
+    }
+
+    inputChange(state) {
+
+
+
         // Adjust accelerations based on impulses
         for (let key in state) {
             if (key == 'rotateX') {
@@ -198,14 +221,41 @@ class Player extends Tickable {
             } else if (key == 'rotateY') {
                 this.movable.pitch = state.rotateY;
             }
+            
         }
 
-        this.updateCamera();
-        console.log(this.cameraPosition);
-    }
+        return;
 
-    destroy() {
-        this.model.destroy();
+
+        // CALCULATE VELOCITY
+        // TODO: refactor this somehow, while handling simultaneous keypresses gracefully
+        if (state.forward == 1) {
+            // keyboard, accelerate gradually
+            this.currentVelocity[2] += -accel;
+            this.currentVelocity[2] = Math.max(this.currentVelocity[2], -velo);
+        } else if (state.forward > 0) {
+            // gamepad, no acceleration, use stick percentage
+            this.currentVelocity[2] = -velo * state.forward;
+        } else if (this.controlState.backward == 1) {
+            this.currentVelocity[2] += accel;
+            this.currentVelocity[2] = Math.min(this.currentVelocity[2], velo);
+        } else if (this.controlState.backward > 0) {
+            this.currentVelocity[2] = velo * this.controlState.backward;
+        } else {
+            // Slowdown
+            if (this.currentVelocity[2] > 0) {
+                this.currentVelocity[2] -= accelerations.slowdown;
+                if (this.currentVelocity[2] < 0) {
+                    this.currentVelocity[2] = 0.00;
+                }
+            } else if (this.currentVelocity[2] < 0) {
+                this.currentVelocity[2] += accelerations.slowdown;
+                if (this.currentVelocity[2] > 0) {
+                    this.currentVelocity[2] = 0.00;
+                }
+            }
+        }
+
     }
 }
 
