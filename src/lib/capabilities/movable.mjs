@@ -158,7 +158,7 @@ class Movable {
         vec3.transformQuat(this.direction, this.baseDirection, this.rotationQuat);
     }
     _updateMatrix() {
-        mat4.fromRotationTranslation(this.matrix, this.rotationQuatY, this.position);
+        mat4.fromRotationTranslation(this.matrix, this.rotationQuat, this.position);
     }
 
     // getRotationQuat() {

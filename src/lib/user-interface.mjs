@@ -131,20 +131,27 @@ var states = {
         mousedown: function(event) {
             if (event.which == 1) {
                 // Is Shift key being held down during left click?
-                if (controlStates.shift) {
-                    controlStates.action2 = true;
+                if (event.shiftKey) {
+                    this.eventQueue.push(['action2', true]);
+                    //controlStates.action2 = true;
                 } else {
-                    controlStates.action1 = true;
+                    //controlStates.action1 = true;
+                    this.eventQueue.push(['action1', true]);
                 }
             } else if (event.which == 3) {
-                controlStates.action2 = true;
+                //controlStates.action2 = true;
+                this.eventQueue.push(['action2', true]);
             }
         }, 
         mouseup: function(event) {
             // Trying to cover edge cases here ...
             // Shift might have been released before mouse, so reset all mouse related states on Up
+            /*
             controlStates.action1 = false;
             controlStates.action2 = false;
+            */
+            this.eventQueue.push(['action1', false]);
+            this.eventQueue.push(['action2', false]);
         },
         mousemove: function(ev) {
             // do bitwise op to remove lower 8 bits or so to clamp to consistent intervals
@@ -152,7 +159,10 @@ var states = {
             //gameGlobal.player.updateYawPitch(ev.movementX, ev.movementY);
 
             // TODO: finalize this
-            gameGlobal.pubsub.publish('mousemove', [ev.movementX, ev.movementY]);
+            //gameGlobal.pubsub.publish('mousemove', [ev.movementX, ev.movementY]);
+
+            this.eventQueue.push(['rotate', ev.movementX / 6, ev.movementY / 6]);
+            //this.eventQueue.push(['rotateY', ev.movementY]);
         },
         keydown: function(event) {
             if (debug) console.log(event);
@@ -181,10 +191,13 @@ var states = {
             var code = event.which;
             var key;
             if (code in codeMap) {
+                this.eventQueue.push([codeMap[code], 1]);
+                /*
                 key = codeMap[code];
                 if (key in controlStates) {
-                    controlStates[key] = true; // TODO: why not boolean?
+                    controlStates[key] = true;
                 }
+                */
                 return false;
             } else {
                 console.log('unexpect keypress: ' + code);
@@ -211,9 +224,12 @@ var states = {
             }
             if (code in codeMap) {
                 key = codeMap[code];
+                this.eventQueue.push([codeMap[code], 0]);
+                /*
                 if (key in controlStates) {
                     controlStates[key] = false;
                 }
+                */
                 // try to prevent ctrl+W from bubbling up
                 return false;
             }
@@ -376,10 +392,12 @@ var states = {
 var controlStates = {
     shift: false,
     alt: false,
-    forward: false,
-    backward: false,
-    left: false,
-    right: false,
+    forward: 0,
+    backward: 0,
+    left: 0,
+    right: 0,
+    rotateX: 0,
+    rotateY: 0,
     jump: false,
     fly: false,
     fire: false,
@@ -415,6 +433,8 @@ var tag = function(tagName, attributes, children) {
 // Really want to proxy events, so that way I can convert controller events to mouse events and send them to the player/camera
 // movement handler.
 class UserInterface extends Tickable {
+    activePlayer = null;
+
     constructor(game) {
         super();
         let self = this;
@@ -423,7 +443,9 @@ class UserInterface extends Tickable {
         gameGlobal = this.game = game;
         this.state = controlStates;
         this.gamepad = null;
+        this.eventQueue = [];
 
+        // Update coordinates in top-right of UI
         this.coordsElement = document.getElementById('coordinates');
         this.game.pubsub.subscribe('player.updatePosition', function(position) {
             // TODO: move this into user-interface
@@ -518,6 +540,10 @@ class UserInterface extends Tickable {
         });
     }
 
+    set activePlayer(player) {
+        this.activePlayer = player;
+    }
+
     
     mouseDeltaCallback(callback) {
         mouseCallback = callback;
@@ -566,6 +592,27 @@ class UserInterface extends Tickable {
     }
 
     tick(ts) {
+        if (this.eventQueue.length > 0) {
+            for (let i = 0; i < this.eventQueue.length; i++) {
+                let event = this.eventQueue[i];
+                let eventName = event[0];
+                if (eventName == 'rotate') {
+                    this.state.rotateX -= event[1];
+                    this.state.rotateY -= event[2];
+                } else {
+                    this.state[ eventName ] = event[1];
+                }
+            }
+            this.eventQueue = [];
+
+            // Pass along changes
+            if (this.activePlayer) {
+                this.activePlayer.inputChange(this.state);
+            }
+        }
+
+        return;
+
         if (!navigator.getGamepads) {
             return;
         }

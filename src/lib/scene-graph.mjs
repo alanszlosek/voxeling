@@ -119,6 +119,7 @@ class Node2 {
 
     render(parentMatrix, ts, delta) {
         mat4.multiply(this.tempMatrix, parentMatrix, this.movable.matrix);
+        //console.log(this.tempMatrix);
 
         this.renderable.render(this.tempMatrix, ts, delta);
 

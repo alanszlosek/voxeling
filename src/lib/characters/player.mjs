@@ -13,7 +13,10 @@ class Player extends Tickable {
         let self = this;
         this.game = game;
 
-        this.camera = new Camera(game);
+        //this.camera = new Camera(game);
+        this.cameraPosition = new Movable();
+        this.cameraPosition.setTranslation(16, 16, 16);
+
         this.currentVelocityLength = 0;
         this.modelMatrix = mat4.create();
         this.movable = new Movable();
@@ -85,6 +88,15 @@ class Player extends Tickable {
     }
 
     updateCamera() {
+        //console.log(this.cameraPosition);
+        // Update camera position
+        this.cameraPosition.yaw = this.movable.yaw;
+        this.cameraPosition.pitch = this.movable.pitch;
+
+        //this.cameraPosition.constrainPitch();
+        this.cameraPosition.update();
+        return;
+
         let delta = 0.25;
 
         let firstPersonOffset = vec3.fromValues(0, 1.25, -0.5);
@@ -167,6 +179,7 @@ class Player extends Tickable {
     tick() {
         this.movable.constrainPitch();
         this.movable.update();
+
         vec3.transformQuat(this.eyePosition, this.eyeOffset, this.movable.rotationQuatY);
         vec3.add(this.eyePosition, this.eyePosition, this.movable.position);
 
@@ -175,6 +188,20 @@ class Player extends Tickable {
 
         this.game.pubsub.publish('player.updatePosition', [this.movable.position]);
         this.game.pubsub.publish('player.updateRotation', [this.movable.yaw, this.movable.pitch]);
+    }
+
+    inputChange(state) {
+        // Adjust accelerations based on impulses
+        for (let key in state) {
+            if (key == 'rotateX') {
+                this.movable.yaw = state.rotateX;
+            } else if (key == 'rotateY') {
+                this.movable.pitch = state.rotateY;
+            }
+        }
+
+        this.updateCamera();
+        console.log(this.cameraPosition);
     }
 
     destroy() {

@@ -52,11 +52,9 @@ game.textureAtlas = new TextureAtlas(game, textureOffsets);
 game.userInterface = new UserInterface(game);
 game.voxelCache = new VoxelCache(game);
 
+game.player = new Player(game);
+game.camera = new Camera(game, game.player.cameraPosition);
 
-//game.player = new Player(game);
-game.camera = new Camera(game); //game.player.camera;
-game.camera.setTranslation(16, 16, 16);
-game.camera.update();
 
 //game.voxels = new Voxels(game);
 
@@ -78,6 +76,8 @@ game.textureAtlas.init().then(function() {
     return game.clientWorkerHandle.init();
 
 }).then(function() {
+    game.userInterface.activePlayer = game.player;
+
     // TODO: trigger world loading, but need to decouple player and position
     game.clientWorkerHandle.regionChange([0,0,0]);
     // render function
