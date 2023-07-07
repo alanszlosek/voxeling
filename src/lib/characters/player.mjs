@@ -6,6 +6,7 @@ import { Movable } from '../capabilities/movable.mjs';
 import { Tickable } from '../capabilities/tickable.mjs';
 import { Bounds } from '../capabilities/bounds.mjs';
 import { Player as PlayerModel } from '../models/player.mjs';
+import { collidables } from '../physics.mjs';
 
 class Player extends Tickable {
     constructor(game) {
@@ -93,6 +94,12 @@ class Player extends Tickable {
         // Update camera position
         this.cameraPosition.yaw = this.movable.yaw;
         this.cameraPosition.pitch = this.movable.pitch;
+
+        this.cameraPosition.position[0] = this.movable.position[0];
+        this.cameraPosition.position[1] = this.movable.position[1] + 1;
+        this.cameraPosition.position[2] = this.movable.position[2];
+
+
 
         //this.cameraPosition.constrainPitch();
         this.cameraPosition.update();
@@ -194,7 +201,6 @@ class Player extends Tickable {
     inputChange(state) {
         this.movement.inputChange(state);
         this.updateCamera();
-        console.log(this.cameraPosition);
     }
 
     destroy() {
@@ -202,17 +208,65 @@ class Player extends Tickable {
     }
 }
 
-class PlayerMovement {
+class PlayerMovement extends Tickable {
     constructor(movable) {
+        super();
         this.movable = movable;
 
-        this.acceleration = vec3.create();
         this.currentVelocity = vec3.create();
+
+        this.currentPosition = this.movable.position;
+        this.tentativeDelta = vec3.create();
+        this.adjustedDelta = vec3.create();
+
+        let ticksPerSecond = 30;
+        this.accelerations = {
+            gravity: -0.4 / ticksPerSecond,
+            // To make jumping less disorienting, fall slower from height of jump
+            partialGravity: -0.4 / ticksPerSecond,
+            // 9.8 units/blocks per second, per tick
+            walk: 0.8 / ticksPerSecond,
+            jog: 0.8 / ticksPerSecond,
+            run: 0.8 / ticksPerSecond,
+            slowdown: 0.4 / ticksPerSecond,
+            fly: 1 / ticksPerSecond
+        };
+        this.velocities = {
+            jump: 6 / ticksPerSecond
+        };
+        this.maxVelocities = {
+            jump: 10 / ticksPerSecond,
+            fly: 6 / ticksPerSecond,
+        
+            // max velocities
+            walk: 4 / ticksPerSecond,
+            jog: 6 / ticksPerSecond,
+            run: 8 / ticksPerSecond
+        
+        };
+
+        this.state = {
+            shift: false,
+            alt: false,
+            forward: 0,
+            backward: 0,
+            left: 0,
+            right: 0,
+            rotateX: 0,
+            rotateY: 0,
+            jump: false,
+            fly: false,
+            fire: false,
+            firealt: false,
+            action1: false, // default: destroy block
+            action2: false, // default: create block,
+            spin: false
+        };
+
+        collidables.push( this );
     }
 
     inputChange(state) {
-
-
 
         // Adjust accelerations based on impulses
         for (let key in state) {
@@ -220,42 +274,101 @@ class PlayerMovement {
                 this.movable.yaw = state.rotateX;
             } else if (key == 'rotateY') {
                 this.movable.pitch = state.rotateY;
+            } else {
+                this.state[key] = state[key];
             }
             
         }
+    }
 
-        return;
+    tick() {
+        let state = this.state;
 
+        let acceleration = state.shift ? this.accelerations.run : this.accelerations.walk;
+        let maxVelocity = state.shift ? this.maxVelocities.run : this.maxVelocities.walk;
 
         // CALCULATE VELOCITY
         // TODO: refactor this somehow, while handling simultaneous keypresses gracefully
         if (state.forward == 1) {
             // keyboard, accelerate gradually
-            this.currentVelocity[2] += -accel;
-            this.currentVelocity[2] = Math.max(this.currentVelocity[2], -velo);
+            this.currentVelocity[2] += -acceleration;
+            this.currentVelocity[2] = Math.max(this.currentVelocity[2], -maxVelocity);
         } else if (state.forward > 0) {
             // gamepad, no acceleration, use stick percentage
-            this.currentVelocity[2] = -velo * state.forward;
-        } else if (this.controlState.backward == 1) {
-            this.currentVelocity[2] += accel;
-            this.currentVelocity[2] = Math.min(this.currentVelocity[2], velo);
-        } else if (this.controlState.backward > 0) {
-            this.currentVelocity[2] = velo * this.controlState.backward;
+            this.currentVelocity[2] = -maxVelocity * state.forward;
+        } else if (state.backward == 1) {
+            this.currentVelocity[2] += acceleration;
+            this.currentVelocity[2] = Math.min(this.currentVelocity[2], maxVelocity);
+        } else if (state.backward > 0) {
+            this.currentVelocity[2] = maxVelocity * state.backward;
         } else {
             // Slowdown
             if (this.currentVelocity[2] > 0) {
-                this.currentVelocity[2] -= accelerations.slowdown;
+                console.log('slowdown');
+                this.currentVelocity[2] -= this.accelerations.slowdown;
                 if (this.currentVelocity[2] < 0) {
                     this.currentVelocity[2] = 0.00;
                 }
             } else if (this.currentVelocity[2] < 0) {
-                this.currentVelocity[2] += accelerations.slowdown;
+                this.currentVelocity[2] += this.accelerations.slowdown;
                 if (this.currentVelocity[2] > 0) {
                     this.currentVelocity[2] = 0.00;
                 }
             }
         }
 
+        if (this.state.left == 1) {
+            this.currentVelocity[0] += -acceleration;
+            this.currentVelocity[0] = Math.max(this.currentVelocity[0], -maxVelocity);
+        } else if (this.state.left > 0) {
+            this.currentVelocity[0] = -maxVelocity * this.state.left;
+        } else if (this.state.right == 1) {
+            this.currentVelocity[0] += acceleration;
+            this.currentVelocity[0] = Math.min(this.currentVelocity[0], maxVelocity);
+        } else if (this.state.right > 0) {
+            this.currentVelocity[0] = maxVelocity * this.state.right;
+        } else {
+            // Slowdown
+            if (this.currentVelocity[0] > 0) {
+                this.currentVelocity[0] -= this.accelerations.slowdown;
+                if (this.currentVelocity[0] < 0) {
+                    this.currentVelocity[0] = 0.00;
+                }
+            } else if (this.currentVelocity[0] < 0) {
+                this.currentVelocity[0] += this.accelerations.slowdown;
+                if (this.currentVelocity[0] > 0) {
+                    this.currentVelocity[0] = 0.00;
+                }
+            }
+        }
+
+        let slowFall = false;
+        // flying and jumping should fall slowly
+        if (this.state.jump && this.currentVelocity[1] == 0) {
+            // only allow jumping if we're on the ground
+            slowFall = true;
+            this.currentVelocity[1] = this.velocities.jump;
+        } else if (this.state.fly) {
+            slowFall = true;
+            // dont exceed maximum upward velocity
+            this.currentVelocity[1] += this.accelerations.fly;
+            if (this.currentVelocity[1] > 0) {
+                this.currentVelocity[1] = Math.min(this.currentVelocity[1], this.maxVelocities.fly);
+            }
+        } else {
+            if (slowFall && this.currentVelocity[1] < 0) {
+                this.currentVelocity[1] += this.accelerations.partialGravity;
+            } else {
+                this.currentVelocity[1] += this.accelerations.gravity;
+            }
+        }
+
+        vec3.transformQuat(this.tentativeDelta, this.currentVelocity, this.movable.rotationQuatY);
+        vec3.copy(this.adjustedDelta, this.tentativeDelta);
+
+        // TODO: temp translation for collision detection
+
+        //this.movable.translate(this.tentativeDelta);
     }
 }
 

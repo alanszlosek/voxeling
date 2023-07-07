@@ -12,7 +12,7 @@ import { ClientWorkerHandle } from './lib/client-worker-handle.mjs';
 import { Cursor } from './lib/cursor.mjs';
 import { Multiplayer } from './lib/multiplayer.mjs'
 import { Node2 } from './lib/scene-graph.mjs'
-import { Physics } from './lib/physics.mjs';
+import { CollisionDetection } from './lib/physics.mjs';
 import { Player } from './lib/characters/player.mjs';
 import { PubSub } from './lib/pubsub.mjs';
 import { Sky } from './lib/models/sky.mjs';
@@ -54,7 +54,7 @@ game.voxelCache = new VoxelCache(game);
 
 game.player = new Player(game);
 game.camera = new Camera(game, game.player.cameraPosition);
-
+game.collisionDetection = new CollisionDetection(game);
 
 //game.voxels = new Voxels(game);
 

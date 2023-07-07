@@ -3,6 +3,11 @@ import { Tickable } from './capabilities/tickable.mjs';
 import raycast from 'voxel-raycast';
 import scratch from './scratch.mjs';
 
+let collidables = [];
+
+
+
+
 var debug = false;
 // ticks per second
 var tps = 60;
@@ -288,4 +293,147 @@ class Physics extends Tickable {
     };
 }
 
-export { Physics };
+
+class CollisionDetection extends Tickable {
+    constructor(game) {
+        super();
+        this.game = game;
+
+        this.hit = vec3.create();
+        this.normals = vec3.create();
+    }
+
+    tick() {
+        let self = this;
+        collidables.forEach(function(item) {
+            self._haggle(item);
+        });
+
+        collidables.forEach(function(item) {
+            item.movable.translate( item.adjustedDelta );
+        });
+    }
+    _resolve(item) {
+        var self = this;
+
+        let currentPosition = item.currentPosition;
+        let tentativeDelta = item.tentativeDelta;
+        let adjustedDelta = item.adjustedDelta;
+
+        let len = vec3.length(tentativeDelta);
+        let adjusted = this._haggle(currentPosition, tentativeDelta, adjustedDelta);
+
+        var testPosition = vec3.create();
+        var hit = vec3.create();
+        var normals = vec3.create();
+
+        var boundsMap = {
+            p0: 'front',
+            n0: 'back',
+            p1: 'top',
+            n1: 'bottom',
+            p2: 'right',
+            n2: 'left'
+        };
+
+        this.player.updateBounds(currentPosition);
+        this.haggle(this.player.bounds.bounds.all, currentPosition, scratch.vec3_0);
+        vec3.copy(this.previousVelocity, scratch.vec3_0);
+        self.player.translate(scratch.vec3_0);
+    };
+
+    // Haggle for a stable, non-colliding position
+    // Result of this is that direction vec3 gets adjusted in the process
+    haggle(bounds, start, direction) {
+        var self = this;
+        var collided = false;
+        var len = vec3.length(direction);
+        var hit = vec3.create();
+        var normals = vec3.create();
+
+        for (var i = 0; i < bounds.length; i++) {
+            var start = bounds[i];
+            var adjusted = false;
+
+            // If we've already adjusted the direction to 0 (like when we're up against a wall), skip further dection
+            if (len == 0) {
+                break;
+            }
+            var collision = raycast(self.game.voxelCache, start, direction, len, hit, normals);
+
+            // Back off direction up to collision point along collision surface normals
+            for (var axis = 0; axis < 3; axis++) {
+                if (normals[axis] < 0.00 || 0.00 < normals[axis]) {
+                    adjusted = true;
+                    // Snap to voxel boundary upon collision
+                    if (normals[axis] > 0) {
+                        direction[axis] = Math.ceil(hit[axis] - start[axis]);
+                    } else {
+                        direction[axis] = Math.floor(hit[axis] - start[axis]);
+                    }
+
+                this.currentVelocity[axis] = 0.00;
+                }
+            }
+            if (adjusted) {
+                collided = true;
+                len = vec3.length(direction);
+            }
+        }
+        return collided;
+    }
+
+    _haggle(item) {
+        let self = this;
+        let len = vec3.length(item.tentativeDelta);
+
+        // If we've already adjusted the direction to 0 (like when we're up against a wall), skip further dection
+        if (len == 0) {
+            return false;
+        }
+        let collision = raycast(this.game.voxelCache, item.currentPosition, item.tentativeDelta, len, this.hit, this.normals);
+
+        if (!collision) {
+            vec3.copy(item.adjustedDelta, item.tentativeDelta);
+            return;
+        } else {
+            // Back off direction up to collision point along collision surface normals
+            let adjusted = false;
+            for (var axis = 0; axis < 3; axis++) {
+                if (this.normals[axis] < 0.00 || 0.00 < this.normals[axis]) {
+                    adjusted = true;
+                    // Snap to voxel boundary upon collision
+                    if (this.normals[axis] > 0) {
+                        item.adjustedDelta[axis] = Math.ceil(this.hit[axis] - item.currentPosition[axis]);
+                    } else {
+                        item.adjustedDelta[axis] = Math.floor(this.hit[axis] - item.currentPosition[axis]);
+                    }
+                    item.currentVelocity[axis] = 0.00;
+                }
+            }
+            if (adjusted) {
+                //collided = true;
+                len = vec3.length(item.tentativeDelta);
+            }
+
+            /*
+            console.log('collidate');
+            item.currentVelocity[0] = 0;
+            item.currentVelocity[1] = 0;
+            item.currentVelocity[2] = 0;
+            
+            item.adjustedDelta[0] = 0;
+            item.adjustedDelta[1] = 0;
+            item.adjustedDelta[2] = 0;
+            */
+            
+        }
+        return;
+
+    }
+    resolve() {
+
+    }
+}
+
+export { Physics, CollisionDetection, collidables };
