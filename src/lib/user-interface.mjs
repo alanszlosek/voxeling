@@ -383,6 +383,7 @@ var states = {
     },
     disconnected: {
         to: function() {
+            document.getElementById('overlay').className = 'disconnected';
         },
         from: function() {
         }
