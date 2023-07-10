@@ -4,9 +4,6 @@ import { default as config } from '../config-client.mjs';
 import textureOffsets from '../texture-offsets.js'
 
 import { Camera } from './lib/camera.mjs'
-//import { Physics } from './lib/physics.mjs'
-
-
 import { Coordinates } from './lib/coordinates.mjs';
 import { ClientWorkerHandle } from './lib/client-worker-handle.mjs';
 import { Cursor } from './lib/cursor.mjs';
@@ -47,36 +44,47 @@ let game = {
 
 game.clientWorkerHandle = new ClientWorkerHandle(game);
 game.stats = new Stats(game);
-// Need textureAtlas before models
+// Need textureAtlas before models like player and dragon
 game.textureAtlas = new TextureAtlas(game, textureOffsets);
 game.userInterface = new UserInterface(game);
 game.voxelCache = new VoxelCache(game);
+game.voxels = new Voxels(game);
 
 game.player = new Player(game);
 game.camera = new Camera(game, game.player.cameraPosition);
+
 game.collisionDetection = new CollisionDetection(game);
 
-//game.voxels = new Voxels(game);
+game.dragon = new Dragon(game);
 
-// TODO: I don't know how I want this to work
+
 // Configure rendering hierarchy .. camera is at the top
-let dragon = new Dragon(game);
-game.scene = new Node2(game.camera, game.camera);
+game.scene = new Node2(game.camera, game.camera.matrix);
 game.scene.addChild(new Stats());
+
 game.scene.addChild(
-    new Node2(dragon.model, dragon.movable)
+    game.dragon.model.node
 );
 
-game.voxels = new Voxels(game);
 game.scene.addChild(
-    game.voxels
+    new Node2(
+        game.voxels,
+        // no model matrix for voxels
+        scratch.identityMat4
+    )
 );
+
+/*
+game.scene.addChild(
+    new Node2(game.player.model, game.player.movable)
+);
+*/
 
 game.textureAtlas.init().then(function() {
     return game.clientWorkerHandle.init();
 
 }).then(function() {
-    game.userInterface.activePlayer = game.player;
+    game.userInterface.activePlayer = game.player; //dragon; // game.player;
 
     // TODO: trigger world loading, but need to decouple player and position
     game.clientWorkerHandle.regionChange([0,0,0]);

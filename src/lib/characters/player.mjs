@@ -22,7 +22,7 @@ class Player extends Tickable {
         this.modelMatrix = mat4.create();
         this.movable = new Movable();
         this.bounds = new Bounds();
-        this.model = new PlayerModel(this.game, this.movable);
+        //this.model = new PlayerModel(this.game, this.movable);
         this.movement = new PlayerMovement(this.movable);
 
         // camera stuff

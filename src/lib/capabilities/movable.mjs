@@ -42,11 +42,14 @@ class Movable {
     setTranslation(x, y, z) {
         vec3.copy(this.position, arguments);
     }
+    copyTranslation(position) {
+        vec3.copy(this.position, position);
+    }
 
-    /*
+    
     rotateY(radians) {
         this.yaw += radians;
-        this.updateQuat();
+        //this.updateQuat();
         
         return;
 
@@ -58,6 +61,7 @@ class Movable {
         }
         this.rotationQuatNeedsUpdate = true;
     }
+    /*
 
     rotateX(radians) {
         // clamp absolute camera pitch, after applying pitch delta
@@ -134,6 +138,13 @@ class Movable {
     setYawPitch(x, y) {
         this.yaw -= x;
         this.pitch -= y;
+    }
+
+    copy(movable) {
+        this.yaw = movable.yaw;
+        this.pitch = movable.yaw;
+
+        vec3.copy(this.position, movable.position);
     }
 
     constrainPitch() {

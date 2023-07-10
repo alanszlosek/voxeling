@@ -104,10 +104,20 @@ class Node {
 
 
 class Node2 {
-    constructor(renderable, movable) {
+    constructor(renderable, matrix) {
+        if (!renderable || !renderable.render) {
+            throw new Error('First parameter to Node must have render()');
+        }
+        /*
+
+        if (!movable || !movable.matrix) {
+            throw new Error('Second parameter to Node must have a matrix field of type mat4');
+        }
+        */
+
         this.children = [];
         this.renderable = renderable;
-        this.movable = movable;
+        this.matrix = matrix;
 
         this.tempMatrix = mat4.create();
     };
@@ -118,7 +128,7 @@ class Node2 {
     };
 
     render(parentMatrix, ts, delta) {
-        mat4.multiply(this.tempMatrix, parentMatrix, this.movable.matrix);
+        mat4.multiply(this.tempMatrix, parentMatrix, this.matrix);
         //console.log(this.tempMatrix);
 
         this.renderable.render(this.tempMatrix, ts, delta);
