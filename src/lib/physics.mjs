@@ -5,46 +5,9 @@ import scratch from './scratch.mjs';
 
 let collidables = [];
 
-
-
-
 var debug = false;
-// ticks per second
-var tps = 60;
-// this gets added to, or subtracted, based on deltaAcceleration
 
-
-// each is half of what we really want
-var accelerations = {
-    gravity: -2 / tps,
-    // To make jumping less disorienting, fall slower from height of jump
-    partialGravity: -0.4 / tps,
-    // 9.8 units/blocks per second, per tick
-    walk: 0.8 / tps,
-    jog: 0.8 / tps,
-    run: 0.8 / tps,
-    slowdown: 0.4 / tps,
-    fly: 4 / tps
-};
-
-// instantaneous velocities, like jumping
-var velocities = {
-    maxWalk: 9 / tps,
-    jump: 20 / tps,
-    maxFly: 15 / tps
-};
-var maxVelocities = {
-    jump: 20 / tps,
-    maxFly: 15 / tps,
-
-    // max velocities
-    walk: 4 / tps,
-    jog: 6 / tps,
-    run: 8 / tps
-
-};
-var slowFall = false;
-
+/*
 // need to pass in start position
 class Physics extends Tickable {
     constructor(game) {
@@ -140,22 +103,6 @@ class Physics extends Tickable {
                 }
             }
         }
-
-        /*
-
-        if (this.controlState.jump) {
-            this.currentVelocity[1] = 3 / tps;
-        } else if (this.controlState.shift) {
-            this.currentVelocity[1] = -(3 / tps);
-        } else {
-            this.currentVelocity[1] = 0;
-        }
-
-        if (this.controlState.spin) {
-            this.movable.yaw += 0.1;
-            this.movable.updateQuat();
-        }
-        */
         
         // flying and jumping should fall slowly
         if (this.controlState.jump && this.currentVelocity[1] == 0) {
@@ -181,17 +128,6 @@ class Physics extends Tickable {
         scratch.vec3[2] = this.currentVelocity[2];
         this.movable.currentVelocityLength = vec3.length(scratch.vec3);
 
-        // SKIPPING COLLISION DETECTION
-        // UPDATE POSITION
-        // rotate velocity according to where player is facing
-        /*
-        vec3.transformQuat(scratch.vec3_0, this.currentVelocity, this.movable.rotationQuatY);
-        // update player position via translation
-        this.movable.translate(scratch.vec3_0);
-        */
-
-
-        
         // TODO: this should not update the player position
         this.handleCollision(this.currentVelocity);
     };
@@ -292,6 +228,7 @@ class Physics extends Tickable {
         return collided;
     };
 }
+*/
 
 
 class CollisionDetection extends Tickable {
@@ -436,4 +373,4 @@ class CollisionDetection extends Tickable {
     }
 }
 
-export { Physics, CollisionDetection, collidables };
+export { CollisionDetection, collidables };
