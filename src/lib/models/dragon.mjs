@@ -1,5 +1,5 @@
 import { Meshes } from '../capabilities/meshes.mjs';
-import { Node2 } from '../scene-graph.mjs';
+import { Node } from '../scene-graph.mjs';
 import Shapes from '../shapes.mjs';
 
 
@@ -11,7 +11,7 @@ class Dragon  {
         this.enabled = true;
 
         this.meshes = new Meshes(game);
-        this.node = new Node2(this.meshes, modelMatrix);
+        this.node = new Node(this.meshes, modelMatrix);
 
         this.initMeshes();
     }

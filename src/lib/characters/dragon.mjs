@@ -2,7 +2,7 @@ import { mat4, quat, vec3 } from 'gl-matrix';
 import { Dragon as DragonModel } from '../models/dragon.mjs';
 import { Movable } from '../capabilities/movable.mjs';
 import { Tickable } from '../capabilities/tickable.mjs';
-import { Node2 } from '../scene-graph.mjs';
+import { Node } from '../scene-graph.mjs';
 import scratch from '../scratch.mjs';
 
 class Dragon extends Tickable {
@@ -16,7 +16,7 @@ class Dragon extends Tickable {
         this.cameraPosition = new Movable();
         this.movable = new Movable();
         this.model = new DragonModel(this.game, this.movable.matrix);
-        //this.sceneNode = new Node2(this.model);
+        //this.sceneNode = new Node(this.model);
     }
 
     tick(ts) {

@@ -8,7 +8,7 @@ import { Coordinates } from './lib/coordinates.mjs';
 import { ClientWorkerHandle } from './lib/client-worker-handle.mjs';
 import { Cursor } from './lib/cursor.mjs';
 import { Multiplayer } from './lib/multiplayer.mjs'
-import { Node2 } from './lib/scene-graph.mjs'
+import { Node } from './lib/scene-graph.mjs'
 import { CollisionDetection } from './lib/physics.mjs';
 import { Player } from './lib/characters/player.mjs';
 import { PubSub } from './lib/pubsub.mjs';
@@ -59,7 +59,7 @@ game.dragon = new Dragon(game);
 
 
 // Configure rendering hierarchy .. camera is at the top
-game.scene = new Node2(game.camera, game.camera.matrix);
+game.scene = new Node(game.camera, game.camera.matrix);
 game.scene.addChild(new Stats());
 
 game.scene.addChild(
@@ -67,18 +67,17 @@ game.scene.addChild(
 );
 
 game.scene.addChild(
-    new Node2(
+    new Node(
         game.voxels,
-        // no model matrix for voxels
+        // no model matrix for voxels, stub this one in
         scratch.identityMat4
     )
 );
 
-/*
 game.scene.addChild(
-    new Node2(game.player.model, game.player.movable)
+    game.player.model.node
 );
-*/
+
 
 game.textureAtlas.init().then(function() {
     return game.clientWorkerHandle.init();
@@ -89,8 +88,10 @@ game.textureAtlas.init().then(function() {
     // TODO: trigger world loading, but need to decouple player and position
     game.clientWorkerHandle.regionChange([0,0,0]);
     // render function
+    let start = 0;
     webgl.start(function(ts) {
-        game.scene.render(scratch.identityMat4, ts);
+        game.scene.render(scratch.identityMat4, ts, ts - start);
+        start = ts;
     });
 });
 

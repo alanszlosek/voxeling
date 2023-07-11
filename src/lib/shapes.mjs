@@ -447,10 +447,12 @@ let shapes = {
                 //faces: faces,
                 texcoords: texcoord,
                 normals: new Float32Array(normals),
+                /*
                 view: mat4.create(),
                 rotation: vec3.fromValues(0, 0, 0),
                 rotateAround: vec3.fromValues(0, 0, 0),
                 render: function(dt) {}
+                */
             };
         },
         rectangle2: function(low, width, height, depth, textureX, textureY) {

@@ -22,15 +22,24 @@ class Player extends Tickable {
         this.modelMatrix = mat4.create();
         this.movable = new Movable();
         this.bounds = new Bounds();
-        //this.model = new PlayerModel(this.game, this.movable);
+        this.model = new PlayerModel(this.game, this.movable);
         this.movement = new PlayerMovement(this.movable);
 
         // camera stuff
-        this.cameraMode = 2;
-    
+        this.cameraMode = 0;
         // TODO: this really should respond like a head tilt
         this.eyeOffset = vec3.fromValues(0, 1.25, -0.5);
         this.eyePosition = vec3.create();
+        this.offsets = [
+            // first person
+            vec3.fromValues(0, 1.25, -0.5),
+            // shoulder
+            vec3.fromValues(0.0, 2.0, 3.0),
+            // third person
+            vec3.fromValues(0.0, this.eyeOffset[1], 8.0)
+        ];
+        this.desiredOffset = this.offsets[1];
+    
     
         this.translate(this.game.config.initialPosition);
 
@@ -97,8 +106,22 @@ class Player extends Tickable {
 
         this.cameraPosition.position[0] = this.movable.position[0];
         this.cameraPosition.position[1] = this.movable.position[1] + 1;
-        this.cameraPosition.position[2] = this.movable.position[2];
+        this.cameraPosition.position[2] = this.movable.position[2] - 2;
 
+        switch (this.cameraMode) {
+            case 0:
+                // Rotate eye offset into tempVector, which we'll then add to player position
+                // vec3.transformQuat(scratch.vec3, this.desiredOffset, this.movable.rotationQuatY);
+                // vec3.add(this.position, this.follow.position, scratch.vec3);
+                // vec3.transformQuat(this.direction, this.baseDirection, this.follow.rotationQuat);
+
+                //this.game.voxels.discardDepth = 0.0;
+
+                vec3.transformQuat(scratch.vec3, this.desiredOffset, this.movable.rotationQuatY);
+                vec3.add(this.cameraPosition.position, this.movable.position, scratch.vec3);
+                //vec3.transformQuat(this.direction, this.baseDirection, this.follow.rotationQuat);
+                break;
+        }
 
 
         //this.cameraPosition.constrainPitch();

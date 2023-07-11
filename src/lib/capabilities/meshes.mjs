@@ -102,8 +102,19 @@ class Meshes {
         return buffers;
     }
 
+    withPreRender(callback) {
+        this.preRender = callback;
+        return this;
+    }
+    // Use this to modify this.matrix before render()
+    preRender(parentMatrix, ts, delta) {
+
+    }
+
     render(parentMatrix, ts, delta) {
         let gl = this.game.gl;
+
+        this.preRender.call(this, parentMatrix, ts, delta);
 
         let shader = this.shader;
         gl.useProgram(shader.program);
