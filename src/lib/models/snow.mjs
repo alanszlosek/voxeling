@@ -4,6 +4,7 @@ import scratch from '../scratch.mjs';
 import Shapes from '../shapes.mjs';
 import { Tickable } from '../capabilities/tickable.mjs';
 
+// WARNING: NEEDS REFACTOR, UNUSED CURRENTLY
 
 import { getRandomInt, getRandomArbitrary } from '../util.mjs';
 

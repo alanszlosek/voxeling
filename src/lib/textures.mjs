@@ -1,3 +1,6 @@
+// NOTE: UNUSED
+
+
 class Textures {
     // load voxel textures and player/model textures
     constructor(textureMeta, players) {

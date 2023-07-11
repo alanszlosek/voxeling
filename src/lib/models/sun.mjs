@@ -4,6 +4,9 @@ import Shapes from '../shapes2.mjs';
 import { Model } from '../model2.mjs';
 import { Node } from '../scene-graph.mjs';
 
+// WARNING: NEEDS REFACTOR, UNUSED CURRENTLY
+
+
 function Sun(gl, shader, textures, player) {
     var self = this;
     this.gl = gl;

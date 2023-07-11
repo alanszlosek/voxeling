@@ -1,5 +1,7 @@
 import { Renderable } from './capabilities/renderable.mjs';
 
+// Used by Cursor to draw block outlines for building
+
 /*
 LineBuffer to hold all the lines we want to draw
 */

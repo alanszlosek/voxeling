@@ -1,8 +1,6 @@
 import { mat4, quat, vec3 } from 'gl-matrix';
 import scratch from '../scratch.mjs';
 import Shapes from '../shapes.mjs';
-import { Renderable } from '../capabilities/renderable.mjs';
-import { Model } from '../capabilities/model.mjs';
 import { Meshes } from '../capabilities/meshes.mjs';
 import { Node } from '../scene-graph.mjs';
 

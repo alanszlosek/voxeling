@@ -3,6 +3,8 @@ import scratch from '../scratch.mjs';
 import { Sun } from './sun.mjs';
 import { Tickable } from '../capabilities/tickable.mjs';
 
+// WARNING: NEEDS REFACTOR, UNUSED CURRENTLY
+
 class Sky extends Tickable {
     constructor(game) {
         super()

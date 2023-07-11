@@ -6,6 +6,8 @@ import Shapes from './shapes.mjs';
 import { Tickable } from './capabilities/tickable.mjs';
 
 
+// WARNING: NEEDS REFACTOR, UNUSED CURRENTLY
+
 class Cursor extends Tickable {
     constructor(game) {
         super();

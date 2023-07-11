@@ -3,6 +3,8 @@ import { mat4, quat, vec3 } from 'gl-matrix';
 import { Tickable } from './capabilities/tickable.mjs';
 import scratch from './scratch.mjs';
 
+// WARNING: NEEDS CLEANUP
+
 class Camera extends Tickable {
     constructor(game, movable) {
         super();
