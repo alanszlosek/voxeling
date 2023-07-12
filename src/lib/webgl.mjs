@@ -339,26 +339,14 @@ class WebGL {
     }
 
     start(callback) {
-        this.render2(callback);
+        this.render(callback);
     }
 
-    render(ts) {
+    render(callback) {
         let self = this;
         let gl = this.gl;
         let r = function(ts) {
             //this.gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-            self.ts = ts;
-            requestAnimationFrame(r);
-        };
-        requestAnimationFrame(r);
-    }
-
-    render2(callback) {
-        let self = this;
-        let gl = this.gl;
-        let r = function(ts) {
-            //this.gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-            //self.scene.render(ts, self.camera.matrix);
             callback(ts);
             self.ts = ts;
             requestAnimationFrame(r);
