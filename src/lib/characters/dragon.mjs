@@ -15,11 +15,14 @@ class Dragon extends Tickable {
 
         this.cameraPosition = new Movable();
         this.movable = new Movable();
-        this.model = new DragonModel(this.game, this.movable.matrix);
+        this.model = new DragonModel(this.game, this.movable.matrix, this.movable);
         //this.sceneNode = new Node(this.model);
+
+        vec3.set(this.movable.position, 16, 5, 0);
     }
 
     tick(ts) {
+        return;
         // Update dragon position
         let speed = 6000;
 

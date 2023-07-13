@@ -1,16 +1,46 @@
+import { mat4, quat, vec3 } from 'gl-matrix';
 import { Meshes } from '../capabilities/meshes.mjs';
 import { Node } from '../scene-graph.mjs';
 import Shapes from '../shapes.mjs';
-
+import scratch from '../scratch.mjs';
 
 class Dragon  {
-    constructor(game, modelMatrix) {
+    orbitVec3 = vec3.fromValues(8, 0, 0);
+    rotateY = 0.00;
+
+    constructor(game, modelMatrix, movable) {
+        let self = this;
         this.game = game;
         this.gl = game.gl;
         this.matrix = modelMatrix;
+        this.movable = movable;
         this.enabled = true;
 
         this.meshes = new Meshes(game);
+        this.meshes.withPreRender(function(parentMatrix, ts, delta) {
+            // adjust rotation
+            //console.log(self.orbitVec3);
+            let speed = 0.4;
+            let r = speed * delta;
+            vec3.rotateY(self.orbitVec3, self.orbitVec3, scratch.zeroVec3, r);
+
+            vec3.add(scratch.vec3, self.movable.position, self.orbitVec3);
+            
+            self.rotateY += r;
+            mat4.translate(this.matrix, scratch.identityMat4, scratch.vec3);
+            mat4.rotateY(this.matrix, this.matrix, self.rotateY);
+
+            /*
+            vec3.rotateY(scratch.vec3, this.orbitVec3, scratch.zeroVec3, ts / speed);
+            // Raise dragon up above the ground
+            scratch.vec3[1] = 15
+    
+            //this.movable.rotateY( ts / speed );
+            this.movable.copyTranslation(scratch.vec3);
+            this.movable.update();
+            */
+    
+        });
         this.node = new Node(this.meshes, modelMatrix);
 
         this.initMeshes();

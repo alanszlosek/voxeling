@@ -58,7 +58,9 @@ game.dragon = new Dragon(game);
 
 // Configure rendering hierarchy .. camera is at the top
 game.scene = new Node(game.camera, game.camera.matrix);
-game.scene.addChild(new Stats());
+game.scene.addChild(
+    new Node(new Stats(), scratch.identityMat4)
+);
 
 game.scene.addChild(
     game.dragon.model.node
@@ -86,9 +88,7 @@ game.textureAtlas.init().then(function() {
     // TODO: trigger world loading, but need to decouple player and position
     game.clientWorkerHandle.regionChange([0,0,0]);
     // render function
-    let start = 0;
-    webgl.start(function(ts) {
-        game.scene.render(scratch.identityMat4, ts, ts - start);
-        start = ts;
+    webgl.start(function(ts, delta) {
+        game.scene.render(scratch.identityMat4, ts, delta);
     });
 });

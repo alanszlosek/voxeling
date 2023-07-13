@@ -345,10 +345,12 @@ class WebGL {
     render(callback) {
         let self = this;
         let gl = this.gl;
+        let previous = 0;
         let r = function(ts) {
             //this.gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-            callback(ts);
-            self.ts = ts;
+            ts *= 0.001;
+            callback(ts, ts - previous);
+            previous = ts;
             requestAnimationFrame(r);
         };
         requestAnimationFrame(r);

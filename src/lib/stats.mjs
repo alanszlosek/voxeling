@@ -29,11 +29,11 @@ class Stats {
         this.container.innerHTML = elements;
         this.minMax.innerText = min + ' - ' + max;
     }
-    
+
     render(parentMatrix, ts) {
         this.frameCount++;
 
-        if (ts - this.frameTimestamp >= 1000.0) {
+        if (ts - this.frameTimestamp >= 1.0) {
             this.frameTimestamp = ts;
             this.history.push(this.frameCount);
             this.frameCount = 0;
