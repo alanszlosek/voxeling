@@ -1,6 +1,11 @@
 voxeling
 ====
 
+NOTE: I'm in the middle of major changes on the [wip-rearchitect](https://github.com/alanszlosek/voxeling/tree/wip-rearchitect) branch if you'd like to check it out.
+
+----
+
+
 Want to use docker? See `INSTALL-DOCKER.md`.
 
 Want to run outside of a container? See `INSTALL.md`.
