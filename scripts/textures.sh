@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 echo "Downloading textures into third-party"
 TS=textures-20220405
 wget https://alanszlosek.com/voxeling/${TS}.zip -O third-party/textures.zip
