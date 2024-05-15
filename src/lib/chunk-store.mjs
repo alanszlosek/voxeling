@@ -13,5 +13,7 @@ class ChunkStore {
     }
 
     close() { }
+
+    snapshot() { }
 }
 export { ChunkStore };

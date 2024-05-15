@@ -309,7 +309,7 @@ class CollisionDetection extends Tickable {
                         direction[axis] = Math.floor(hit[axis] - start[axis]);
                     }
 
-                this.currentVelocity[axis] = 0.00;
+                    this.currentVelocity[axis] = 0.00;
                 }
             }
             if (adjusted) {

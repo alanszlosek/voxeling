@@ -1,6 +1,6 @@
 import Log from './log.mjs';
 
-let log = Log('voxel-cache');
+let log = Log('voxel-cache', true);
 
 class VoxelCache {
     constructor(game) {
@@ -10,7 +10,7 @@ class VoxelCache {
 
     addChunk(chunk) {
         var chunkID = chunk.chunkID;
-        log('Game.storeVoxels: storing voxels for ' + chunkID);
+        log('addChunk storing voxels for ' + chunkID);
         this.cache[ chunkID ] = chunk;
     }
 

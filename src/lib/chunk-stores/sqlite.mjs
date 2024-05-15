@@ -4,7 +4,7 @@ import Log from '../log.mjs';
 import sqlite3 from 'sqlite3';
 import zlib from 'zlib';
 
-var log = Log('SqliteChunkStore', false);
+var log = Log('SqliteChunkStore', true);
 
 var worldId = 1;
 
@@ -93,6 +93,43 @@ class SqliteChunkStore extends ChunkStore {
                     }
                 }
             );
+        });
+    };
+
+    // archive what has changed since last snapshot
+    snapshot() {
+        var self = this;
+        // get last snapshot time
+        // INSERT ... SELECT all that has changed since last snapshot time
+        // INSERT INTO snapshots (x,y,z,voxels,snapshot_seconds) SELECT (x,y,z,voxels, "" as snapshot_seconds) FROM chunk WHERE update_ms > %s"
+
+        var sql = 'SELECT created_ms FROM history ORDER BY created_ms DESC LIMIT 1';
+        self.sqlite.all(sql, function(error, results) {
+            if (error) {
+                reject('Error getting most recent history timestamp (created_ms) from Sqlite: ' + error);
+                return;
+            }
+            let cutoff = 0;
+            if (results.length) {
+                cutoff = results[0].created_ms;
+            }
+
+            let created_ms = Date.now();
+            let sql = "INSERT INTO history (world_id,x,y,z,voxels,created_ms) "
+            + "SELECT 0 AS world_id,x,y,z,voxels," + created_ms + " AS created_ms FROM chunk WHERE updated_ms > ?";
+            console.log("snapshotting: " + sql)
+            self.sqlite.run(
+                sql,
+                [
+                    cutoff
+                ],
+                function(error) {
+                    if (error) {
+                        console.log("Failed to snapshot chunk rows in Sqlite: " + error)
+                    }
+                }
+            );
+
         });
     };
 

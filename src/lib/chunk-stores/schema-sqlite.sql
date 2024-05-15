@@ -5,9 +5,9 @@ create unique index chunk_id on chunk (x, y, z);
 
 
 drop table if exists history;
-create table history (worldId integer, snapshot_ms bigint(20), x integer, y integer, z integer, voxels blob);
+create table history (world_id integer, created_ms bigint(20), x integer, y integer, z integer, voxels blob);
 
-create unique index worldId_snapshot_chunk on history (worldId, snapshot_ms, x, y, z);
+create unique index worldId_created_chunk on history (worldId, created_ms, x, y, z);
 
 
 drop table if exists chat;

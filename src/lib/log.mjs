@@ -15,7 +15,7 @@ export default function(moduleName, enabled) {
 
     return function() {
         var args = new Array(arguments.length + 1);
-        args[0] = moduleName;
+        args[0] = moduleName + ":";
         for (var i = 0, len = arguments.length; i < len; i++) {
             args[i+1] = arguments[i];
         }

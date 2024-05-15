@@ -15,7 +15,7 @@ let MaxConcurrent = MC(10);
 var chunkArrayLength = config.chunkSize * config.chunkSize * config.chunkSize;
 var chunkCache = {};
 
-var log = Log('client-worker', false);
+var log = Log('client-worker', true);
 var debug = true;
 
 /*

@@ -381,6 +381,11 @@ class Server {
         setInterval(function() {
             self.sendPlayers();
         }, 1000 / 10);
+
+        // take snapshot of changed chunks every hour
+        setInterval(function() {
+            self.chunkStore.snapshot();
+        }, 1000 * (60 * 60)); // every hour
     }
 
     log(message) {
