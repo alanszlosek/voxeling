@@ -1,6 +1,7 @@
 import { default as config } from '../config-client.mjs';
 import textureOffsets from '../texture-offsets.js'
 
+import Log from './lib/log.mjs';
 import { Camera } from './lib/camera.mjs'
 import { Coordinates } from './lib/coordinates.mjs';
 import { ClientWorkerHandle } from './lib/client-worker-handle.mjs';
@@ -37,7 +38,8 @@ let game = {
     coordinates: new Coordinates(config),
     players: {},
     pubsub: new PubSub(),
-    settings: {}
+    settings: {},
+    log: Log(['world'])
 };
 
 game.clientWorkerHandle = new ClientWorkerHandle(game);

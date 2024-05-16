@@ -1,13 +1,11 @@
 import { ChunkStore } from '../chunk-store.mjs';
-import Log from '../log.mjs';
 import zlib from 'zlib';
 
-var log = Log('MemoryChunkStore', false);
-
 class MemoryChunkStore extends ChunkStore {
-    constructor(config) {
-        super(config);
-        log('Using MemoryChunkStore');
+    constructor(runtime, config) {
+        super(runtime, config);
+        this.log = runtime.log("MemoryChunkStore");
+        this.log('Using MemoryChunkStore');
         this.chunks = {};
     }
 

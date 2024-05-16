@@ -1,25 +1,23 @@
 import { ChunkStore } from '../chunk-store.mjs';
 import HLRU from 'hashlru';
-import Log from '../log.mjs';
 import mysql from 'mysql';
 import zlib from 'zlib';
-
-var log = Log('MysqlChunkStore', true);
 
 var worldId = 1;
 
 class MysqlChunkStore extends ChunkStore {
-    constructor(config, generator) {
+    constructor(runtime, config, generator) {
         super(config, generator);
+        this.log = runtime.log("MysqlChunkStore");
         this.mysqlPool = mysql.createPool(config);
-        log('Using MysqlChunkStore');
+        this.log('Using MysqlChunkStore');
     }
 
     read(chunkId, chunkPosition) {
         var self = this;
 
         // Check filesystem
-        log('get', chunkId, chunkPosition);
+        self.log('get', chunkId, chunkPosition);
 
         return new Promise(function(resolve, reject) {
             var sql = 'select voxels from chunk where x=? and y=? and z=?';
@@ -31,7 +29,7 @@ class MysqlChunkStore extends ChunkStore {
                 if (results.length == 0) {
                     reject('Chunk not found');
                 } else if (results.length == 1) {
-                    log('get', 'select returned ' + chunkId);
+                    self.log('get', 'select returned ' + chunkId);
 
                     var chunk = {
                         position: chunkPosition,

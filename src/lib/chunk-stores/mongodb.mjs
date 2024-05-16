@@ -1,18 +1,16 @@
 import { ChunkStore } from '../chunk-store.mjs';
 import HLRU from 'hashlru';
-import Log from '../log.mjs';
 import mongo from 'mongodb';
 import zlib from 'zlib';
-
-var log = Log('MongoDBChunkStore', false);
 
 var worldId = 1;
 
 class MongoDbChunkStore extends ChunkStore {
-    constructor(config, generator) {
-        super(config, generator);
+    constructor(runtime, config, generator) {
+        super(runtime, config, generator);
+        this.log = runtime.log("MongoDbChunkStore");
         this._connect();
-        log('Using MongoDbChunkStore');
+        this.log('Using MongoDbChunkStore');
     }
 
     async _connect() {
@@ -31,7 +29,7 @@ class MongoDbChunkStore extends ChunkStore {
                     return;
                 }
                 
-                log('get', 'select returned ' + chunkId);
+                self.log('get', 'select returned ' + chunkId);
 
                 let chunk = {
                     position: chunkPosition,

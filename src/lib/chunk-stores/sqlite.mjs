@@ -1,24 +1,22 @@
 import { ChunkStore } from '../chunk-store.mjs';
 import HLRU from 'hashlru';
-import Log from '../log.mjs';
 import sqlite3 from 'sqlite3';
 import zlib from 'zlib';
-
-var log = Log('SqliteChunkStore', true);
 
 var worldId = 1;
 
 class SqliteChunkStore extends ChunkStore {
-    constructor(config) {
-        super(config);
+    constructor(runtime, config) {
+        super(runtime, config);
+        this.log = runtime.log("SqliteChunkStore");
         this.sqlite = new sqlite3.Database(config.filename);
-        log('Using SqliteChunkStore');
+        this.log('Using SqliteChunkStore');
     }
 
     read(chunkId, chunkPosition) {
         var self = this;
         // Check filesystem
-        log('get', chunkId, chunkPosition);
+        self.log('get', chunkId, chunkPosition);
 
         return new Promise(function(resolve, reject) {
             //position.unshift( Number(worldId) );
@@ -31,7 +29,7 @@ class SqliteChunkStore extends ChunkStore {
                 if (results.length == 0) {
                     reject('Chunk not found');
                 } else if (results.length == 1) {
-                    log('get', 'select returned ' + chunkId);
+                    self.log('get', 'select returned ' + chunkId);
 
                     var chunk = {
                         position: chunkPosition,

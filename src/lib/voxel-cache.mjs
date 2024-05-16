@@ -1,16 +1,14 @@
-import Log from './log.mjs';
-
-let log = Log('voxel-cache', true);
 
 class VoxelCache {
     constructor(game) {
+        this.log = game.log("VoxelCache");
         this.coordinates = game.coordinates;
         this.cache = {};
     }
 
     addChunk(chunk) {
         var chunkID = chunk.chunkID;
-        log('addChunk storing voxels for ' + chunkID);
+        this.log('addChunk storing voxels for ' + chunkID);
         this.cache[ chunkID ] = chunk;
     }
 
@@ -31,7 +29,7 @@ class VoxelCache {
             // value of 0 tells collision detection no hit, >0 is a hit
             return voxelValue;
         } else {
-            log('Game.getBlock: chunkid not found');
+            this.log('Game.getBlock: chunkid not found');
         }
         // if chunk doesn't exist, act like it's full of blocks (keep player out)
         return 0;

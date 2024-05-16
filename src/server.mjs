@@ -4,6 +4,7 @@ import chunkGenerator from './lib/generators/server-terraced.mjs';
 
 import config from '../config-client.mjs';
 import configServer from '../config-server.mjs';
+import Log from './lib/log.mjs';
 import { Chunk } from './lib/chunk.mjs';
 import { Coordinates } from './lib/coordinates.mjs';
 import { existsSync, readFileSync } from 'fs';
@@ -19,28 +20,35 @@ import 'process';
 //var stats = require('./lib/voxel-stats');
 var debug = false;
 
+let runtime = {
+    log: Log(["SqliteChunkStore", "Server"])
+};
+
 let chunkStore;
 
 if ('mysql' in configServer) {
     let cs = await import('./lib/chunk-stores/mysql.mjs');
     chunkStore = new cs.MysqlChunkStore(
+        runtime,
         configServer.mysql
     );
 } else if ('mongo' in configServer) {
     let cs = await import('./lib/chunk-stores/mongodb.mjs');
     chunkStore = new cs.MongoDbChunkStore(
+        runtime,
         configServer.mongo
     );
 
 } else if ('sqlite3' in configServer) {
     let cs = await import('./lib/chunk-stores/sqlite.mjs');
     chunkStore = new cs.SqliteChunkStore(
+        runtime, 
         configServer.sqlite3
     );
 
 } else if ('memory' in configServer) {
     let cs = await import('./lib/chunk-stores/memory.mjs');
-    chunkStore = new cs.MemoryChunkStore();
+    chunkStore = new cs.MemoryChunkStore(runtime);
 }
 
 
@@ -52,20 +60,21 @@ function clientUsernames() {
         var client = server.clients[clientId];
         usernames.push( client.username );
     }
-    self.log('Usernames:', usernames.join(','));
+    console.log('Usernames:', usernames.join(','));
 }
 
 
 
 class Server {
     constructor(config, configServer, chunkStore) {
+        this.log = runtime.log("Server");
         this.config = config;
         this.configServer = configServer;
 
         this.chunkStore = chunkStore;
         this.coordinates = new Coordinates(config.chunkSize);
         this.generator = new chunkGenerator(config.chunkSize);
-        this.chunk = new Chunk(config, chunkStore, this.generator);
+        this.chunk = new Chunk(runtime, config, chunkStore, this.generator);
         this.encodedChunkCache = new HLRU(10);
         // SERVER SETUP
         // Create WebSocket and HTTP Servers separately so you can customize...
@@ -114,7 +123,7 @@ class Server {
             var parsedUrl = url.parse(request.url);
             var path = decodeURIComponent(parsedUrl.path);
             if (request.method.toUpperCase() != 'GET') {
-                console.log('Returning 405 for unexpected HTTP method: ' + request.method);
+                self.log('Returning 405 for unexpected HTTP method: ' + request.method);
                 // not supported
                 response.writeHead(405, 'Method Not Allowed');
                 response.end();
@@ -129,12 +138,12 @@ class Server {
                 // Bail if someone requested a chunk outside our world radius
                 let chunkPosition = self.coordinates.chunkIdToPosition(chunkId);
                 if (!self.isChunkPositionValid(chunkPosition)) {
-                    console.log('Chunk out of bounds: ' + chunkId);
+                    self.log('Chunk out of bounds: ' + chunkId);
                     response.writeHead(404, 'Not Found');
                     response.end();
                     return;
                 }
-                console.log('HTTP, fetch chunk: ' + chunkId);
+                self.log('HTTP, fetch chunk: ' + chunkId);
                 // Try to fetch from chunk store first
                 self.chunk.read(chunkId, chunkPosition).then(
                     function(chunk) {
@@ -164,7 +173,7 @@ class Server {
                         }
                     },
                     function(error) {
-                        console.log('Server: ' + error);
+                        self.log('Server: ' + error);
                         response.writeHead(404, {});
                         response.end();
 
@@ -194,7 +203,7 @@ class Server {
                     return;
                 }
                 path = 'www' + path;
-                console.log('path: ' + path);
+                self.log('path: ' + path);
                 if (existsSync(path)) {
                     // TODO: gzip
                     response.writeHead(200, {
@@ -390,7 +399,7 @@ class Server {
 
     log(message) {
         var ts = new Date();
-        console.log(ts.toUTCString() + ' ' + message);
+        self.log(ts.toUTCString() + ' ' + message);
     }
 
     // send message to all clients
@@ -470,7 +479,7 @@ class Server {
     }
 
     sendMessage(websocket, name, payload) {
-        //console.log(JSON.stringify([name, payload]));
+        //self.log(JSON.stringify([name, payload]));
         websocket.send( JSON.stringify([name, payload]) );
     }
 }

@@ -1,10 +1,8 @@
-import Log from './log.mjs';
-
-let log = Log('client-worker-handle');
 
 class ClientWorkerHandle {
     constructor(game) {
         this.game = game;
+        this.log = game.log("ClientWorkerHandle");
     }
     init() {
         var self = this;
@@ -20,15 +18,15 @@ class ClientWorkerHandle {
                 switch (message[0]) {
                     case 'open':
                         self.connected = true;
-                        log('Client.bindEvents: connection opened');
+                        self.log('Client.bindEvents: connection opened');
                         break;
                     case 'close':
                         self.connected = false;
-                        log('Client.bindEvents: connection closed');
+                        self.log('Client.bindEvents: connection closed');
                         self.game.userInterface.transition('disconnected');
                         break;
                     case 'error':
-                        log('Client.bindEvents.error: ' + message[1]);
+                        self.log('Client.bindEvents.error: ' + message[1]);
                         break;
                     case 'settings':
                         var settings = message[1];
@@ -36,13 +34,13 @@ class ClientWorkerHandle {
                         // merge settings from server into those from the client side
                         // TODO: fix this for new engine setup
                         //self.settings = extend(self.settings, settings) // server settings squash client settings
-                        log('Client.bindEvents: Got settings', settings);
+                        self.log('Client.bindEvents: Got settings', settings);
                         if ('initialPosition' in settings) {
                             self.game.settings.initialPosition = settings.initialPosition;
                         }
                         self.id = id;
                         //self.player.avatarImage = avatarImage
-                        log('Client.bindEvents: got id ' + id);
+                        self.log('Client.bindEvents: got id ' + id);
                         // setup complete, do we need to do additional engine setup?
                         resolve();
                         break;
