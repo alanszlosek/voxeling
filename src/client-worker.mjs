@@ -15,7 +15,7 @@ let MaxConcurrent = MC(10);
 var chunkArrayLength = config.chunkSize * config.chunkSize * config.chunkSize;
 var chunkCache = {};
 
-var log = Log('client-worker', true);
+var logger = Log(["*"])('client-worker');
 var debug = true;
 
 /*
@@ -108,7 +108,7 @@ var worker = {
         websocket.onopen = function() {
             self.connected = true;
             if (debug) {
-                log('websocket connection opened');
+                logger('websocket connection opened');
             }
             postMessage(['open']);
         };
@@ -116,13 +116,13 @@ var worker = {
         websocket.onclose = function() {
             self.connected = false;
             if (debug) {
-                log('websocket connection closed');
+                logger('websocket connection closed');
             }
             postMessage(['close']);
         };
 
         websocket.onerror = function(message) {
-            log('websocket error, ' + message);
+            logger('websocket error, ' + message);
         };
 
         websocket.onmessage = function(event) {
@@ -134,7 +134,7 @@ var worker = {
             switch (type) {
                 case 'settings':
                     if (debug) {
-                        log('got settings', payload);
+                        logger('got settings', payload);
                     }
                     postMessage(['settings', payload['settings'], payload['id']]);
                     break;
@@ -177,7 +177,7 @@ var worker = {
                     postMessage(['players', payload]);
                     break;
                 default:
-                    console.log('WebWorker received unexpected message type from server: ' + type);
+                    console.logger('WebWorker received unexpected message type from server: ' + type);
                     break;
             }
         };
@@ -188,7 +188,7 @@ var worker = {
     regionChange: function(playerPosition, drawDistance) {
         var self = this;
 
-        log('regionChange: playerPosition is', playerPosition);
+        logger('regionChange: playerPosition is', playerPosition);
 
         // Helps us ignore chunks we don't care about, and also prioritize re-drawing nearby chunks
         var chunkDistances = {};
@@ -223,23 +223,23 @@ var worker = {
                         if (!(chunkId in self.clientHasVoxels)) {
                             self.clientNeedsVoxels[chunkId] = true;
                         } else {
-                            log('Chunk ' + chunkId + ' in clientHasVoxels, skipping');
+                            logger('Chunk ' + chunkId + ' in clientHasVoxels, skipping');
                         }
                     }
                     if (!(chunkId in self.clientHasMeshes)) {
                         self.clientNeedsMeshes[chunkId] = true;
                     } else {
-                        log('Chunk ' + chunkId + ' in clientHasMeshes, skipping');
+                        logger('Chunk ' + chunkId + ' in clientHasMeshes, skipping');
                     }
 
                 } else {
                     // Does client need voxels or meshes for it?
                     if (chunkId in self.requestedChunks) {
-                        log('Chunk ' + chunkId + ' in requestedChunks, skipping');
+                        logger('Chunk ' + chunkId + ' in requestedChunks, skipping');
                         return;
                     }
                     if (chunkId in self.chunksToRequest) {
-                        log('Chunk ' + chunkId + ' in chunksToRequest, skipping');
+                        logger('Chunk ' + chunkId + ' in chunksToRequest, skipping');
                         return;
                     }
                     self.chunksToRequest[chunkId] = actualChunkPosition;
@@ -265,7 +265,7 @@ var worker = {
 
         // clear our worker chunkCache?
 
-        log('nearbyChunks', nearbyChunks);
+        logger('nearbyChunks', nearbyChunks);
     },
     requestChunks: function() {
         let self = this;
@@ -520,7 +520,7 @@ onmessage = function(e) {
     if (type in worker) {
         worker[type].apply(worker, message);
     } else {
-        log('worker does not have handler for ' + type, message);
+        logger('worker does not have handler for ' + type, message);
     }
     
 };

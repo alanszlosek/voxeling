@@ -2,7 +2,7 @@ class World {
     constructor(game) {
         let self = this;
         this.game = game;
-        this.log = game.log('World');
+        this.logger = game.log('World');
 
         // start clearly out of bounds to trigger a load of world chunks
         this.lastRegion = [100,100,100];
@@ -11,7 +11,7 @@ class World {
         this.coordsTimestamp = 0;
 
         this.game.pubsub.subscribe('player.updatePosition', function(position) {
-            self.log("player.updatePosition subscription");
+            self.logger("player.updatePosition subscription");
             // compare player position with chunk boundaries to trigger regionChange
             var thisRegion = self.game.coordinates.positionToChunk(position);
             var lastRegion = self.lastRegion;

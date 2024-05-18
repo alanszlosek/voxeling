@@ -1,6 +1,6 @@
 
 // Helper
-function createShader(gl, vertexShaderCode, fragmentShaderCode, attributes, uniforms) {
+function createShaderProgram(gl, vertexShaderCode, fragmentShaderCode, attributes, uniforms) {
     var out = {
         program: null,
         attributes: {},
@@ -39,7 +39,7 @@ function createShader(gl, vertexShaderCode, fragmentShaderCode, attributes, unif
 
     for (var i = 0; i < attributes.length; i++) {
         var name = attributes[i];
-        out.attributes[name] = gl.getAttribLocation(shaderProgram, "a_" + name);
+        out.attributes[name] = gl.getAttribLocation(shaderProgram, name);
         if (out.attributes[name] == -1) {
             console.log('Attribute error in GL shader: ' + name + '. Is the attribute being used in the shader?');
         }
@@ -47,8 +47,7 @@ function createShader(gl, vertexShaderCode, fragmentShaderCode, attributes, unif
 
     for (var i = 0; i < uniforms.length; i++) {
         var name = uniforms[i];
-        // this hungarian notation seems unnecessary since our shaders are so simple
-        out.uniforms[name] = gl.getUniformLocation(shaderProgram, "u_" + name);
+        out.uniforms[name] = gl.getUniformLocation(shaderProgram, name);
     }
 
     if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
@@ -95,12 +94,12 @@ class WebGL {
         var fragmentShaderCode =
             "precision mediump float;" +
 
-            "uniform sampler2D u_texture;" +
-            "uniform float u_textureOffset;" +
-            "uniform vec3 u_ambientLightColor;" +
-            "uniform vec3 u_directionalLightColor;" +
-            "uniform vec3 u_directionalLightPosition;" +
-            "uniform float u_hazeDistance;" +
+            "uniform sampler2D texture;" +
+            "uniform float textureOffset;" +
+            "uniform vec3 ambientLightColor;" +
+            "uniform vec3 directionalLightColor;" +
+            "uniform vec3 directionalLightPosition;" +
+            "uniform float hazeDistance;" +
 
             "varying vec4 v_position;" +
             //"varying vec3 v_normal;" +
@@ -109,16 +108,16 @@ class WebGL {
             "vec3 fogColor;" +
 
             "void main() {" +
-                "vec4 texelColor = texture2D(u_texture, v_texcoord + vec2(0, u_textureOffset));" +
+                "vec4 texelColor = texture2D(texture, v_texcoord + vec2(0, textureOffset));" +
                 //"vec3 temp;" +
 
                 "if(texelColor.a < 0.5) " +
                     "discard;" +
 
                 //"float distance = length(v_position.xyz);" +
-                //"vec3 lightDirection = normalize(u_directionalLightPosition - v_position.xyz);" +
+                //"vec3 lightDirection = normalize(directionalLightPosition - v_position.xyz);" +
                 //"highp float directionalLightWeight = max(dot(v_normal, lightDirection), 0.0);" +
-                //"vec3 lightWeight = u_ambientLightColor + (u_directionalLightColor * directionalLightWeight);" +
+                //"vec3 lightWeight = ambientLightColor + (directionalLightColor * directionalLightWeight);" +
 
                 // Apply light before we apply the haze?
                 "gl_FragColor.rgb = texelColor.rgb;" + // * lightWeight;" +
@@ -126,7 +125,7 @@ class WebGL {
                 "float depth = gl_FragCoord.z / gl_FragCoord.w;" +
                 // Start haze 1 chunk away, complete haze beyond 2.8 chunks away
                 // TODO: adjusting these doesn't seem to do anything
-                //"float fogFactor = smoothstep( 32.0, u_hazeDistance, depth );" +
+                //"float fogFactor = smoothstep( 32.0, hazeDistance, depth );" +
 
                 "gl_FragColor.a = texelColor.a;" + // - fogFactor;" +
             "}";
@@ -134,27 +133,27 @@ class WebGL {
 
         // projection * view * position vertex shader
         var vertexShaderCode =
-            "uniform mat4 u_projection;" +
-            "uniform mat4 u_view;" +
-            "uniform mat4 u_model;" +
+            "uniform mat4 projection;" +
+            "uniform mat4 view;" +
+            "uniform mat4 model;" +
 
-            "attribute vec4 a_position;" +
-            //"attribute vec3 a_normal;" +
-            "attribute vec2 a_texcoord;" +
+            "attribute vec4 position;" +
+            //"attribute vec3 normal;" +
+            "attribute vec2 texcoord;" +
 
             "varying vec4 v_position;" +
             //"varying vec3 v_normal;" +
             "varying vec2 v_texcoord;" +
 
             "void main() {" +
-                "v_position = u_projection * u_view * u_model * a_position;" +
-                //"v_normal = a_normal;" +
-                "v_texcoord = a_texcoord;" +
+                "v_position = projection * view * model * position;" +
+                //"v_normal = normal;" +
+                "v_texcoord = texcoord;" +
 
                 "gl_Position = v_position;" +
             "}";
 
-        this.shaders.mvp = createShader(
+        this.shaders.mvp = createShaderProgram(
             this.gl,
             vertexShaderCode,
             fragmentShaderCode,
@@ -167,26 +166,26 @@ class WebGL {
 
         // projection * view * position vertex shader
         var vertexShaderCode2 =
-            "uniform mat4 u_view;" +
-            "uniform mat4 u_model;" +
+            "uniform mat4 view;" +
+            "uniform mat4 model;" +
 
-            "attribute vec4 a_position;" +
-            //"attribute vec3 a_normal;" +
-            "attribute vec2 a_texcoord;" +
+            "attribute vec4 position;" +
+            //"attribute vec3 normal;" +
+            "attribute vec2 texcoord;" +
 
             "varying vec4 v_position;" +
             //"varying vec3 v_normal;" +
             "varying vec2 v_texcoord;" +
 
             "void main() {" +
-                "v_position = u_view * u_model * a_position;" +
-                //"v_normal = a_normal;" +
-                "v_texcoord = a_texcoord;" +
+                "v_position = view * model * position;" +
+                //"v_normal = normal;" +
+                "v_texcoord = texcoord;" +
 
                 "gl_Position = v_position;" +
             "}";
 
-        this.shaders.mvp2 = createShader(
+        this.shaders.mvp2 = createShaderProgram(
             this.gl,
             vertexShaderCode2,
             fragmentShaderCode,
@@ -198,39 +197,39 @@ class WebGL {
 
 
         var vertexShaderCodeBillboard =
-            "uniform mat4 u_projection;" +
-            "uniform mat4 u_view;" +
-            "uniform mat4 u_model;" +
-            "uniform vec3 u_baseposition;" +
+            "uniform mat4 projection;" +
+            "uniform mat4 view;" +
+            "uniform mat4 model;" +
+            "uniform vec3 baseposition;" +
 
-            "attribute vec4 a_position;" +
-            "attribute vec3 a_normal;" +
-            "attribute vec2 a_texcoord;" +
+            "attribute vec4 position;" +
+            "attribute vec3 normal;" +
+            "attribute vec2 texcoord;" +
 
             "varying vec4 v_position;" +
             "varying vec3 v_normal;" +
             "varying vec2 v_texcoord;" +
 
             "void main() {" +
-                //"v_position = u_projection * u_view * u_model * (a_position + u_cameraposition);" +
-                "v_normal = a_normal;" +
-                "v_texcoord = a_texcoord;" +
+                //"v_position = projection * view * model * (position + cameraposition);" +
+                "v_normal = normal;" +
+                "v_texcoord = texcoord;" +
 
-                "vec3 camX = vec3(u_view[0].x, u_view[1].x, u_view[2].x);" +
-                "vec3 camY = vec3(u_view[0].y, u_view[1].y, u_view[2].y);" +
+                "vec3 camX = vec3(view[0].x, view[1].x, view[2].x);" +
+                "vec3 camY = vec3(view[0].y, view[1].y, view[2].y);" +
                 // // think rpoblem is right here
-                "vec4 pos = vec4((camX * a_position[0]) + (camY * a_position[1]), 0);" +
-                // "v_position = (u_projection * u_view * u_model * pos) + (u_projection * u_view * vec4(u_baseposition, 1));" +
+                "vec4 pos = vec4((camX * position[0]) + (camY * position[1]), 0);" +
+                // "v_position = (projection * view * model * pos) + (projection * view * vec4(baseposition, 1));" +
 
-                //"v_position = u_projection * u_view * ((u_model * pos) + vec4(u_baseposition, 1));" +
-                "v_position = u_projection * u_view * ((u_model * pos) + vec4(u_baseposition, 1));" +
+                //"v_position = projection * view * ((model * pos) + vec4(baseposition, 1));" +
+                "v_position = projection * view * ((model * pos) + vec4(baseposition, 1));" +
 
 
-                //"gl_Position = u_projection * (view_position + vec4(a_position.xyz * dist, 0));" +
-                //"v_position = u_projection * (view_position + vec4(a_position.xyz * dist, 0));" +
+                //"gl_Position = projection * (view_position + vec4(position.xyz * dist, 0));" +
+                //"v_position = projection * (view_position + vec4(position.xyz * dist, 0));" +
                 "gl_Position = v_position;" +
             "}";
-        this.shaders.mvpBillboard = createShader(
+        this.shaders.mvpBillboard = createShaderProgram(
             this.gl,
             vertexShaderCodeBillboard,
             fragmentShaderCode,
@@ -242,26 +241,26 @@ class WebGL {
 
 
         var voxelVertexShader =
-            "uniform mat4 u_view;" +
-            "uniform sampler2D u_sampler;" +
+            "uniform mat4 view;" +
+            "uniform sampler2D sampler;" +
 
-            "attribute vec4 a_position;" +
-            "attribute vec2 a_texcoord;" +
+            "attribute vec4 position;" +
+            "attribute vec2 texcoord;" +
 
             "varying vec4 v_position;" +
             "varying vec2 v_texcoord;" +
 
             "void main() {" +
-                "v_position = u_view * a_position;" +
-                "v_texcoord = a_texcoord;" +
+                "v_position = view * position;" +
+                "v_texcoord = texcoord;" +
 
                 "gl_Position = v_position;" +
             "}";
         var voxelFragmentShader =
             "precision mediump float;" +
 
-            "uniform sampler2D u_sampler;" +
-            //"uniform vec3 u_ambientLightColor;" +
+            "uniform sampler2D sampler;" +
+            //"uniform vec3 ambientLightColor;" +
 
             "varying vec4 v_position;" +
             "varying vec2 v_texcoord;" +
@@ -269,7 +268,7 @@ class WebGL {
             "vec3 fogColor;" +
 
             "void main() {" +
-                "vec4 texelColor = texture2D(u_sampler, v_texcoord);" +
+                "vec4 texelColor = texture2D(sampler, v_texcoord);" +
                 "gl_FragColor.rgb = texelColor.rgb;" +
                 "gl_FragColor.a = texelColor.a;" +
 
@@ -279,9 +278,9 @@ class WebGL {
                     "discard;" +
 
                 //"float distance = length(v_position.xyz);" +
-                //"vec3 lightDirection = normalize(u_directionalLightPosition - v_position.xyz);" +
-                //"highp float directionalLightWeight = max(dot(u_normal, lightDirection), 0.0);" +
-                //"vec3 lightWeight = u_ambientLightColor + (u_directionalLightColor * directionalLightWeight);" +
+                //"vec3 lightDirection = normalize(directionalLightPosition - v_position.xyz);" +
+                //"highp float directionalLightWeight = max(dot(normal, lightDirection), 0.0);" +
+                //"vec3 lightWeight = ambientLightColor + (directionalLightColor * directionalLightWeight);" +
 
                 // Apply light before we apply the haze?
                 //"gl_FragColor.rgb = texelColor.rgb;" + // * lightWeight;" +
@@ -289,14 +288,14 @@ class WebGL {
                 //"float depth = gl_FragCoord.z / gl_FragCoord.w;" +
                 // Start haze 1 chunk away, complete haze beyond 2.8 chunks away
                 // TODO: adjusting these doesn't seem to do anything
-                //"float fogFactor = smoothstep( 32.0, u_hazeDistance, depth );" +
+                //"float fogFactor = smoothstep( 32.0, hazeDistance, depth );" +
                 //"gl_FragColor.a = texelColor.a - fogFactor;" +
                 
             
                 //"gl_FragColor = texelColor;" +
                 //"gl_FragColor.a = texelColor.a;" +
             "}";
-        this.shaders.voxel = createShader(
+        this.shaders.voxel = createShaderProgram(
             this.gl,
             voxelVertexShader,
             voxelFragmentShader,
@@ -308,26 +307,26 @@ class WebGL {
         );
 
         var instancedVertexShader =
-        "uniform mat4 u_projection;" +
-        "uniform mat4 u_view;" +
+        "uniform mat4 projection;" +
+        "uniform mat4 view;" +
 
-        "attribute vec4 a_position;" +
-        "attribute vec3 a_normal;" +
-        "attribute vec2 a_texcoord;" +
-        "attribute vec4 a_translation;" +
+        "attribute vec4 position;" +
+        "attribute vec3 normal;" +
+        "attribute vec2 texcoord;" +
+        "attribute vec4 translation;" +
 
         "varying vec4 v_position;" +
         "varying vec3 v_normal;" +
         "varying vec2 v_texcoord;" +
 
         "void main() {" +
-            "v_position = u_projection * u_view * (a_position + a_translation);" +
-            "v_normal = a_normal;" +
-            "v_texcoord = a_texcoord;" +
+            "v_position = projection * view * (position + translation);" +
+            "v_normal = normal;" +
+            "v_texcoord = texcoord;" +
 
             "gl_Position = v_position;" +
         "}";
-        this.shaders.translationInstanced = createShader(
+        this.shaders.translationInstanced = createShaderProgram(
             this.gl,
             instancedVertexShader,
             fragmentShaderCode,
@@ -357,4 +356,4 @@ class WebGL {
     }
 }
 
-export { WebGL }
+export { WebGL, createShaderProgram }

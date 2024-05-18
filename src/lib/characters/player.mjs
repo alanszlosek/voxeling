@@ -217,6 +217,8 @@ class Player extends Tickable {
         // update our camera
         this.updateCamera();
 
+        console.log('tick');
+
         this.game.pubsub.publish('player.updatePosition', [this.movable.position]);
         this.game.pubsub.publish('player.updateRotation', [this.movable.yaw, this.movable.pitch]);
     }

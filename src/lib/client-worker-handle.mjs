@@ -2,7 +2,7 @@
 class ClientWorkerHandle {
     constructor(game) {
         this.game = game;
-        this.log = game.log("ClientWorkerHandle");
+        this.logger = game.log("ClientWorkerHandle");
     }
     init() {
         var self = this;
@@ -18,15 +18,15 @@ class ClientWorkerHandle {
                 switch (message[0]) {
                     case 'open':
                         self.connected = true;
-                        self.log('Client.bindEvents: connection opened');
+                        self.logger('Client.bindEvents: connection opened');
                         break;
                     case 'close':
                         self.connected = false;
-                        self.log('Client.bindEvents: connection closed');
+                        self.logger('Client.bindEvents: connection closed');
                         self.game.userInterface.transition('disconnected');
                         break;
                     case 'error':
-                        self.log('Client.bindEvents.error: ' + message[1]);
+                        self.logger('Client.bindEvents.error: ' + message[1]);
                         break;
                     case 'settings':
                         var settings = message[1];
@@ -34,13 +34,13 @@ class ClientWorkerHandle {
                         // merge settings from server into those from the client side
                         // TODO: fix this for new engine setup
                         //self.settings = extend(self.settings, settings) // server settings squash client settings
-                        self.log('Client.bindEvents: Got settings', settings);
+                        self.logger('Client.bindEvents: Got settings', settings);
                         if ('initialPosition' in settings) {
                             self.game.settings.initialPosition = settings.initialPosition;
                         }
                         self.id = id;
                         //self.player.avatarImage = avatarImage
-                        self.log('Client.bindEvents: got id ' + id);
+                        self.logger('Client.bindEvents: got id ' + id);
                         // setup complete, do we need to do additional engine setup?
                         resolve();
                         break;
@@ -103,6 +103,8 @@ class ClientWorkerHandle {
     }
 
     regionChange(position) {
+        let self = this;
+        self.logger("regionChange")
         let game = this.game;
         this.worker.postMessage(['regionChange', position, game.config.drawDistance]);
     }

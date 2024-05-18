@@ -1,6 +1,7 @@
 // callback should match function(error, chunk)
 class ChunkStore {
-    constructor(config) {
+    constructor(runtime, config) {
+        this.log = runtime.log("ChunkStore");
         this.config = config;
     }
 

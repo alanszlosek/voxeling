@@ -601,6 +601,9 @@ class UserInterface extends Tickable {
                     this.state.rotateX -= event[1];
                     this.state.rotateY -= event[2];
                 } else {
+                    // TODO: race condition here: if user clicks and releases between ticks,
+                    // the event will be lost. perhaps simply spread out processing of some types
+                    // of events?
                     this.state[ eventName ] = event[1];
                 }
             }

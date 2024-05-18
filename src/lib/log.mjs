@@ -25,7 +25,7 @@ let old = function(moduleName, enabled) {
 
 export default function(modules) {
     return function(moduleName) {
-        if (modules.includes(moduleName)) {
+        if (modules.includes(moduleName) || modules.includes("*")) {
             return function() {
                 var args = new Array(arguments.length + 1);
                 args[0] = moduleName + ":";

@@ -1,24 +1,21 @@
-import { Renderable } from './capabilities/renderable.mjs';
-
+import { createShaderProgram } from './webgl.mjs';
 // Used by Cursor to draw block outlines for building
 
 /*
 LineBuffer to hold all the lines we want to draw
 */
 var vertexShaderCode =
-	"uniform mat4 u_projection;" +
-    "uniform mat4 u_view;" +
-	"attribute vec4 a_position;" +
-	"void main() { gl_Position = (u_projection * u_view * a_position); }";
+    "uniform mat4 view;" +
+	"attribute vec4 position;" +
+	"void main() { gl_Position = (view * position); }";
 var fragmentShaderCode = 
 	"precision mediump float;" +
-	"uniform vec4 u_color;" +
-	"void main() { gl_FragColor = u_color; }";
+	"uniform vec4 color;" +
+	"void main() { gl_FragColor = color; }";
 
-class Lines extends Renderable {
+class Lines {
     constructor(game, color) {
-        super();
-        let gl = this.gl = game.userInterface.webgl.gl;
+        let gl = this.gl = game.webgl.gl;
         this.game = game;
         this.glBuffer;
         this.tuples = 0;
@@ -29,44 +26,15 @@ class Lines extends Renderable {
         this.pointOffsets = [];
         this.color = color || [ 255, 0, 0, 1 ];
 
-        // Set up shaders
-        var shader = gl.createShader(gl.FRAGMENT_SHADER);
-        gl.shaderSource(shader, fragmentShaderCode);
-        gl.compileShader(shader);
-        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-            var errmsg = "fragment shader compile failed: " + gl.getShaderInfoLog(shader);
-            alert(errmsg);
-            throw new Error();
-        }
-        this.shaders.fragment = shader;
-
-        shader = gl.createShader(gl.VERTEX_SHADER);
-        gl.shaderSource(shader, vertexShaderCode);
-        gl.compileShader(shader);
-        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-            var errmsg = "vertex shader compile failed : " + gl.getShaderInfoLog(vertShader);
-            alert(errmsg);
-            throw new Error(errmsg);
-        }
-        this.shaders.vertex = shader;
-
-        var shaderProgram = gl.createProgram();
-        gl.attachShader(shaderProgram, this.shaders.vertex);
-        gl.attachShader(shaderProgram, this.shaders.fragment);
-        gl.linkProgram(shaderProgram);
-
-        this.shaderAttributes.position = gl.getAttribLocation(shaderProgram, "a_position");
-        this.shaderUniforms.projection = gl.getUniformLocation(shaderProgram, "u_projection");
-        this.shaderUniforms.view = gl.getUniformLocation(shaderProgram, "u_view");
-        this.shaderUniforms.color = gl.getUniformLocation(shaderProgram, "u_color");
-
-        if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-            var errmsg = "failed to initialize shader with data matrices";
-            alert(errmsg);
-            throw new Error(errmsg);
-        }
-
-        this.shaderProgram = shaderProgram;
+        this.shader = createShaderProgram(
+            this.gl,
+            vertexShaderCode,
+            fragmentShaderCode,
+            // attributes
+            ['position'],
+            // uniforms
+            ['view', 'color']
+        );
 
         this.glBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.glBuffer);
@@ -90,21 +58,21 @@ class Lines extends Renderable {
         gl.bufferData(gl.ARRAY_BUFFER, points, gl.STATIC_DRAW);
     }
 
-    render(gl, ts) {
+    render(parentMatrix, ts, delta) {
         if (this.skipDraw || this.tuples == 0) {
             return;
         }
-        gl.useProgram(this.shaderProgram);
+        let gl = this.game.gl;
+        gl.useProgram(this.shader.program);
         gl.lineWidth(3);
 
-        gl.uniformMatrix4fv(this.shaderUniforms.projection, false, this.game.camera.projectionMatrix);
-        gl.uniformMatrix4fv(this.shaderUniforms.view, false, this.game.camera.viewMatrix);
+        gl.uniformMatrix4fv(this.shader.uniforms.view, false, parentMatrix);
 
         gl.bindBuffer(gl.ARRAY_BUFFER, this.glBuffer);
-        gl.enableVertexAttribArray(this.shaderAttributes.position);
-        gl.vertexAttribPointer(this.shaderAttributes.position, 3, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(this.shader.attributes.position);
+        gl.vertexAttribPointer(this.shader.attributes.position, 3, gl.FLOAT, false, 0, 0);
 
-        gl.uniform4fv(this.shaderUniforms.color, this.color);
+        gl.uniform4fv(this.shader.uniforms.color, this.color);
         //console.log('lines.mjs drawing tuples: ' + this.tuples);
         gl.drawArrays(gl.LINES, 0, this.tuples);
     }

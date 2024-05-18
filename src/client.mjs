@@ -5,7 +5,7 @@ import Log from './lib/log.mjs';
 import { Camera } from './lib/camera.mjs'
 import { Coordinates } from './lib/coordinates.mjs';
 import { ClientWorkerHandle } from './lib/client-worker-handle.mjs';
-//import { Cursor } from './lib/cursor.mjs';
+import { Cursor } from './lib/cursor.mjs';
 //import { Multiplayer } from './lib/multiplayer.mjs'
 import { Node } from './lib/scene-graph.mjs'
 import { CollisionDetection } from './lib/physics.mjs';
@@ -18,7 +18,7 @@ import { TextureAtlas } from './lib/texture-atlas.mjs';
 import { UserInterface } from './lib/user-interface.mjs';
 import { VoxelCache } from './lib/voxel-cache.mjs';
 import { Voxels } from './lib/voxels.mjs';
-//import { World } from './lib/world.mjs';
+import { World } from './lib/world.mjs';
 //import { Exploration } from './lib/models/exploration.mjs';
 import { Dragon } from './lib/characters/dragon.mjs';
 import { WebGL } from './lib/webgl.mjs';
@@ -39,7 +39,7 @@ let game = {
     players: {},
     pubsub: new PubSub(),
     settings: {},
-    log: Log(['world'])
+    log: Log(['Cursor'])
 };
 
 game.clientWorkerHandle = new ClientWorkerHandle(game);
@@ -49,9 +49,11 @@ game.textureAtlas = new TextureAtlas(game, textureOffsets);
 game.userInterface = new UserInterface(game);
 game.voxelCache = new VoxelCache(game);
 game.voxels = new Voxels(game);
+game.world = new World(game);
 
 game.player = new Player(game);
 game.camera = new Camera(game, game.player.cameraPosition);
+game.cursor = new Cursor(game);
 
 game.collisionDetection = new CollisionDetection(game);
 
@@ -78,6 +80,15 @@ game.scene.addChild(
 
 game.scene.addChild(
     game.player.model.node
+);
+
+// add cursor, perhaps as child of player?
+game.scene.addChild(
+    new Node(
+        game.cursor.lines,
+        // no model matrix for voxels, stub this one in
+        scratch.identityMat4
+    )
 );
 
 
