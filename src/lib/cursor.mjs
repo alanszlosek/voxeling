@@ -63,97 +63,92 @@ class Cursor extends Tickable {
     _updateMesh(fromPoint, toPoint) {
         let self = this;
         this.logger("_updateMesh");
-        let dim0 = toPoint[0] - fromPoint[0];
-        let dim1 = toPoint[1] - fromPoint[1];
-        // odd that this one isn't used
-        let dim2 = toPoint[2] - fromPoint[2];
 
         // low face outline (bottom of cube?)
         let i = 0;
         self.lineMesh[i++] = fromPoint[0];
         self.lineMesh[i++] = fromPoint[1];
         self.lineMesh[i++] = fromPoint[2];
-        self.lineMesh[i++] = fromPoint[0] + dim0;
+        self.lineMesh[i++] = toPoint[0];
         self.lineMesh[i++] = fromPoint[1];
         self.lineMesh[i++] = fromPoint[2];
 
-        self.lineMesh[i++] = fromPoint[0] + dim0;
+        self.lineMesh[i++] = toPoint[0];
         self.lineMesh[i++] = fromPoint[1];
         self.lineMesh[i++] = fromPoint[2];
-        self.lineMesh[i++] = fromPoint[0] + dim0;
-        self.lineMesh[i++] = fromPoint[1] + dim1;
+        self.lineMesh[i++] = toPoint[0];
+        self.lineMesh[i++] = toPoint[1];
         self.lineMesh[i++] = fromPoint[2];
 
-        self.lineMesh[i++] = fromPoint[0] + dim0;
-        self.lineMesh[i++] = fromPoint[1] + dim1;
+        self.lineMesh[i++] = toPoint[0];
+        self.lineMesh[i++] = toPoint[1];
         self.lineMesh[i++] = fromPoint[2];
         self.lineMesh[i++] = fromPoint[0];
-        self.lineMesh[i++] = fromPoint[1] + dim1;
+        self.lineMesh[i++] = toPoint[1];
         self.lineMesh[i++] = fromPoint[2];
 
         self.lineMesh[i++] = fromPoint[0];
-        self.lineMesh[i++] = fromPoint[1] + dim1;
+        self.lineMesh[i++] = toPoint[1];
         self.lineMesh[i++] = fromPoint[2];
         self.lineMesh[i++] = fromPoint[0];
         self.lineMesh[i++] = fromPoint[1];
         self.lineMesh[i++] = fromPoint[2];
 
         // higher face's outine
-        self.lineMesh[i++] = toPoint[0];
-        self.lineMesh[i++] = toPoint[1];
-        self.lineMesh[i++] = toPoint[2];
-        self.lineMesh[i++] = toPoint[0] - dim0;
-        self.lineMesh[i++] = toPoint[1];
-        self.lineMesh[i++] = toPoint[2];
-
-        self.lineMesh[i++] = toPoint[0] - dim0;
-        self.lineMesh[i++] = toPoint[1];
-        self.lineMesh[i++] = toPoint[2];
-        self.lineMesh[i++] = toPoint[0] - dim0;
-        self.lineMesh[i++] = toPoint[1] - dim1;
-        self.lineMesh[i++] = toPoint[2];
-
-        self.lineMesh[i++] = toPoint[0] - dim0;
-        self.lineMesh[i++] = toPoint[1] - dim1;
+        self.lineMesh[i++] = fromPoint[0];
+        self.lineMesh[i++] = fromPoint[1];
         self.lineMesh[i++] = toPoint[2];
         self.lineMesh[i++] = toPoint[0];
-        self.lineMesh[i++] = toPoint[1] - dim1;
+        self.lineMesh[i++] = fromPoint[1];
         self.lineMesh[i++] = toPoint[2];
 
         self.lineMesh[i++] = toPoint[0];
-        self.lineMesh[i++] = toPoint[1] - dim1;
+        self.lineMesh[i++] = fromPoint[1];
         self.lineMesh[i++] = toPoint[2];
         self.lineMesh[i++] = toPoint[0];
         self.lineMesh[i++] = toPoint[1];
+        self.lineMesh[i++] = toPoint[2];
+
+        self.lineMesh[i++] = toPoint[0];
+        self.lineMesh[i++] = toPoint[1];
+        self.lineMesh[i++] = toPoint[2];
+        self.lineMesh[i++] = fromPoint[0];
+        self.lineMesh[i++] = toPoint[1];
+        self.lineMesh[i++] = toPoint[2];
+
+        self.lineMesh[i++] = fromPoint[0];
+        self.lineMesh[i++] = toPoint[1];
+        self.lineMesh[i++] = toPoint[2];
+        self.lineMesh[i++] = fromPoint[0];
+        self.lineMesh[i++] = fromPoint[1];
         self.lineMesh[i++] = toPoint[2];
 
         // connectors
         self.lineMesh[i++] = fromPoint[0];
         self.lineMesh[i++] = fromPoint[1];
         self.lineMesh[i++] = fromPoint[2];
-        self.lineMesh[i++] = toPoint[0] - dim0;
-        self.lineMesh[i++] = toPoint[1] - dim1;
+        self.lineMesh[i++] = fromPoint[0];
+        self.lineMesh[i++] = fromPoint[1];
         self.lineMesh[i++] = toPoint[2];
 
-        self.lineMesh[i++] = fromPoint[0] + dim0;
+        self.lineMesh[i++] = toPoint[0]
         self.lineMesh[i++] = fromPoint[1];
         self.lineMesh[i++] = fromPoint[2];
-
         self.lineMesh[i++] = toPoint[0];
-        self.lineMesh[i++] = toPoint[1] - dim1;
+        self.lineMesh[i++] = fromPoint[1];
         self.lineMesh[i++] = toPoint[2];
 
-        self.lineMesh[i++] = fromPoint[0] + dim0;
-        self.lineMesh[i++] = fromPoint[1] + dim1;
+        self.lineMesh[i++] = toPoint[0];
+        self.lineMesh[i++] = toPoint[1];
         self.lineMesh[i++] = fromPoint[2];
         self.lineMesh[i++] = toPoint[0];
         self.lineMesh[i++] = toPoint[1];
         self.lineMesh[i++] = toPoint[2];
 
         self.lineMesh[i++] = fromPoint[0];
-        self.lineMesh[i++] = fromPoint[1] + dim1;
+        self.lineMesh[i++] = toPoint[1];
         self.lineMesh[i++] = fromPoint[2];
-        self.lineMesh[i++] = toPoint[0] - dim0;
+        self.lineMesh[i++] = fromPoint[0];
         self.lineMesh[i++] = toPoint[1];
         self.lineMesh[i++] = toPoint[2];
 
