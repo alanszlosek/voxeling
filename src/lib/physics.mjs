@@ -243,13 +243,18 @@ class CollisionDetection extends Tickable {
     tick() {
         let self = this;
         collidables.forEach(function(item) {
-            self._haggle(item);
+            let collisions = self._haggle(item);
+            if (item == self.game.player.movement) {
+                console.log('updating');
+                self.game.debugging.updateCollisions(collisions);
+            }
         });
 
         collidables.forEach(function(item) {
             item.movable.translate( item.adjustedDelta );
         });
     }
+    /*
     _resolve(item) {
         var self = this;
 
@@ -278,6 +283,7 @@ class CollisionDetection extends Tickable {
         vec3.copy(this.previousVelocity, scratch.vec3_0);
         self.player.translate(scratch.vec3_0);
     };
+    */
 
     // Haggle for a stable, non-colliding position
     // Result of this is that direction vec3 gets adjusted in the process
@@ -323,17 +329,24 @@ class CollisionDetection extends Tickable {
     _haggle(item) {
         let self = this;
         let len = vec3.length(item.tentativeDelta);
+        let collisions = [];
 
         // If we've already adjusted the direction to 0 (like when we're up against a wall), skip further dection
         if (len == 0) {
-            return false;
+            return collisions;
         }
         let collision = raycast(this.game.voxelCache, item.currentPosition, item.tentativeDelta, len, this.hit, this.normals);
 
         if (!collision) {
             vec3.copy(item.adjustedDelta, item.tentativeDelta);
-            return;
+            return collisions;
         } else {
+            console.log(this.hit);
+            collisions.push([
+                Math.floor(this.hit[0]),
+                Math.floor(this.hit[1]),
+                Math.floor(this.hit[2]),
+            ]);
             // Back off direction up to collision point along collision surface normals
             let adjusted = false;
             for (var axis = 0; axis < 3; axis++) {
@@ -365,7 +378,7 @@ class CollisionDetection extends Tickable {
             */
             
         }
-        return;
+        return collisions;
 
     }
     resolve() {

@@ -24,6 +24,8 @@ import { Dragon } from './lib/characters/dragon.mjs';
 import { WebGL } from './lib/webgl.mjs';
 import scratch from './lib/scratch.mjs';
 
+import { Debugging } from './lib/debugging.mjs';
+
 let canvas = document.getElementById('herewego');
 canvas.width = canvas.clientWidth;
 canvas.height = canvas.clientHeight;
@@ -89,6 +91,16 @@ game.scene.addChild(
         // no model matrix for voxels, stub this one in
         scratch.identityMat4
     )
+);
+
+
+// TODO: want to add a player debugging node
+// it outlines voxels player is colliding with
+// and where player facing (cursor)
+game.debugging = new Debugging(game);
+game.scene.addChild(
+    game.debugging,
+    game.debugging.view
 );
 
 

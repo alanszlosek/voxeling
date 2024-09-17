@@ -335,6 +335,27 @@ class WebGL {
             // uniforms
             ['projection', 'view', 'texture', 'textureOffset', 'ambientLightColor', 'directionalLightColor', 'directionalLightPosition', 'hazeDistance']
         );
+
+
+
+        // Line shader
+        var lineVertexShaderCode =
+            "uniform mat4 view;" +
+            "attribute vec4 position;" +
+            "void main() { gl_Position = (view * position); }";
+        var lineFragmentShaderCode = 
+            "precision mediump float;" +
+            "uniform vec4 color;" +
+            "void main() { gl_FragColor = color; }";
+        this.shaders.line = createShaderProgram(
+            this.gl,
+            lineVertexShaderCode,
+            lineFragmentShaderCode,
+            // attributes
+            ['position'],
+            // uniforms
+            ['view', 'color']
+        );
     }
 
     start(callback) {

@@ -24,7 +24,9 @@ class Node {
 
     // Accepts anything with a render() method
     addChild(node) {
+        var index = this.children.length;
         this.children.push(node);
+        return index;
     };
 
     render(parentMatrix, ts, delta) {

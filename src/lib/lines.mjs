@@ -1,17 +1,10 @@
-import { createShaderProgram } from './webgl.mjs';
+import { mat4, quat, vec3 } from 'gl-matrix';
+//import { WebGL } from './webgl.mjs';
 // Used by Cursor to draw block outlines for building
 
 /*
 LineBuffer to hold all the lines we want to draw
 */
-var vertexShaderCode =
-    "uniform mat4 view;" +
-	"attribute vec4 position;" +
-	"void main() { gl_Position = (view * position); }";
-var fragmentShaderCode = 
-	"precision mediump float;" +
-	"uniform vec4 color;" +
-	"void main() { gl_FragColor = color; }";
 
 class Lines {
     constructor(game, color) {
@@ -19,22 +12,12 @@ class Lines {
         this.game = game;
         this.glBuffer;
         this.tuples = 0;
-        this.shaders = {};
-        this.shaderAttributes = {};
-        this.shaderUniforms = {};
+        this.shader = game.webgl.shaders.line;
+        this.view = mat4.create();
+
         this.points = [];
         this.pointOffsets = [];
         this.color = color || [ 255, 0, 0, 1 ];
-
-        this.shader = createShaderProgram(
-            this.gl,
-            vertexShaderCode,
-            fragmentShaderCode,
-            // attributes
-            ['position'],
-            // uniforms
-            ['view', 'color']
-        );
 
         this.glBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.glBuffer);
