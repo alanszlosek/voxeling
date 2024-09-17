@@ -382,10 +382,13 @@ class Server {
             self.log('WebSocket error: ' + error);
         });
 
+        let port = process.env.PORT || 3000;
+        let network_interface = process.env.BIND_INTERFACE || '0.0.0.0';
         httpServer.listen(
-            process.env.PORT || 3000,
-            process.env.BIND_INTERFACE || '0.0.0.0',
+            port,
+            network_interface
         );
+        console.log("Server now available at %s:%s\nTry visiting http://127.0.0.1:%s", network_interface, port, port);
 
         setInterval(function() {
             self.sendPlayers();
