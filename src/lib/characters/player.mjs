@@ -21,7 +21,7 @@ class Player extends Tickable {
         this.currentVelocityLength = 0;
         this.modelMatrix = mat4.create();
         this.movable = new Movable();
-        this.bounds = new Bounds();
+        this.bounds = new Bounds(0.6, 1.4, 0.6);
         this.model = new PlayerModel(this.game, this.movable);
         this.movement = new PlayerMovement(this.movable);
 
@@ -52,11 +52,6 @@ class Player extends Tickable {
         this.game.pubsub.publish('player', this);
         return Promise.resolve();
     }
-
-    updateBounds(position) {
-        this.bounds.updateBounds(position);
-    }
-
 
     updateYawPitch(x, y) {
         this.movable.setYawPitch(x,y);
@@ -211,13 +206,12 @@ class Player extends Tickable {
         this.movable.constrainPitch();
         this.movable.update();
 
+
         vec3.transformQuat(this.eyePosition, this.eyeOffset, this.movable.rotationQuatY);
         vec3.add(this.eyePosition, this.eyePosition, this.movable.position);
 
         // update our camera
         this.updateCamera();
-
-        console.log('tick');
 
         this.game.pubsub.publish('player.updatePosition', [this.movable.position]);
         this.game.pubsub.publish('player.updateRotation', [this.movable.yaw, this.movable.pitch]);
@@ -237,6 +231,7 @@ class PlayerMovement extends Tickable {
     constructor(movable) {
         super();
         this.movable = movable;
+        this.bounds = new Bounds(0.6, 1.4, 0.6);
 
         this.currentVelocity = vec3.create();
 
@@ -394,6 +389,10 @@ class PlayerMovement extends Tickable {
         // TODO: temp translation for collision detection
 
         //this.movable.translate(this.tentativeDelta);
+
+        // Maybe update bounds here
+        console.log(this.movable.position);
+        this.bounds.updateBounds(this.movable.position);
     }
 }
 

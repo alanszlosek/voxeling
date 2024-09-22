@@ -245,12 +245,12 @@ class CollisionDetection extends Tickable {
         collidables.forEach(function(item) {
             let collisions = self._haggle(item);
             if (item == self.game.player.movement) {
-                console.log('updating');
                 self.game.debugging.updateCollisions(collisions);
             }
         });
 
         collidables.forEach(function(item) {
+            console.log("Reconciling to ", item.adjustedDelta);
             item.movable.translate( item.adjustedDelta );
         });
     }
@@ -293,6 +293,7 @@ class CollisionDetection extends Tickable {
         var len = vec3.length(direction);
         var hit = vec3.create();
         var normals = vec3.create();
+        console.log("haggle()");
 
         for (var i = 0; i < bounds.length; i++) {
             var start = bounds[i];
@@ -306,6 +307,7 @@ class CollisionDetection extends Tickable {
 
             // Back off direction up to collision point along collision surface normals
             for (var axis = 0; axis < 3; axis++) {
+                // TODO: what is this ?
                 if (normals[axis] < 0.00 || 0.00 < normals[axis]) {
                     adjusted = true;
                     // Snap to voxel boundary upon collision
@@ -314,7 +316,6 @@ class CollisionDetection extends Tickable {
                     } else {
                         direction[axis] = Math.floor(hit[axis] - start[axis]);
                     }
-
                     this.currentVelocity[axis] = 0.00;
                 }
             }
@@ -328,27 +329,37 @@ class CollisionDetection extends Tickable {
 
     _haggle(item) {
         let self = this;
-        let len = vec3.length(item.tentativeDelta);
         let collisions = [];
+        
+        let len = vec3.length(item.tentativeDelta);
 
         // If we've already adjusted the direction to 0 (like when we're up against a wall), skip further dection
         if (len == 0) {
             return collisions;
         }
-        let collision = raycast(this.game.voxelCache, item.currentPosition, item.tentativeDelta, len, this.hit, this.normals);
 
-        if (!collision) {
-            vec3.copy(item.adjustedDelta, item.tentativeDelta);
-            return collisions;
-        } else {
-            console.log(this.hit);
-            collisions.push([
-                Math.floor(this.hit[0]),
-                Math.floor(this.hit[1]),
-                Math.floor(this.hit[2]),
-            ]);
+        for (var i = 0; i < item.bounds.all.length; i++) {
+            var start = item.bounds.all[i];
+            var adjusted = false;
+            let collision = raycast(this.game.voxelCache, start, item.tentativeDelta, len, this.hit, this.normals);
+
+            // if (!collision) {
+            //     vec3.copy(item.adjustedDelta, item.tentativeDelta);
+            //     return collisions;
+            // } else {
+
+                // TODO: based on normals, find exact voxel involved in collision
+                // Change collisions to object, key is voxel id
+                // value is array of voxel coordinates
+                // Need this cuz bounding box will end up adding same voxel many times
+            if (collision) {
+                collisions.push([
+                    Math.floor(this.hit[0]),
+                    Math.floor(this.hit[1]- 1),
+                    Math.floor(this.hit[2]),
+                ]);
+            }
             // Back off direction up to collision point along collision surface normals
-            let adjusted = false;
             for (var axis = 0; axis < 3; axis++) {
                 if (this.normals[axis] < 0.00 || 0.00 < this.normals[axis]) {
                     adjusted = true;

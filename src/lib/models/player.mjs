@@ -98,7 +98,7 @@ class Player {
            0,
            Shapes.three.rectangle(0.33, 0.35, 0.33, uvCoordinates.head, 64)
         );
-        mat4.translate(this.head.matrix, this.head.matrix, [0, 0.72, 0]);
+        mat4.translate(this.head.matrix, this.head.matrix, [0, 0.62, 0]);
         this.head.withPreRender(function(parentMatrix, ts, delta) {
             // handle head tilt here
             //console.log(parentMatrix);
@@ -119,7 +119,7 @@ class Player {
            0,
            Shapes.three.rectangle(0.33, 0.5, 0.2, uvCoordinates.body, 64)
         );
-        mat4.translate(this.body.matrix, this.body.matrix, [0, 0.5, 0]);
+        mat4.translate(this.body.matrix, this.body.matrix, [0, 0.40, 0]);
         this.body.withPreRender(function(parentMatrix, ts, delta) {
             // handle head tilt here
             //console.log('here');
@@ -147,7 +147,7 @@ class Player {
            0,
            Shapes.three.rectangle(0.16, 0.5, 0.16, uvCoordinates.leftArm, 64)
         );
-        mat4.translate(this.leftArm.matrix, this.leftArm.matrix, [-0.13, 0.50, 0]);
+        mat4.translate(this.leftArm.matrix, this.leftArm.matrix, [-0.13, 0.350, 0]);
         this.leftArm.rotateAround = vec3.fromValues(0, 0.25, 0);
         this.leftArm.rotation = vec3.fromValues(0, 0, 0);
         this.leftArm.rotation1 = mat4.create();
@@ -197,7 +197,7 @@ class Player {
            0,
            Shapes.three.rectangle(0.16, 0.5, 0.16, uvCoordinates.rightArm, 64)
         );
-        mat4.translate(this.rightArm.matrix, this.rightArm.matrix, [0.13, 0.50, 0]);
+        mat4.translate(this.rightArm.matrix, this.rightArm.matrix, [0.13, 0.350, 0]);
         this.rightArm.withPreRender(function(parentMatrix, ts, delta) {
             // handle head tilt here
             //console.log('here');
@@ -228,10 +228,19 @@ class Player {
            Shapes.three.rectangle(0.16, 0.5, 0.16, uvCoordinates.leftLeg, 64)
         );
         
-        mat4.translate(this.leftLeg.matrix, this.leftLeg.matrix, [-0.05, 0.25, 0]);
+        // I'm so confused why 0.125 Y axis translation is the right thing ... should be 0.25
+        // given the let piece is 0.5 long
+        mat4.translate(this.leftLeg.matrix, this.leftLeg.matrix, [-0.05, 0.125, 0]);
         this.leftLeg.withPreRender(function(parentMatrix, ts, delta) {
             // handle head tilt here
             //console.log('here');
+            var trans = vec3.create();
+            mat4.getTranslation(trans, self.leftLeg.matrix);
+
+            console.log("leg translation", trans);
+
+            mat4.getTranslation(trans, self.movable.matrix);
+            console.log("parent translation", trans);
         });
 
         /*
@@ -261,7 +270,7 @@ class Player {
            Shapes.three.rectangle(0.16, 0.5, 0.16, uvCoordinates.rightLeg, 64)
         );
         
-        mat4.translate(this.rightLeg.matrix, this.rightLeg.matrix, [0.05, 0.25, 0]);
+        mat4.translate(this.rightLeg.matrix, this.rightLeg.matrix, [0.05, 0.125, 0]);
         this.rightLeg.withPreRender(function(parentMatrix, ts, delta) {
             // handle head tilt here
             //console.log('here');
