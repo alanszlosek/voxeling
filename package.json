@@ -2,16 +2,15 @@
   "name": "voxeling-engine",
   "description": "Pure WebGL voxel game engine, with multiplayer functionality and very few dependencies",
   "dependencies": {
-    "gl-matrix": "^3.3.0",
+    "gl-matrix": "^3.4.3",
     "hashlru": "^2.3.0",
     "hat": "0.0.3",
-    "mongodb": "^4.5.0",
-    "mysql": "^2.18.1",
     "perlin-simplex": "^0.0.3",
     "sillyname": "^0.1.0",
+    "sqlite3": "^5.1.7",
     "voxel-raycast": "^0.2.1",
     "voxel-trees": "^0.1.0",
-    "websocket": "^1.0.34"
+    "websocket": "^1.0.35"
   },
   "engines": {
     "node": ">14.0.0"
