@@ -5,7 +5,7 @@
     "gl-matrix": "^3.3.0",
     "hashlru": "^2.3.0",
     "hat": "0.0.3",
-    "mongodb": "^4.5.0",
+    "mongodb": "^4.17.0",
     "mysql": "^2.18.1",
     "perlin-simplex": "^0.0.3",
     "sillyname": "^0.1.0",
@@ -17,7 +17,7 @@
     "node": ">14.0.0"
   },
   "devDependencies": {
-    "esbuild": "^0.12.15"
+    "esbuild": "^0.25.0"
   },
   "scripts": {
     "server": "node src/server.mjs",
