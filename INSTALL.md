@@ -16,6 +16,7 @@ First, clone the voxeling git repo into your current working directory.
 
 ```shell
 git clone https://github.com/alanszlosek/voxeling.git
+cd voxeling
 ```
 
 ## Copy example configs
@@ -30,7 +31,6 @@ cp config-server-example.mjs config-server.mjs
 Run the `scripts/textures.sh` script to get textures, and generate texture atlases.
 
 ```shell
-cd voxeling
 ./scripts/textures.sh
 ```
 
