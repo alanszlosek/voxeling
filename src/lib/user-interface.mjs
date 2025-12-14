@@ -94,6 +94,15 @@ var states = {
                 case 'avatar':
                     gameGlobal.player.setTexture( event.target.value );
                     break;
+                case 'wayback':
+                    var ms = parseInt(event.target.value);
+                    if (ms > 0) {
+                        gameGlobal.wayback = ms;
+                    } else {
+                        gameGlobal.wayback = 0;
+                    }
+                    gameGlobal.clientWorkerHandle.wayback(ms);
+                    break;
             }
         }
     },
@@ -430,6 +439,17 @@ var tag = function(tagName, attributes, children) {
 
     return element;
 };
+var drawChildren = function(container, children) {
+    while (container.firstChild) {
+        container.removeChild(container.firstChild);
+    }
+    children.forEach(function(item) {
+        if (item == null) {
+            return;
+        }
+        container.appendChild(item);
+    });
+};
 
 // Really want to proxy events, so that way I can convert controller events to mouse events and send them to the player/camera
 // movement handler.
@@ -706,6 +726,21 @@ class UserInterface extends Tickable {
         } else {
             fired = false;
         }
+    }
+
+    setWayback(snapshots) {
+        var options = [
+            tag("option", {value: 0}, ["None"])
+        ];
+        for (var i in snapshots) {
+            var snapshot = snapshots[i];
+            options.push(
+                tag("option", {value: snapshot.snapshot_ms}, [snapshot.name])
+
+            )
+        }
+        drawChildren(document.getElementById("wayback"), options);
+
     }
     
     on(name, callback) {

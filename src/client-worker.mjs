@@ -136,7 +136,7 @@ var worker = {
                     if (debug) {
                         logger('got settings', payload);
                     }
-                    postMessage(['settings', payload['settings'], payload['id']]);
+                    postMessage(['settings', payload['settings'], payload['id'], payload['snapshots']]);
                     break;
                 // fires when server sends us voxel edits [chunkID, voxelIndex, value, voxelIndex, value...]
                 case 'chunkVoxelIndexValue':
@@ -267,6 +267,15 @@ var worker = {
 
         logger('nearbyChunks', nearbyChunks);
     },
+
+    wayback: function(ms) {
+        var self = this;
+        sendMessage(self.connection, 'wayback', {milliseconds: ms});
+        chunkCache = {};
+        self.clientHasMeshes = {};
+        self.clientHasVoxels = {};
+    },
+
     requestChunks: function() {
         let self = this;
         let next = function(delay) {

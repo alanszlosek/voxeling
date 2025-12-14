@@ -40,6 +40,12 @@ class ClientWorkerHandle {
                         }
                         self.id = id;
                         //self.player.avatarImage = avatarImage
+
+                        // Populate wayback dropdown
+                        self.game.userInterface.setWayback(message[3]);
+
+
+
                         self.logger('Client.bindEvents: got id ' + id);
                         // setup complete, do we need to do additional engine setup?
                         resolve();
@@ -107,6 +113,21 @@ class ClientWorkerHandle {
         self.logger("regionChange");
         let game = this.game;
         this.worker.postMessage(['regionChange', game.player.getPosition(), game.config.drawDistance]);
+    }
+
+    wayback(ms) {
+        let self = this;
+        self.logger("wayback");
+        let game = this.game;
+        this.worker.postMessage(['wayback', ms]);
+
+        setTimeout(
+            function() {
+                self.worker.postMessage(['regionChange', game.player.getPosition(), game.config.drawDistance]);
+            },
+            500
+        );
+
     }
 
 }

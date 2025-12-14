@@ -41,6 +41,7 @@ let game = {
     players: {},
     pubsub: new PubSub(),
     settings: {},
+    wayback: 0,
     log: Log(['Cursor'])
 };
 

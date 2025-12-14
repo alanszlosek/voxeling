@@ -255,7 +255,8 @@ class Server {
                 pitch: 0,
 
                 // The chunk ids this client cares about
-                onlyTheseChunks: []
+                onlyTheseChunks: [],
+                wayback: 0
             };
 
 
@@ -355,6 +356,14 @@ class Server {
                         }
                         self.clients[id].onlyTheseChunks = payload;
                         break;
+                    case 'wayback':
+                        if (debug) {
+                            self.log('Client told us to show world state up to: ', payload);
+                        }
+                        var ms = parseInt(payload.milliseconds);
+                        self.clients[id].wayback = ms;
+                        self.chunkStore.wayback = ms;
+                        break;
                     default:
                         if (debug) {
                             self.log('Unexpected WebSocket message: ', decoded);
@@ -375,7 +384,13 @@ class Server {
                 self.log('Connections: ' + self.connections);
             });
 
-            self.sendMessage(connection, 'settings', {id: id, settings: self.clientSettings});
+            var snapshots = self.chunkStore.getSnapshots();
+
+            self.sendMessage(connection, 'settings', {
+                id: id,
+                settings: self.clientSettings,
+                snapshots: snapshots
+            });
         });
 
         wsServer.on('error', function(error) {
