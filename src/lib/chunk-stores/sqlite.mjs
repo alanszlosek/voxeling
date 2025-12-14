@@ -13,11 +13,10 @@ class SqliteChunkStore extends ChunkStore {
         this.sqlite = new DatabaseSync(config.filename);
         this.log('Using SqliteChunkStore');
 
-
         // Prepared statements
         this.readChunk = this.sqlite.prepare('select voxels from chunk where x=? and y=? and z=?');
-        this.readChunkHistory = this.sqlite.prepare('select voxels from history where x=? and y=? and z=? AND snapshot_ms < ? ORDER BY snapshot_ms DESC LIMIT 1');
-        this.readSnapshots = this.sqlite.prepare("select distinct datetime(snapshot_ms/1000, 'unixepoch') as name, snapshot_ms from history order by snapshot_ms desc");
+        this.readChunkHistory = this.sqlite.prepare('select voxels from history where x=? and y=? and z=? AND created_ms < ? ORDER BY created_ms DESC LIMIT 1');
+        this.readSnapshots = this.sqlite.prepare("select distinct datetime(created_ms/1000, 'unixepoch') as name, created_ms as snapshot_ms from history order by created_ms desc");
         this.updateChunk = this.sqlite.prepare('UPDATE chunk SET voxels=?, updated_ms=? WHERE x=? AND y=? AND z=?');
         this.insertChunk = this.sqlite.prepare('INSERT INTO chunk (voxels,updated_ms,x,y,z) VALUES (?,?,?,?,?)');
     }
@@ -46,44 +45,6 @@ class SqliteChunkStore extends ChunkStore {
         };
         return Promise.resolve(chunk);
     }
-
-    /*
-    read(chunkId, chunkPosition, cutoff) {
-        var self = this;
-        // Check filesystem
-        self.log('get', chunkId, chunkPosition);
-
-        // Would like to enable reading from history, too
-        // If cutoff is specified, get newest chunk from history up to cutoff
-
-        return new Promise(function(resolve, reject) {
-            //position.unshift( Number(worldId) );
-            var sql = 'select voxels from chunk where x=? and y=? and z=?';
-            self.sqlite.all(sql, chunkPosition, function(error, results) {
-                if (error) {
-                    reject('Error getting chunk from Sqlite: ' + error);
-                    return;
-                }
-                if (results.length == 0) {
-                    reject('Chunk not found');
-                } else if (results.length == 1) {
-                    self.log('get', 'select returned ' + chunkId);
-
-                    var chunk = {
-                        position: chunkPosition,
-                        chunkID: chunkId,
-                        voxels: new Uint8Array( zlib.gunzipSync(results[0].voxels) ),
-                        compressedVoxels: results[0].voxels
-                    };
-                    resolve(chunk);
-                } else {
-                    reject('Something else happened');
-                }
-            });
-        });
-    }
-    */
-
 
     write(chunkId, chunk) {
         var self = this;
@@ -116,57 +77,6 @@ class SqliteChunkStore extends ChunkStore {
         return Promise.reject('SqliteChunkStore::write(): Failed to insert');
     }
 
-    /*
-    write(chunkId, chunk) {
-        var self = this;
-        let updated_ms = Date.now();
-
-        // If we're in time machine mode, don't write
-
-        return new Promise(function(resolve, reject) {
-            self.sqlite.run(
-                'UPDATE chunk SET voxels=?, updated_ms=? WHERE x=? AND y=? AND z=?',
-                [
-                    chunk.compressedVoxels,
-                    updated_ms,
-                    chunk.position[0], // x
-                    chunk.position[1], // y
-                    chunk.position[2]
-                ],
-                function(error) {
-                    if (error) {
-                        // do insert?
-                        reject('SqliteChunkStore::saveVoxels error', error);
-                    } else if (this.changes == 1) {
-                        resolve();
-
-                    } else if (this.changes == 0) {
-                        self.sqlite.run(
-                            'INSERT INTO chunk (x,y,z,voxels,updated_ms) VALUES (?,?,?,?,?)',
-                            [
-                                chunk.position[0], // x
-                                chunk.position[1], // y
-                                chunk.position[2],
-                                chunk.compressedVoxels,
-                                updated_ms
-                            ],
-                            function(error) {
-                                if (error) {
-                                    reject('SqliteChunkStore::saveVoxels error', error);
-                                    return;
-                                }
-                                resolve();
-                            }
-                        );
-
-                    } else {
-                        reject('SqliteChunkStore::saveVoxels catchall');
-                    }
-                }
-            );
-        });
-    };
-    */
 
     // archive what has changed since last snapshot
     snapshot() {
