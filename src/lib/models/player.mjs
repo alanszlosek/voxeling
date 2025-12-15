@@ -237,10 +237,10 @@ class Player {
             var trans = vec3.create();
             mat4.getTranslation(trans, self.leftLeg.matrix);
 
-            console.log("leg translation", trans);
+            //console.log("leg translation", trans);
 
             mat4.getTranslation(trans, self.movable.matrix);
-            console.log("parent translation", trans);
+            //console.log("parent translation", trans);
         });
 
         /*

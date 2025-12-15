@@ -334,12 +334,13 @@ class CollisionDetection extends Tickable {
         let len = vec3.length(item.tentativeDelta);
 
         // If we've already adjusted the direction to 0 (like when we're up against a wall), skip further dection
-        if (len == 0) {
-            return collisions;
-        }
+        // if (len == 0) {
+        //     return collisions;
+        // }
 
         for (var i = 0; i < item.bounds.all.length; i++) {
             var start = item.bounds.all[i];
+            //console.log("Checking collisions starting from Y of:" + start[1], item.tentativeDelta);
             var adjusted = false;
             let collision = raycast(this.game.voxelCache, start, item.tentativeDelta, len, this.hit, this.normals);
 
@@ -352,10 +353,11 @@ class CollisionDetection extends Tickable {
                 // Change collisions to object, key is voxel id
                 // value is array of voxel coordinates
                 // Need this cuz bounding box will end up adding same voxel many times
-            if (collision) {
+            if (collision > 0) {
+                //console.log("Hit normal", this.normals);
                 collisions.push([
                     Math.floor(this.hit[0]),
-                    Math.floor(this.hit[1]- 1),
+                    Math.floor(this.hit[1]),
                     Math.floor(this.hit[2]),
                 ]);
             }
